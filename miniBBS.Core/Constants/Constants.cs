@@ -1,0 +1,100 @@
+﻿using System;
+
+namespace miniBBS.Core
+{
+    public static class Constants
+    {
+        public const string Version = "2.2 - 2022.07.12";
+        public const string SysopName = "Divarin";
+
+        public const int MinutesUntilMessageIsUndeletable = 15;
+        public const int MinimumPasswordLength = 5;
+        public const string DatabaseFilename = "community.db";
+        public const string TextFileRootDirectory = @"F:\";
+        //public const string TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
+
+        public static readonly string[] IllegalUsernames = new[]
+        {
+            "Sysop", "Administrator", "Admin", "Root", "Owner", "New", "Me", "On", "Off"
+        };
+
+        /// <summary>
+        /// If a non-administrator is attempting to delete a channel, this may succeed if 
+        /// a) they are a moderator and b) the channel was created within 60 minutes.
+        /// </summary>
+        public const int MaxMinutesToDeleteChannel = 60;
+        public const int NumberOfLogEntriesUntilWriteToDatabase = 20;
+
+        public const string DefaultChannelName = "General";
+
+        public const int MaxSessions = 100;
+        public const int MaxSessionsPerUser = 5;
+        public const int MaxSessionsPerIpAddress = 5;
+        public const int MaxSearchResults = 50;
+
+        public const int MaxUsernameLength = 15;
+        public const int MinUsernameLength = 2;
+        public const int MaxChannelNameLength = 25;
+
+        /// <summary>
+        /// A placeholder for a space character.  This is used because the SplitAndWrap extension trims off spaces at the start/end of a line 
+        /// but sometimes we explicitly want to add a space there (such as for returning a blank line) so this placeholder can sit there 
+        /// and will be replaced with an actual space at the last second.
+        /// </summary>
+        public const char Spaceholder = '¿';
+
+        /// <summary>
+        /// A character which indicates the beginning of, or ending of, a color code that's embedded within text.  This is used 
+        /// if you want to stream a block of text with pagination but with color changes.  The format to use this would be:
+        /// $"{Constants.InlineColorizer}{(int)ConsoleColor.Red}{Constants.InlineColorizer}this is red!{Constants.InlineColorizer}-1{Constants.InlineColorizer} This isn't red!"
+        /// Instead of a specific color you can use the int value "-1" to mean "return to the current foreground color" since 
+        /// the inline colorizer doesn't change what the Io *thinks* is the foreground color.  Because of this you should always 
+        /// return to the current foreground.
+        /// </summary>
+        public const char InlineColorizer = '½';
+
+        /// <summary>
+        /// How long to wait, in millisecond, before hanging up.  This delay allows any remaining data in the stream to be 
+        /// written out.  Without this the user may not see the last message, which may be why the user is being hung-up on.
+        /// </summary>
+        public const long HangupDelay = 1000;
+
+        /// <summary>
+        /// 2 minutes to complete a login or you get disconnected
+        /// </summary>
+        public const int MaxLoginTimeMin = 2;
+
+        public const int MaxAfkReasonLength = 30;
+
+        public static readonly string NewUserMessage =
+            $"Welcome, new user, to Mutiny Community BBS! {Environment.NewLine}" +
+            "This is a chat system similar to IRC but also allows for 'one-user-at-a-time', messagebase-like, conversations retaining a full history " +
+            "of all previous chat messages.  So if no one is online to talk with feel free to respond to chats you read or start up your own topic and check " +
+            $"back later to see if anyone has responded.{Environment.NewLine}{Environment.NewLine}" +
+            $"Are you looking for a more traditional BBS?  Check out Mutiny BBS at this address port 2332 (mutinybbs.com:2332){Environment.NewLine}" +
+            "Are you looking to get here via SSH?  You can SSH into Mutiny BBS on port 2232 and then go to (X) Games & More -> Internet -> Community. " +
+            $"That will bring you here but through SSH.{Environment.NewLine}{Environment.NewLine}" +
+            "Once at the main prompt please type '/?' for help.";
+
+        public const double MaxCalendarItemDays = 30;
+
+        // used for search results when searching chat history
+        public const int MaxSnippetLength = 25;
+
+        public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
+        
+        public const int DefaultPingPongDelayMin = 15;
+
+        /// <summary>
+        /// Maximum length of file or directory names for user generated text files
+        /// </summary>
+        public const int MaxUserFilenameLength = 50;
+
+        public const int MaxLinesToInsertInLineEditor = 50;
+
+        public static class Files
+        {
+            public const string NewUser = "newuser.txt";
+        }
+    }
+}

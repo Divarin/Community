@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{36B12940-0F2C-4B2A-8F69-3BC4FE872390}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>miniBBS.Core</RootNamespace>
+    <AssemblyName>miniBBS.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Constants\Constants.cs" />
+    <Compile Include="Enums\AccessFlag.cs" />
+    <Compile Include="Enums\OutputHandlingFlag.cs" />
+    <Compile Include="Enums\PauseResult.cs" />
+    <Compile Include="Enums\PingPongType.cs" />
+    <Compile Include="Enums\SystemControlFlag.cs" />
+    <Compile Include="Enums\TerminalEmulation.cs" />
+    <Compile Include="Enums\UCFlag.cs" />
+    <Compile Include="Interfaces\IDataModel.cs" />
+    <Compile Include="Interfaces\IHasher.cs" />
+    <Compile Include="Interfaces\ILogger.cs" />
+    <Compile Include="Interfaces\IMessager.cs" />
+    <Compile Include="Interfaces\INotificationHandler.cs" />
+    <Compile Include="Interfaces\IRepository.cs" />
+    <Compile Include="Interfaces\ISessionsList.cs" />
+    <Compile Include="Interfaces\IStructuredQuery.cs" />
+    <Compile Include="Interfaces\ITextEditor.cs" />
+    <Compile Include="Interfaces\ITextFilesBrowser.cs" />
+    <Compile Include="Interfaces\IUserIo.cs" />
+    <Compile Include="Models\Control\BbsSession.cs" />
+    <Compile Include="Models\Data\CalendarItem.cs" />
+    <Compile Include="Models\Data\IpBan.cs" />
+    <Compile Include="Models\Data\LogEntry.cs" />
+    <Compile Include="Models\Control\NodeParams.cs" />
+    <Compile Include="Models\Data\Channel.cs" />
+    <Compile Include="Models\Data\Chat.cs" />
+    <Compile Include="Models\Data\Mail.cs" />
+    <Compile Include="Models\Data\Notification.cs" />
+    <Compile Include="Models\Data\User.cs" />
+    <Compile Include="Models\Data\UserChannelFlag.cs" />
+    <Compile Include="Models\Messages\ChannelMessage.cs" />
+    <Compile Include="Models\Messages\ChannelPostMessage.cs" />
+    <Compile Include="Models\Messages\EmoteMessage.cs" />
+    <Compile Include="Models\Messages\UserLoginOrOutMessage.cs" />
+    <Compile Include="Models\Messages\UserMessage.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

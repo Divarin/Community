@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{894634D8-357A-4B3F-8387-DBE7B1F68B95}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>miniBBS</RootNamespace>
+    <AssemblyName>miniBBS</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Data.SQLite, Version=1.0.111.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Program Files (x86)\System.Data.SQLite\2008\bin\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SQLite.Linq, Version=1.0.111.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Program Files (x86)\System.Data.SQLite\2008\bin\System.Data.SQLite.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Commands\Afk.cs" />
+    <Compile Include="Commands\Announce.cs" />
+    <Compile Include="Commands\Bell.cs" />
+    <Compile Include="Commands\Calendar.cs" />
+    <Compile Include="Commands\ChatInfo.cs" />
+    <Compile Include="Commands\Context.cs" />
+    <Compile Include="Commands\ContinuousRead.cs" />
+    <Compile Include="Commands\DeleteChannel.cs" />
+    <Compile Include="Commands\DeleteMessage.cs" />
+    <Compile Include="Commands\Emote.cs" />
+    <Compile Include="Commands\FindMessages.cs" />
+    <Compile Include="Commands\IndexBy.cs" />
+    <Compile Include="Commands\KickUser.cs" />
+    <Compile Include="Commands\ListChannels.cs" />
+    <Compile Include="Commands\ListInvitations.cs" />
+    <Compile Include="Commands\ListModerators.cs" />
+    <Compile Include="Commands\Mail.cs" />
+    <Compile Include="Commands\ReadFile.cs" />
+    <Compile Include="Commands\SessionInfo.cs" />
+    <Compile Include="Commands\TimeZone.cs" />
+    <Compile Include="Commands\ToggleChannelInvite.cs" />
+    <Compile Include="Commands\SetMessagePointer.cs" />
+    <Compile Include="Commands\SwitchOrMakeChannel.cs" />
+    <Compile Include="Commands\Shutdown.cs" />
+    <Compile Include="Commands\ToggleChannelModerator.cs" />
+    <Compile Include="Commands\ToggleInviteOnly.cs" />
+    <Compile Include="Commands\UserInfo.cs" />
+    <Compile Include="Commands\WhoIsAll.cs" />
+    <Compile Include="Commands\WhoIsOn.cs" />
+    <Compile Include="DI.cs" />
+    <Compile Include="Exceptions\IdleTimeoutException.cs" />
+    <Compile Include="Extensions\ModelExtensions.cs" />
+    <Compile Include="Helpers\NotificationHandler.cs" />
+    <Compile Include="Helpers\Messager.cs" />
+    <Compile Include="Helpers\SessionsList.cs" />
+    <Compile Include="Helpers\TcpClientFactory.cs" />
+    <Compile Include="Menus\About.cs" />
+    <Compile Include="Menus\Bells.cs" />
+    <Compile Include="Menus\Channels.cs" />
+    <Compile Include="Menus\Context.cs" />
+    <Compile Include="Menus\Emotes.cs" />
+    <Compile Include="Menus\Messages.cs" />
+    <Compile Include="Menus\Users.cs" />
+    <Compile Include="Persistence\DatabaseMaint.cs" />
+    <Compile Include="Persistence\Logger.cs" />
+    <Compile Include="Subscribers\ChannelMessageSubscriber.cs" />
+    <Compile Include="Subscribers\ChannelPostSubscriber.cs" />
+    <Compile Include="Subscribers\EmoteSubscriber.cs" />
+    <Compile Include="Subscribers\UserLoginOrOutSubscriber.cs" />
+    <Compile Include="Subscribers\UserMessageSuibscriber.cs" />
+    <Compile Include="UserIo\Ansi.cs" />
+    <Compile Include="UserIo\Ascii.cs" />
+    <Compile Include="Helpers\Hasher.cs" />
+    <Compile Include="UserIo\Cbm.cs" />
+    <Compile Include="UserIo\UserIoBase.cs" />
+    <Compile Include="Menus\MainMenu.cs" />
+    <Compile Include="Persistence\DatabaseInitializer.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\miniBBS.Core\miniBBS.Core.csproj">
+      <Project>{36b12940-0f2c-4b2a-8f69-3bc4fe872390}</Project>
+      <Name>miniBBS.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\miniBBS.Extensions\miniBBS.Extensions.csproj">
+      <Project>{206838c7-deb0-44df-bd83-5cc75c3aee6a}</Project>
+      <Name>miniBBS.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\miniBBS.Services\miniBBS.Services.csproj">
+      <Project>{77c102f0-f7a0-4560-850a-189c81fc3284}</Project>
+      <Name>miniBBS.Services</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\miniBBS.TextFiles\miniBBS.TextFiles.csproj">
+      <Project>{d4d8cb6f-b556-4315-b63e-4ab740958e40}</Project>
+      <Name>miniBBS.TextFiles</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="newuser.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

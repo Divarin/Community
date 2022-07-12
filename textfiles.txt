@@ -1,0 +1,77 @@
+*** textfiles browser ***
+
+NOTE: the space between the command and it's option number is optional.  Spaces will be used in this document 
+for brevity but know that "read4" and "read 4" will both work as is the case with other similar commands.
+
+command line interface similar to dos/*nix
+use dir/ls to list directory contents
+'ls' or 'dir /w' shows only filenames, in wide format:
+(1) [subdir1]        (2) [subdir2]       (3) [subdir3]
+(4) somefile.txt     (5) otherfil.txt    (6) anotherf.txt
+(7) yetmore.txt      (8) evenmore.txt
+
+'dir' shows files in long format:
+  1: [subdir1]    - description of subdir
+  2: [subdir2]    - description of subdir
+  3: [subdir3]    - description of subdir
+  4: somefile.txt - As much content of the description of the file th...
+  5: otherfil.txt - at will fit on the remainder of the line.
+  6: anotherf.txt - and so on...
+  
+at prompt, entering just the number will 
+1) show full description
+2a) if it's a dir ask "change to this directory (y/n)"
+2b) if it's a file ask "read this file (y/n)"
+
+this "describe first, then confirm before continuing" can be bypassed by:
+a) if it's a dir use "cd 1" where '1' is the number, or "cd name" where 'name' is the subdir name
+   NOTE: 'cd..' or 'cd ..' can be used to go up one level, 'cd/' or 'cd /' or 'cd\' or 'cd \' can return
+   you to the top level
+b) if it's a file use "read 4" where '4' is the number.  Alternatives to the keyword 'read':
+   type, more, less, cat, r (can use just 'r' instead of 'read')
+   alternatively the commands 'nonstop' and 'ns' can be used to read the file without page pauses.
+   
+While reading a document when, when at a page pause "More? (y,n,c)" you can use Page Up or 'u' to cause 
+the reader to redraw the previous page.  If you're at the "more" prompt at the bottom of page 2 then 
+pressing Page Up or 'u' will re-display page 1.  If you're at the prompt at the bottom of page 1 then 
+pressing this will re-display the same page (1) over again.
+
+[Community integration]
+the textfile browser is a subsection of community similar to the email or live chat events calendar subsections.  
+That is, although you're connected to community and in some channel, you're also in a separate menu system.  
+The effect of this is that you can see channel notifications (including new chat messages) but you can't respond to them 
+until you leave the subsystem.
+
+Unlike the calendar or email systems where you're not expected to be there for very long you might find yourself in the 
+textfile browser for long periods of time, perhaps even just reading a single document for a long time.  
+
+Therefore the "Do not Disturb" feature of community is automatically activated when entering the textfile browser, however 
+you can use the command 'dnd' to toggle this.  This way you can still be notified if someone logs in or types a message 
+while you're reading text files.
+
+You can also use the command 'chat' (or 'c') to send a message to the channel:
+txt /humor/JOKES>
+Just Now: <soandso> hey dude, what's up?
+txt /humor/JOKES>c not much dude, just reading some texts!
+12345 Posted to [General]
+txt /humor/JOKES>
+
+You can also use the 'link' (or 'l') command to link to a textfiles directory or a file:
+txt /humor/JOKES>dir
+ 1: 100.txt     - I'd Love To, But.........
+ 2: 100room.txt - 100 Ways to Freak Out Your Roommate
+ ...
+txt /humor/JOKES>link 2
+<Jimbob> Check out the textfile '100room.txt' with the channel, use '/read 3025' to read this text file!
+   This is entered into the chat as if you had typed it, therefore it also persists in the history and can be read by future users.  The link 
+   is also persisted in the database so that others can follow it in the future.
+txt /humor/JOKES>
+
+You can, optionally, send the link to only one person by adding their name after the word 'link' (or 'l'):
+txt /humor/JOKES>link soandso 2
+Jimbob has shared the text file '100room.txt' with you, use '/read' to read this text file!
+   Note, in this case, since the link was only sent to a single user, Jimbob, and that user had to be online at the time 
+   there is no persistence here. The message is shown only to jimbob, not saved in the history, and the link has no persistence.
+   The 'read' command that jimbob might use will only work during that session.  Also if you were to send jimbob another link then 
+   then 'read' command will point to the new file and not the previous.
+  

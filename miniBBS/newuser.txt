@@ -1,0 +1,42 @@
+﻿Welcome, new user, to Mutiny Community!
+
+This is a very different type of BBS and this documentation will help you understand how the system works.
+Mutiny Community is a chat system modelled after Internet Relay Chat (IRC) but also includes a full history of chats.  This means that you can strike up a conversation even if no one else is online at the moment.  Just post what's on your mind and when others call later they can read it and respond.
+
+If others are online while you're on, and if they are in the same channel, then they will see your post right away and can respond right away, thus real-time IRC chat can ensue.  
+
+There are no other areas outside of this chat-with-history on this system.  There are no games, downloads, BBS lists, or anything else.  If that type of system is more to your liking please check out Mutiny BBS at the same address (mutinybbs.com) but on port 2332 (2232 for SSH).
+
+Please try to post something when you call.  No one is required to post anything because systems set up like that are filled with useless posts like "Just check'n in!".  However if there's nothing new to respond to since your last call why not take a moment to try to start a new topic.
+
+Okay so here's how it works on a technical level:
+
+First of all you need to think of this system not as a menu-driven system like a traditional BBS but more like a chat room like IRC.  If you are unfamiliar with IRC basically anything you type gets "posted" to the channel.  So if you want to issue a command you have to start by typing a slash (/).  For example, to get a list of commands you don't type question mark (?) as you would on a normal BBS instead you type slash-question mark (/?) and press enter.
+
+This document won't get into specific commands as the help menus (/?) will do that, instead the purpose of this document is to try to get you familiarized with how this system works.
+
+To read messages you just simply press enter and the next unread message will be shown.  Press enter again for the next one after that, etc...
+
+Most of the conversation happens in the main channel called "General".  However there are other channels as well.  You can also start your own channel just like you can on IRC.  If you do that you will be the moderator of that channel which means you can keep people out if you want and limit who may join.  This way you can have private conversations with 1 or more people.
+
+At each prompt you will see:
+(/?=help) (n) (t) [ch#:channelName] 
+where:
+n = the number of "unread" messages
+t = the time of day (in UTC unless you used the /tz command)
+ch# = the current channel number
+channelName = the current channel name
+
+So, the "unread" message number is actually the number of messages between your current message pointer and the most recent message.  So to explain that further let's get into message pointers:
+
+There's actually two different types of message pointers, one points to the message that will appear the next time you press enter.  So if you last read message # 103 (just to pick a number at random) then the message pointer will be set to 104.  When you hit enter you'll read 104 and the message pointer will move to 105.
+
+You can manually move the message pointer though by using /n (where n is the message number you want to move to). /0 will jump to the oldest message in the channel, /103 will jump to message # 103, and /e (shortcut for 'end') will jump to the newest message in the channel.
+
+The other type of pointer is called the "last read message number".  This is the message that you last read.  So in the above example if you read 103 then your message pointer is set to 104 but your "last read message number" is 103.  Why does this matter?  If you type a response to 103 then your response will be entered as the highest, and most recent, message in the channel.  Let's say that ends up being 242 (just to pick another number at random).
+
+Now when someone reads message 242, it will show that 242 was "in response to" 103.  And then they can use the /ctx (context) command to look back at 103.  This way there's no need to "quote" original text.
+
+I think I've thrown enough at you as a new user, please check out the help menus (/?) to learn more, please read the messages and please try to post every now and then.
+
+Nothing kills a BBS faster than a shy user-base.
