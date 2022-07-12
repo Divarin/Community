@@ -327,7 +327,7 @@ namespace miniBBS
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
                 session.StartPingPong(Constants.DefaultPingPongDelayMin);
-                session.Io.OutputLine($"Welcome Mutiny Community version {Constants.Version}.");
+                session.Io.OutputLine($"Welcome to Mutiny Community version {Constants.Version}.");
                 session.Io.OutputLine("Type '/?' for help (DON'T FORGET THE SLASH!!!!).");
                 session.Io.SetForeground(ConsoleColor.Cyan);
                 session.Io.OutputLine(" ------------------- ");
