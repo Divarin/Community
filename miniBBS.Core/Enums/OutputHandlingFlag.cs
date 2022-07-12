@@ -7,6 +7,6 @@ namespace miniBBS.Core.Enums
     {
         None = 0,
         Nonstop = 1,
-        DoNotTrimRight = 2
+        DoNotTrimStart = 2
     }
 }

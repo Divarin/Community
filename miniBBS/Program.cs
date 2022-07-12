@@ -474,7 +474,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyNewPost(Chat chat, BbsSession session)
         {
-            if (chat == null || chat.ChannelId != session.Channel.Id)
+            if (session.DoNotDisturb || chat == null || chat.ChannelId != session.Channel.Id)
                 return;
 
             bool isAtEndOfMessages = session.MsgPointer == session.Chats.Keys.Max();

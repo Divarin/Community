@@ -91,7 +91,7 @@ namespace miniBBS.Extensions
                             substring = substring.Substring(2);
                         if (!string.IsNullOrWhiteSpace(substring))
                         {
-                            if (!flags.HasFlag(OutputHandlingFlag.DoNotTrimRight))
+                            if (!flags.HasFlag(OutputHandlingFlag.DoNotTrimStart))
                                 substring = substring.TrimStart(' ');
                             yield return substring.Replace(Constants.Spaceholder, ' ');
                         }

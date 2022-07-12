@@ -366,7 +366,7 @@ namespace miniBBS.TextFiles
                 using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                 {
                     var flags = OutputHandlingFlag.None;
-                    if (!link.IsUserGeneratedContent()) flags |= OutputHandlingFlag.DoNotTrimRight;
+                    if (!link.IsUserGeneratedContent()) flags |= OutputHandlingFlag.DoNotTrimStart;
                     if (nonstop) flags |= OutputHandlingFlag.Nonstop;
                     _session.Io.OutputLine(body, flags);
                 }
