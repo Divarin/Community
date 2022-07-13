@@ -207,13 +207,14 @@ namespace miniBBS.TextFiles
                         break;
                     case "?":
                     case "help":
-                        ReadFile(new Link()
-                        {
-                            ActualFilename = "help.txt",
-                            DisplayedFilename = "Help",
-                            Description = "Help with Mutiny Community's Text Files Browser",
-                            Parent = _topLevel
-                        });
+                        Help.Show(_session);
+                        //ReadFile(new Link()
+                        //{
+                        //    ActualFilename = "help.txt",
+                        //    DisplayedFilename = "Help",
+                        //    Description = "Help with Mutiny Community's Text Files Browser",
+                        //    Parent = _topLevel
+                        //});
                         break;
                     case "chat":
                         OnChat?.Invoke(string.Join(" ", parts.Skip(1)));
@@ -248,6 +249,7 @@ namespace miniBBS.TextFiles
                             _session.Io.OutputLine("Unable to create directory.");
                         break;
                     case "del":
+                    case "rd":
                     case "rm":
                         if (parts.Length < 2)
                             _session.Io.OutputLine("Please supply a file name or number.");

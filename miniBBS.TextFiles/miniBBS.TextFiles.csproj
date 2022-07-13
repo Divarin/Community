@@ -66,6 +66,7 @@
     <Compile Include="Extensions\LinkExtensions.cs" />
     <Compile Include="FileReader.cs" />
     <Compile Include="FileWriter.cs" />
+    <Compile Include="Help.cs" />
     <Compile Include="LinkParser.cs" />
     <Compile Include="Models\Index.cs" />
     <Compile Include="Models\Link.cs" />

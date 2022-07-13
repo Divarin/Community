@@ -29,6 +29,7 @@ namespace miniBBS.Menus
             "/fu (username) : Searches for messages from user (most recent first).",
             "/index date : Shows a snippet of the first message of each day, most recent first.",
             "/index new  : Shows a snippet of each 'new' message thread (messages not in response to any other message).",
+            "/index length : Shows a snippet of the top 100 longest messages sorted from longest to shortest.",
             "/read : Begins continuous output of messages starting at the message pointer.  You can abort at page breaks (more prompts)."            
         };
 

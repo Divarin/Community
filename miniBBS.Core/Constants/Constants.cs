@@ -4,14 +4,18 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "2.2 - 2022.07.12";
+        public const string Version = "2.3 - 2022.07.13";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
         public const int MinimumPasswordLength = 5;
         public const string DatabaseFilename = "community.db";
+
+        public const string UploadDirectory = @"c:\sbbs\data\dirs\";
         public const string TextFileRootDirectory = @"F:\";
+        
         //public const string TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
+        //public const string UploadDirectory = @"c:\work\";
 
         public static readonly string[] IllegalUsernames = new[]
         {
@@ -91,6 +95,8 @@ namespace miniBBS.Core
         public const int MaxUserFilenameLength = 50;
 
         public const int MaxLinesToInsertInLineEditor = 50;
+
+        
 
         public static class Files
         {

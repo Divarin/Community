@@ -4,6 +4,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -94,13 +95,17 @@ namespace miniBBS.Services.Services
             {
                 case "save":
                 case "s":
+                case "sq":
                     // save
                     if (OnSave != null)
                     {
                         var body = Compile(lines);
                         var status = OnSave(body);
                         Notify(status);
-                        return CommandResult.Saved;
+                        var result = CommandResult.Saved;
+                        if ("sq".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
+                            result |= CommandResult.ExitEditor;
+                        return result;
                     }
                     break;
                 case "abort":
@@ -187,6 +192,9 @@ namespace miniBBS.Services.Services
                     // replace
                     Replace(lines, args.Skip(1)?.ToArray());
                     break;
+                case "import":
+                    Import(lines, args.Skip(1)?.FirstOrDefault());
+                    break;
                 case "help":
                 case "h":
                 case "?":
@@ -198,6 +206,34 @@ namespace miniBBS.Services.Services
             return CommandResult.None;
         }
 
+        private void Import(List<string> lines, string filename)
+        {
+            if (string.IsNullOrWhiteSpace(filename) || 
+                !Directory.Exists($"{Constants.UploadDirectory}{_session.User.Name.MaxLength(8, false)}") ||
+                filename.Any(c => c == '/' || c == '\\'))
+            {
+                _session.Io.OutputLine("Invalid import filename.");
+                return;
+            }
+
+            filename = $"{Constants.UploadDirectory}{_session.User.Name.MaxLength(8, false)}\\{filename}";
+            if (!File.Exists(filename))
+            {
+                _session.Io.OutputLine("Invalid import filename.");
+                return;
+            }
+
+            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            using (StreamReader reader = new StreamReader(fs))
+            {
+                var data = reader.ReadToEnd();
+                lines.AddRange(data.Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
+                        .Select(l => l.TrimEnd()));
+
+                _session.Io.OutputLine("File contents imported, use '/l' to list.");
+            }
+        }
+
         private void Help()
         {
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
@@ -205,6 +241,7 @@ namespace miniBBS.Services.Services
                 _session.Io.OutputLine(String.Join(Environment.NewLine, new[]
                 {
                     "/save, /s : Save file (does not exit, use '/q' to quit)",
+                    "/sq : Saves and then exits",
                     "/abort, /abt, /a : Abort (undoes all changes since your last save)",
                     "/quit, /exit, /q, /x : Exit the editor, if you have unsaved changes you're asked if you also want to save",
                     "/list, /l [range] : Lists the file's contents.  You will be asked if you want to show line numbers.  Optional range can be a line number or a range of lines (such as '/list 5' or '/list 5-10' or '/list 5-' or '/list -5'",
@@ -218,6 +255,7 @@ namespace miniBBS.Services.Services
                     $"{Constants.Spaceholder}/edit foo bar - replaces instances of 'foo' with 'bar' on the last line (case sensitive)",
                     "/find, /f (search) : Lists all lines containing the (search)",
                     "/replace, /r (search) (replace) : Replaces all occurances of (search) with (replace) throughout the document (case sensitive).  Asks you for confirmation.",
+                    "/import, /imp (filename) : Loads in the contents of a file uploaded to Mutiny BBS if it was uploaded to your text files upload area",
                     "/help, /h, /? : This menu"
                 }));
             }

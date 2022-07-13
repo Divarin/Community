@@ -106,11 +106,14 @@ namespace miniBBS.Extensions
             }
         }
 
-        public static string MaxLength(this string str, int maxLength)
+        public static string MaxLength(this string str, int maxLength, bool addElipsis = true)
         {
             if (string.IsNullOrWhiteSpace(str) || str.Length <= maxLength)
                 return str;
-            return str.Substring(0, maxLength) + "...";
+            if (addElipsis)
+                return str.Substring(0, maxLength) + "...";
+            else
+                return str.Substring(0, maxLength);
         }
 
         public static bool IsPrintable(this string str)
