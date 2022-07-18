@@ -9,15 +9,24 @@ namespace miniBBS.Core.Models.Messages
     /// </summary>
     public class ChannelMessage : IMessage
     {
-        public ChannelMessage(Guid sessionId, int channelId, string message)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sessionId"></param>
+        /// <param name="channelId"></param>
+        /// <param name="message"></param>
+        /// <param name="disturb">If true then message will be shown even to users with DoNotDistrub turned on</param>
+        public ChannelMessage(Guid sessionId, int channelId, string message, bool disturb=false)
         {
             SessionId = sessionId;
             ChannelId = channelId;
             Message = message;
+            Disturb = disturb;
         }
 
         public int ChannelId { get; private set; }
         public string Message { get; private set; }
+        public bool Disturb { get; private set; }
         public Guid SessionId { get; private set; }
         public Action<BbsSession> OnReceive { get; set; }
     }

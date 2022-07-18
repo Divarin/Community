@@ -164,7 +164,7 @@ namespace miniBBS.UserIo
             }
         }
 
-        private PauseResult Pause(BbsSession session, double? percentage = null)
+        private PauseResult Pause(BbsSession session, KeywordSearch keywordSearch, double? percentage = null)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkRed))
             {
@@ -180,15 +180,28 @@ namespace miniBBS.UserIo
                 
                 session.Stream.Write(r, 0, r.Length);
                 var k = StreamInput(session);
-                r[0] = 13;
-                r[1] = 10;
-                session.Stream.Write(r, 0, 2);
+                if (k != '/')
+                {
+                    r[0] = 13;
+                    r[1] = 10;
+                    session.Stream.Write(r, 0, 2);
+                }
+
                 if (k == 'c' || k == 'C')
                     return PauseResult.Continuous;
                 else if (k == 'n' || k == 'N')
                     return PauseResult.No;
                 else if (k == 'u' || k == 'U' || k == 27 || k == 'p' || k == 'P')
                     return PauseResult.PageUp;
+                else if (k == '/')
+                {
+                    StreamOutput(session, "Search: ");
+                    string search = StreamInputLine(session);
+                    if (!string.IsNullOrWhiteSpace(search))
+                        keywordSearch.Keyword = search;
+                    keywordSearch.From = SearchFrom.AfterPreviousMatch_WithoutWraparound;
+                    return PauseResult.ExecuteKeywordSearch;
+                }
             }
             return PauseResult.Yes;
         }
@@ -222,6 +235,7 @@ namespace miniBBS.UserIo
             bool continuousOutput = flags.HasFlag(OutputHandlingFlag.Nonstop);
             text = ReplaceInlineColors(text);
 
+
             if (session.Stream.CanWrite)
             {
                 if (text.Length > session.Cols)
@@ -230,8 +244,31 @@ namespace miniBBS.UserIo
                     var lines = text.SplitAndWrap(session, flags).ToList();
                     int totalLines = lines.Count;
                     int row = 0;
+                    var keywordSearch = new KeywordSearch();
+
                     var pageMarkers = new Stack<int>();
                     pageMarkers.Push(0);
+
+                    Func<int, int> DoPageUp = (_l) =>
+                    {
+                        if (pageMarkers.Count > 1)
+                        {
+                            pageMarkers.Pop(); // top of current page
+                            _l = pageMarkers.Pop(); // top of previous page
+                            if (_l > 0)
+                                _l--;
+                            row = 0;
+                            return _l;
+                        }
+                        else
+                        {
+                            // restart top of document
+                            _l = row = 0;
+                            pageMarkers.Clear();
+                            pageMarkers.Push(0);
+                            return _l;
+                        }
+                    };
 
                     for (int l = 0; l < lines.Count; l++)
                     {
@@ -241,28 +278,34 @@ namespace miniBBS.UserIo
                         if (!continuousOutput && row >= session.Rows-3)
                         {
                             var pcent = (double)l / totalLines;
-                            var pauseResult = Pause(session, pcent);
+                            var pauseResult = Pause(session, keywordSearch, pcent);
                             if (pauseResult == PauseResult.No)
                                 break;
                             else if (pauseResult == PauseResult.Continuous)
                                 continuousOutput = true;
                             else if (pauseResult == PauseResult.PageUp)
                             {
-                                if (pageMarkers.Count > 1)
+                                l = DoPageUp(l);
+                                continue;
+                            }
+                            else if (pauseResult == PauseResult.ExecuteKeywordSearch && !string.IsNullOrWhiteSpace(keywordSearch.Keyword))
+                            {
+                                int f = lines
+                                    .Skip(l) // so that we only search lines we haven't read yet
+                                    .IndexOf(x => x.ToLower().Contains(keywordSearch.Keyword.ToLower()))
+                                    + l; // because we did Skip(l) 
+                                if (f > l)
                                 {
-                                    pageMarkers.Pop(); // top of current page
-                                    l = pageMarkers.Pop(); // top of previous page
-                                    if (l > 0)
-                                        l--;
-                                    row = 0;
-                                    continue;
+                                    if (f > 1) f -= 2; // back up a couple lines to provide context
+                                    l = f - 1; // set line number to line where we found the match (-1 because of the l++ coming up)
                                 }
                                 else
                                 {
-                                    // restart top of document
-                                    l = row = 0;
-                                    pageMarkers.Clear();
-                                    pageMarkers.Push(0);
+                                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                                    {
+                                        StreamOutputLine(session, $"No more occurances of '{keywordSearch.Keyword}' found.");
+                                    }
+                                    l = DoPageUp(l);
                                     continue;
                                 }
                             }

@@ -31,6 +31,9 @@ namespace miniBBS
             if (args?.Length < 1 || !int.TryParse(args[0], out int port))
                 port = 23;
 
+            if (args?.Length >= 2 && args[1] == "local")
+                Constants.IsLocal = true;
+
             _logger = DI.Get<ILogger>();
 
             new DatabaseInitializer().InitializeDatabase();
@@ -45,7 +48,7 @@ namespace miniBBS
                 .Select(x => x.IpMask)
                 .ToList();
 
-            while (!sysControl.HasFlag(SystemControlFlag.Shutdown))// && Constants.EndOfTime > DateTime.Now)
+            while (!sysControl.HasFlag(SystemControlFlag.Shutdown))
             {
                 try
                 {
@@ -516,7 +519,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyChannelMessage(BbsSession session, ChannelMessage message)
         {
-            if (session.DoNotDisturb || message.ChannelId != session.Channel.Id)
+            if ((session.DoNotDisturb && !message.Disturb) || message.ChannelId != session.Channel.Id)
                 return;
 
             Action action = () =>
@@ -796,6 +799,9 @@ namespace miniBBS
                         DeleteMessage.Execute(session, arg);
                         return;
                     }
+                case "/edit":
+                    EditMessage.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case "/dnd":
                     session.DoNotDisturb = !session.DoNotDisturb;
                     session.Io.OutputLine($"Do not disturb mode is : {(session.DoNotDisturb ? "On" : "Off")}");
@@ -870,14 +876,14 @@ namespace miniBBS
                         session.Io.OutputLine($"Added '{mask}' to IP ban list.");
                     }
                     return;
-                //case "/pp":
-                //    {
-                //        if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
-                //            session.StartPingPong(i);
-                //        else
-                //            session.StartPingPong(0);
-                //    }
-                //    return;
+                case "/pp":
+                    {
+                        if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
+                            session.StartPingPong(i, silently: false);
+                        else
+                            session.StartPingPong(0, silently: false);
+                    }
+                    return;
                 case "/newuser":
                     ReadFile.Execute(session, Constants.Files.NewUser);
                     return;
@@ -908,6 +914,25 @@ namespace miniBBS
                             AddToChatLog(session, DI.GetRepository<Chat>(), line);
                         };
                         browser.Browse(session);
+                    }
+                    return;
+                case "/textread":
+                case "/tr":
+                    {
+                        bool linkFound = false;
+                        var browser = DI.Get<ITextFilesBrowser>();
+                        Chat msg = null;
+                        if (session.LastReadMessageNumber.HasValue && session.Chats.ContainsKey(session.LastReadMessageNumber.Value))
+                        {
+                            msg = session.Chats[session.LastReadMessageNumber.Value];
+                            linkFound = browser.ReadLink(session, msg.Message);
+                        }
+
+                        if (!linkFound && session.ContextPointer.HasValue && session.Chats.ContainsKey(session.ContextPointer.Value))
+                        {
+                            msg = session.Chats[session.ContextPointer.Value];
+                            browser.ReadLink(session, msg.Message);
+                        }
                     }
                     return;
             }

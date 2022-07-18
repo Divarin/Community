@@ -212,7 +212,7 @@ namespace miniBBS.Commands
             }
             else
             {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow)) ;
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
                 {
                     session.Io.OutputLine("You have no mail, sorry.");
                 }

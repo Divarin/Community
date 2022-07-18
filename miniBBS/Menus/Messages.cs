@@ -18,6 +18,8 @@ namespace miniBBS.Menus
             "/dnd : Toggle Do Not Disturb mode.  In this mode you will not receive notifications from activity on other nodes.  This can be helpful while reading a backlog of messages.",
             $"/d : Delete the last message that you typed if it is not more than {Constants.MinutesUntilMessageIsUndeletable} minutes old.",
             $"/d (msg #) : Deletes the given message number if you are a moderator or if it's your's and not more than {Constants.MinutesUntilMessageIsUndeletable} minutes old.",
+            $"/edit (search) (replace) : Edits the last message you typed to replace the text (search) with (replace).  There must not be spaces within the (search) & (replace) as space delimits the search from the replace.  However you can use dashes as a place holder for spaces.  For example '/edit I'm I-Am' will replace 'I'm' with 'I Am'",
+            $"/edit (msg #) (search) (replace) : Same as '/edit' above but referring to a specific message number.  Edit follows the same rules as Delete, it must be your message, or you must be a moderator/admin, or it must be a fairly recently entered message.",
             "/123 : Jump to message # 123.  Example: '/10825' jumps to message 10825.",
             "/e  : Jumps to end (high message number in this channel).",
             "/0  : Jumps to start (lowest message number in this channel).",

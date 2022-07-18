@@ -68,6 +68,7 @@
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
     <Compile Include="Enums\PingPongType.cs" />
+    <Compile Include="Enums\SearchFrom.cs" />
     <Compile Include="Enums\SystemControlFlag.cs" />
     <Compile Include="Enums\TerminalEmulation.cs" />
     <Compile Include="Enums\UCFlag.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="Interfaces\ITextFilesBrowser.cs" />
     <Compile Include="Interfaces\IUserIo.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
+    <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
     <Compile Include="Models\Data\LogEntry.cs" />

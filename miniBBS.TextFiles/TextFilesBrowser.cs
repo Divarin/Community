@@ -9,7 +9,6 @@ using miniBBS.TextFiles.Extensions;
 using miniBBS.TextFiles.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -61,7 +60,7 @@ namespace miniBBS.TextFiles
                     {
                         links = string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
                             TopLevel.GetLinks().ToList() :
-                            LinkParser.GetLinksFromIndex(_currentLocation);
+                            LinkParser.GetLinksFromIndex(session, _currentLocation);
                     }
 
                     _session.Io.SetForeground(ConsoleColor.Gray);
@@ -86,6 +85,66 @@ namespace miniBBS.TextFiles
                 _session.ShowPrompt = origionalShowPrompt;
                 _session.DoNotDisturb = originalDnd;
             }
+        }
+
+        /// <summary>
+        /// Returns true if a link was found in the <paramref name="msg"/>
+        /// </summary>
+        public bool ReadLink(BbsSession session, string msg)
+        {
+            bool linkFound = false;
+            _session = session;
+            var originalDnd = session.DoNotDisturb;
+
+            try
+            {
+                _currentLocation = _topLevel;
+                IList<Link> links = TopLevel.GetLinks().ToList();
+
+                Link link = FindLink(msg, links);
+                if (link != null && !link.IsDirectory)
+                {
+                    linkFound = true;
+                    DescribeFile(link);
+                    var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
+                    if (inp == 'Y' || inp == 'C')
+                        ReadFile(link, nonstop: inp == 'C');
+                }
+                else
+                    session.Io.OutputLine("Sorry I was unable to find that file.");
+
+                return linkFound;
+            }
+            finally
+            {
+                session.DoNotDisturb = originalDnd;
+            }
+        }
+
+        private Link FindLink(string msg, IList<Link> links)
+        {
+            if (string.IsNullOrWhiteSpace(msg))
+                return null;
+            int pos = msg.IndexOf("[");
+            if (pos < 0)
+                return null;
+            pos++;
+            int end = msg.IndexOf("]", pos);
+            if (end <= pos)
+                return null;
+            int len = end - pos;
+            string path = msg.Substring(pos, len);
+            var parts = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            Link link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
+            for (int i=1; i < parts.Length && true == link?.IsDirectory; i++)
+            {
+                _currentLocation = link;
+                links = LinkParser.GetLinksFromIndex(_session, _currentLocation);
+                link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(parts[i], StringComparison.CurrentCultureIgnoreCase));
+            }
+
+            return link;
         }
 
         private void HandleException(Exception ex)
@@ -205,16 +264,13 @@ namespace miniBBS.TextFiles
                         if (parts.Length >= 2)
                             ReadFile (parts[1], links, nonstop: true);
                         break;
+                    case "link":
+                        if (parts.Length >= 2)
+                            LinkFile(parts[1], links);
+                        break;
                     case "?":
                     case "help":
-                        Help.Show(_session);
-                        //ReadFile(new Link()
-                        //{
-                        //    ActualFilename = "help.txt",
-                        //    DisplayedFilename = "Help",
-                        //    Description = "Help with Mutiny Community's Text Files Browser",
-                        //    Parent = _topLevel
-                        //});
+                        Help.Show(_session, parts.Length >= 2 ? parts[1] : null);
                         break;
                     case "chat":
                         OnChat?.Invoke(string.Join(" ", parts.Skip(1)));
@@ -273,6 +329,31 @@ namespace miniBBS.TextFiles
                         else
                             _session.Io.OutputLine("You may not delete directories in this directory.");
                         break;
+                    case "publish":
+                    case "pub":
+                        if (parts.Length < 2)
+                            _session.Io.OutputLine("Please supply a directory name or number.");
+                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        {
+                            Publisher.Publish(_session, _currentLocation, parts[1], links);
+                            result = CommandResult.ReadDirectory;
+                        }
+                        else
+                            _session.Io.OutputLine("You may not publish files in this directory.");
+                        break;
+                    case "unpublish":
+                    case "unpub":
+                        if (parts.Length < 2)
+                            _session.Io.OutputLine("Please supply a directory name or number.");
+                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        {
+                            Publisher.Unpublish(_session, _currentLocation, parts[1], links);
+                            result = CommandResult.ReadDirectory;
+                        }
+                        else
+                            _session.Io.OutputLine("You may not publish files in this directory.");
+                        break;
+                        break;
                     default:
                         var link = links.FirstOrDefault(x => x.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
                         if (link != null)
@@ -297,6 +378,50 @@ namespace miniBBS.TextFiles
             }
 
             return result;
+        }
+
+        private void LinkFile(string filenameOrNumber, IList<Link> links)
+        {
+            if (string.IsNullOrWhiteSpace(filenameOrNumber))
+                return;
+            else if (int.TryParse(filenameOrNumber, out int n))
+            {
+                if (n >= 1 && n <= links.Count)
+                    LinkFile(links[n - 1]);
+                else
+                    _session.Io.OutputLine("Invalid file number");
+            }
+            else
+            {
+                var link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+                if (link != null)
+                    LinkFile(link);
+                else
+                    _session.Io.OutputLine("Invalid filename");
+            }
+        }
+
+        private void LinkFile(Link link)
+        {
+            if (link.IsDirectory)
+            {
+                _session.Io.OutputLine($"{link.DisplayedFilename} is a directory, you may only link files.");
+                return;
+            }
+
+            using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                _session.Io.Output($"Post a link to {link.DisplayedFilename} on channel {_session.Channel.Name}?: ");
+                var k = _session.Io.InputKey();
+                _session.Io.OutputLine();
+                if (k == 'y' || k == 'Y')
+                {
+                    string msg = $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file.";
+                    _session.Io.SetForeground(ConsoleColor.Yellow);
+                    _session.Io.OutputLine("Link posted.");
+                    OnChat?.Invoke(msg);
+                }
+            }
         }
 
         private void DescribeFile(string filenameOrNumber, IList<Link> links)

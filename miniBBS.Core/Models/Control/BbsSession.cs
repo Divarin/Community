@@ -94,15 +94,18 @@ namespace miniBBS.Core.Models.Control
 
         public bool NoPingPong { get; set; }
 
-        public void StartPingPong(int delayMinutes)
+        public void StartPingPong(int delayMinutes, bool silently = true)
         {
-            //using (Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
-            //{
-            //    if (delayMinutes <= 0)
-            //        Io.OutputLine("Stopping ping pong.");
-            //    else
-            //        Io.OutputLine($"Starting ping pong every {delayMinutes} minutes, use '/pp' to stop.");
-            //}
+            if (!silently)
+            {
+                using (Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+                {
+                    if (delayMinutes <= 0)
+                        Io.OutputLine("Stopping ping pong.");
+                    else
+                        Io.OutputLine($"Setting ping pong every {delayMinutes} minutes.");
+                }
+            }
 
             if (_pingPongThread != null && _pingPongThread.IsAlive)
                 _pingPongThread.Abort();

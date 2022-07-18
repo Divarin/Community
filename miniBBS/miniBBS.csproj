@@ -83,6 +83,7 @@
     <Compile Include="Commands\ContinuousRead.cs" />
     <Compile Include="Commands\DeleteChannel.cs" />
     <Compile Include="Commands\DeleteMessage.cs" />
+    <Compile Include="Commands\EditMessage.cs" />
     <Compile Include="Commands\Emote.cs" />
     <Compile Include="Commands\FindMessages.cs" />
     <Compile Include="Commands\IndexBy.cs" />

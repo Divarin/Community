@@ -65,9 +65,11 @@ namespace miniBBS.TextFiles
                 session.Io.Output($"Enter description{(string.IsNullOrEmpty(file.Description) ? "" : " Enter=Keep Current")}: ");
                 string descr = session.Io.InputLine();
                 if (!string.IsNullOrWhiteSpace(descr))
+                {
                     file.Description = descr;
+                    IndexUpdater.UpdateIndex(currentLocation, file);
+                }
 
-                UpdateIndex(currentLocation, file);
                 return $"Saved as '{file.DisplayedFilename}'";
             };
 
@@ -111,7 +113,7 @@ namespace miniBBS.TextFiles
             if (File.Exists(filename))
             {
                 File.Delete(filename);
-                UpdateIndex(currentLocation, file, delete: true);
+                IndexUpdater.UpdateIndex(currentLocation, file, delete: true);
             }
         }
 
@@ -121,7 +123,7 @@ namespace miniBBS.TextFiles
             if (Directory.Exists(directoryName))
             {
                 Directory.Delete(directoryName, recursive: true);
-                UpdateIndex(currentLocation, directory, delete: true);
+                IndexUpdater.UpdateIndex(currentLocation, directory, delete: true);
             }
         }
 
@@ -190,7 +192,7 @@ namespace miniBBS.TextFiles
                 Parent = currentLocation
             };
 
-            UpdateIndex(currentLocation, newItem);
+            IndexUpdater.UpdateIndex(currentLocation, newItem);
             
             session.Io.OutputLine("Directory created");
         }
@@ -208,58 +210,6 @@ namespace miniBBS.TextFiles
             }
         }
 
-        private static void UpdateIndex(Link indexLocation, Link item, bool delete = false)
-        {
-            var data = FileReader.LoadFileContents(indexLocation, new Link
-            {
-                ActualFilename = "index.html",
-                Parent = indexLocation
-            });
-
-            var linkComparer = new LinkComparer();
-
-            var links = LinkParser.GetLinks(data);
-            var dirs = links.Where(l => l.IsDirectory).ToList();
-            dirs.Sort(linkComparer);
-            var files = links.Where(l => !l.IsDirectory).ToList();
-            files.Sort(linkComparer);
-
-            var listToInsertInto = item.IsDirectory ? dirs : files;
-
-            var itemIndex = listToInsertInto.BinarySearch(item, linkComparer);
-            if (!delete)
-            {
-                if (itemIndex < 0)
-                {
-                    itemIndex = ~itemIndex;
-                    listToInsertInto.Insert(itemIndex, item);
-                }
-                else
-                {
-                    listToInsertInto[itemIndex] = item;
-                }
-            }
-            else
-            {
-                listToInsertInto.RemoveAt(itemIndex);
-            }
-
-            links = dirs.Union(files);
-
-            WriteIndex(indexLocation, links);
-        }
-
-        private static void WriteIndex(Link indexLocation, IEnumerable<Link> links)
-        {
-            string filename = $"{Constants.TextFileRootDirectory}{indexLocation.Path}\\index.html";
-            if (File.Exists(filename))
-                File.Delete(filename);
-            using (FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
-            using (StreamWriter writer = new StreamWriter(fs))
-            {
-                foreach (var link in links)
-                    writer.WriteLine($"<A HREF=\"{link.ActualFilename.Replace("\\", "/")}\">{link.DisplayedFilename}</A><BR>{link.Description}");
-            }
-        }
+        
     }
 }
