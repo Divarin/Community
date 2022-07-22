@@ -52,7 +52,7 @@ namespace miniBBS.Core.Models.Control
         public ISubscriber<ChannelMessage> ChannelMessageSubscriber { get; set; }
         public ISubscriber<UserMessage> UserMessageSubscriber { get; set; }
         public ISubscriber<EmoteMessage> EmoteSubscriber { get; set; }
-
+        public Module CurrentLocation { get; set; }
         public Action OnDispose { get; set; }
         public bool DoNotDisturb { get; set; }
         public string IpAddress { get; set; }

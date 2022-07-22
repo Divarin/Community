@@ -19,15 +19,17 @@ namespace miniBBS.Services.Services
         {
             bool wasDnd = session.DoNotDisturb;
             session.DoNotDisturb = true;
+            List<string> lines = null;
+
             try
             {
-                var lines = new List<string>();
+                lines = new List<string>();
                 if (!string.IsNullOrWhiteSpace(existingText))
                     lines.AddRange(existingText
                         .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
                         .Select(l => l.TrimEnd()));
 
-                _savedText = String.Join(Environment.NewLine, lines);
+                _savedText = string.Join(Environment.NewLine, lines);
                 _session = session;
 
                 var cmdResult = CommandResult.None;
@@ -52,11 +54,14 @@ namespace miniBBS.Services.Services
                             _savedText = String.Join(Environment.NewLine, lines);
                         if (cmdResult.HasFlag(CommandResult.RevertToOriginal))
                         {
-                            lines.Clear();
-                            if (!string.IsNullOrWhiteSpace(_savedText))
-                                lines.AddRange(existingText
-                                .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
-                                .Select(l => l.TrimEnd()));
+                            if ('Y' == _session.Io.Ask("Are you sure you want to undo changes since your last save?: "))
+                            {
+                                lines.Clear();
+                                if (!string.IsNullOrWhiteSpace(_savedText))
+                                    lines.AddRange(_savedText
+                                        .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
+                                        .Select(l => l.TrimEnd()));
+                            }
                         }
                     }
                     else
@@ -68,6 +73,16 @@ namespace miniBBS.Services.Services
                 var result = string.Join(Environment.NewLine, lines);
                 return result;
             } 
+            catch (Exception)
+            {
+                // something went wrong, possibly a connection failure, auto-save before throwing exception
+                if (OnSave != null && HasUnsavedChanges(lines))
+                {
+                    var body = Compile(lines);
+                    OnSave(body);
+                }
+                throw;
+            }
             finally
             {
                 session.DoNotDisturb = wasDnd;
@@ -76,7 +91,10 @@ namespace miniBBS.Services.Services
 
         private bool HasUnsavedChanges(List<string> lines)
         {
-            string text = String.Join(Environment.NewLine, lines);
+            if (lines == null)
+                return false;
+
+            string text = string.Join(Environment.NewLine, lines);
             return text != _savedText;
         }
 
@@ -208,8 +226,21 @@ namespace miniBBS.Services.Services
 
         private void Import(List<string> lines, string filename)
         {
-            if (string.IsNullOrWhiteSpace(filename) || 
-                !Directory.Exists($"{Constants.UploadDirectory}{_session.User.Name.MaxLength(8, false)}") ||
+            var dir = $"{Constants.UploadDirectory}{_session.User.Name.MaxLength(8, false)}";
+
+            if (!Directory.Exists(dir))
+            {
+                _session.Io.OutputLine("Sorry you don't seem to have a dedicated upload directory on Mutiny BBS.  Please ask the sysop to create one for you.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                _session.Io.OutputLine($"Files found in your upload directory: {Environment.NewLine}{string.Join(", ", GetFiles(dir))}");
+                return;
+            }    
+
+            if (!Directory.Exists(dir) ||
                 filename.Any(c => c == '/' || c == '\\'))
             {
                 _session.Io.OutputLine("Invalid import filename.");
@@ -232,6 +263,13 @@ namespace miniBBS.Services.Services
 
                 _session.Io.OutputLine("File contents imported, use '/l' to list.");
             }
+        }
+
+        private IEnumerable<string> GetFiles(string dir)
+        {
+            return new DirectoryInfo(dir)
+                .GetFiles()
+                .Select(f => f.Name);
         }
 
         private void Help()
@@ -263,9 +301,30 @@ namespace miniBBS.Services.Services
 
         private void Replace(List<string> lines, string[] args)
         {
-            if (args?.Length != 2)
+            string search, replace;
+            search = replace = null;
+            if (args?.Length == 1)
             {
-                Notify("Please use '/r (old) (new)' where (old) is the word to find and (new) is what to replace it with.");
+                var arr = args[0]
+                    .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .ToArray();
+                if (arr.Length == 2)
+                {
+                    search = arr[0];
+                    replace = arr[1];
+                }
+            }
+            else if (args?.Length == 2)
+            {
+                search = args[0].Trim();
+                replace = args[1].Trim();
+            }
+            else
+            {
+                Notify(
+                    $"Please use '/r (old) (new)' where (old) is the word to find and (new) is what to replace it with.{Environment.NewLine}" +
+                    "You can also use '/r (old)/(new)' (separated by a slash) if either (old) or (new) contains spaces.");
                 return;
             }
 

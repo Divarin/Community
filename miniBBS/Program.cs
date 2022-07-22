@@ -26,6 +26,8 @@ namespace miniBBS
         private static ILogger _logger;
         private static List<string> _ipBans;
 
+        public static Module ConfigureEmulation { get; private set; }
+
         static void Main(string[] args)
         {
             if (args?.Length < 1 || !int.TryParse(args[0], out int port))
@@ -122,7 +124,8 @@ namespace miniBBS
                         Stream = stream,
                         Messager = nodeParams.Messager,
                         IpAddress = ip,
-                        PingType = PingPongType.Invisible
+                        PingType = PingPongType.Invisible,
+                        CurrentLocation = Module.Connecting
                     };
                     session.ShowPrompt = () => Prompt(session);
                     session.OnPingPong = () =>
@@ -225,76 +228,88 @@ namespace miniBBS
 
         private static void SetEmulation(BbsSession session)
         {
-            session.Rows = session.User.Rows;
-            session.Cols = session.User.Cols;
-            var emulation = session.User.Emulation;
+            var originalLocation = session.CurrentLocation;
+            session.CurrentLocation = ConfigureEmulation;
 
-            if (session.Rows < 5)
-                session.Rows = 24;
-            if (session.Cols < 5)
-                session.Cols = 80;
-
-            while (true)
+            try
             {
-                session.Io.OutputLine($"{Environment.NewLine} -- Emulation Setup --");
-                session.Io.OutputLine($"(R)ows      : {session.Rows}");
-                session.Io.OutputLine($"(C)ols      : {session.Cols}");
-                session.Io.OutputLine($"(E)mulation : {emulation}");                
-                session.Io.Output("Enter = Continue > ");
-                var chr = session.Io.InputKey();
-                session.Io.OutputLine();
-                switch (chr)
+                session.Rows = session.User.Rows;
+                session.Cols = session.User.Cols;
+                var emulation = session.User.Emulation;
+
+                if (session.Rows < 5)
+                    session.Rows = 24;
+                if (session.Cols < 5)
+                    session.Cols = 80;
+
+                while (true)
                 {
-                    case 'r':
-                    case 'R':
-                        {
-                            session.Io.Output($"Rows [{session.Rows}] : ");
-                            string s = session.Io.InputLine();
-                            if (int.TryParse(s, out int r) && r > 5 && r < 255)
-                                session.Rows = r;
-                        }
-                        break;
-                    case 'c':
-                    case 'C':
-                        {
-                            session.Io.Output($"Cols [{session.Cols}] : ");
-                            string s = session.Io.InputLine();
-                            if (int.TryParse(s, out int c) && c > 10 && c < 255)
-                                session.Cols = c;
-                        }
-                        break;
-                    case 'e':
-                    case 'E':
-                        {
-                            session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}Emulation [{1}] : ", Environment.NewLine, emulation.ToString()));
-                            char? s = session.Io.InputKey();
-                            switch (s)
+                    session.Io.OutputLine($"{Environment.NewLine} -- Emulation Setup --");
+                    session.Io.OutputLine($"(R)ows      : {session.Rows}");
+                    session.Io.OutputLine($"(C)ols      : {session.Cols}");
+                    session.Io.OutputLine($"(E)mulation : {emulation}");
+                    session.Io.Output("Enter = Continue > ");
+                    var chr = session.Io.InputKey();
+                    session.Io.OutputLine();
+                    switch (chr)
+                    {
+                        case 'r':
+                        case 'R':
                             {
-                                case '1': emulation = TerminalEmulation.Ascii; break;
-                                case '2': emulation = TerminalEmulation.Ansi; break;
-                                case '3': emulation = TerminalEmulation.Cbm; break;
+                                session.Io.Output($"Rows [{session.Rows}] : ");
+                                string s = session.Io.InputLine();
+                                if (int.TryParse(s, out int r) && r > 5 && r < 255)
+                                    session.Rows = r;
                             }
-                        }
-                        break;
-                    default:
-                        session.Io.OutputLine();
-                        switch (emulation)
-                        {
-                            case TerminalEmulation.Ascii: session.Io = new Ascii(session); break;
-                            case TerminalEmulation.Ansi: session.Io = new ANSI(session); break;
-                            case TerminalEmulation.Cbm: session.Io = new Cbm(session); break;
-                        }
-                        session.User.Rows = session.Rows;
-                        session.User.Cols = session.Cols;
-                        session.User.Emulation = emulation;
-                        session.UserRepo.Update(session.User);
-                        return;
+                            break;
+                        case 'c':
+                        case 'C':
+                            {
+                                session.Io.Output($"Cols [{session.Cols}] : ");
+                                string s = session.Io.InputLine();
+                                if (int.TryParse(s, out int c) && c > 10 && c < 255)
+                                    session.Cols = c;
+                            }
+                            break;
+                        case 'e':
+                        case 'E':
+                            {
+                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}Emulation [{1}] : ", Environment.NewLine, emulation.ToString()));
+                                char? s = session.Io.InputKey();
+                                switch (s)
+                                {
+                                    case '1': emulation = TerminalEmulation.Ascii; break;
+                                    case '2': emulation = TerminalEmulation.Ansi; break;
+                                    case '3': emulation = TerminalEmulation.Cbm; break;
+                                }
+                            }
+                            break;
+                        default:
+                            session.Io.OutputLine();
+                            switch (emulation)
+                            {
+                                case TerminalEmulation.Ascii: session.Io = new Ascii(session); break;
+                                case TerminalEmulation.Ansi: session.Io = new ANSI(session); break;
+                                case TerminalEmulation.Cbm: session.Io = new Cbm(session); break;
+                            }
+                            session.User.Rows = session.Rows;
+                            session.User.Cols = session.Cols;
+                            session.User.Emulation = emulation;
+                            session.UserRepo.Update(session.User);
+                            return;
+                    }
                 }
+            } 
+            finally
+            {
+                session.CurrentLocation = originalLocation;
             }
         }
 
         private static void RunSession(BbsSession session)
         {
+            session.CurrentLocation = Module.Chat;
+
             bool notifiedAboutHowToDeleteOwnMessages = false;
             bool notifiedAboutNoOneInChannel = false;
 
@@ -619,6 +634,8 @@ namespace miniBBS
 
         private static void Logon(BbsSession session, IRepository<User> userRepo)
         {
+            session.CurrentLocation = Module.Login;
+
             if (DI.Get<ISessionsList>().Sessions.Count() >= Constants.MaxSessions)
             {
                 session.Io.OutputLine("Sorry, too many people are online right now!  Try again later.");
@@ -669,6 +686,7 @@ namespace miniBBS
                 if (k != 'y' && k != 'Y')
                     return;
                 user = RegisterNewUser(session, username, userRepo);
+                session.CurrentLocation = Module.Login;
                 if (user == null)
                     return;
                 session.Io.Output("Do you want to read the new user documentation now?: ");
@@ -717,6 +735,8 @@ namespace miniBBS
 
         private static User RegisterNewUser(BbsSession session, string username, IRepository<User> userRepo)
         {
+            session.CurrentLocation = Module.NewUserRegistration;
+
             session.Io.Output("Choose a password (and don't forget it): ");
             string pw = session.Io.InputLine('*')?.ToLower();
 
@@ -750,6 +770,15 @@ namespace miniBBS
 
             if (string.IsNullOrWhiteSpace(command))
                 return;
+
+            if (command.StartsWith("/s/", StringComparison.CurrentCultureIgnoreCase))
+            {
+                // replace "/s/(search)/(replace)" with "/s (search)/(replace)"
+                var chars = command.ToArray();
+                chars[2] = ' ';
+                command = new string(chars);
+            }
+
             var parts = command.Split(' ');
             if (parts?.Length < 1)
                 return;
@@ -799,7 +828,9 @@ namespace miniBBS
                         DeleteMessage.Execute(session, arg);
                         return;
                     }
+                case "/typo":
                 case "/edit":
+                case "/s":
                     EditMessage.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/dnd":

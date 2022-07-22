@@ -29,6 +29,10 @@ namespace miniBBS.Commands
                 case "length":
                     Length(session);
                     return;
+                case "links":
+                case "link":
+                    TextFilesLinks(session);
+                    return;
                 default:
                     ShowUsage(session);
                     return;
@@ -135,6 +139,37 @@ namespace miniBBS.Commands
             }
         }
 
+        private static void TextFilesLinks(BbsSession session)
+        {
+            if (true != session.Chats?.Any())
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                {
+                    session.Io.OutputLine("No chats in this channel.");
+                }
+                return;
+            }
+
+            var chats = session.Chats.Values
+                .Where(c => c.Message.StartsWith("TextFile Link:"))
+                .OrderByDescending(c => c.DateUtc)
+                .Take(100)
+                .Select(chat =>
+                {
+                    string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
+                    return $"{session.Chats.ItemNumber(chat.Id)} : {chat.DateUtc.AddHours(session.TimeZone):MM-dd HH:mm} : <{username}> {chat.Message.MaxLength(Constants.MaxSnippetLength)}";
+                });
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine("Index of messages with links to a text file, most recent first:");
+                foreach (var c in chats)
+                    builder.AppendLine(c);
+                session.Io.OutputLine(builder.ToString());
+            }
+        }
+
         private static void ShowUsage(BbsSession session)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
@@ -144,6 +179,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine("/index date   : shows the first post from each day.");
                 session.Io.OutputLine("/index new    : shows new messages (msgs without 're:' numbers).");
                 session.Io.OutputLine("/index length : shows long messages.");
+                session.Io.OutputLine("/index links  : shows messages with textfile links.");
             }
         }
 

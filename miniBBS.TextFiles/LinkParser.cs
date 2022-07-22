@@ -36,7 +36,9 @@ namespace miniBBS.TextFiles
                 if (end <= pos)
                     continue;
                 len = end - pos;
-                var desc = ExtractDescription(body.Substring(pos, len));
+                string theRestOfTheLine = body.Substring(pos, len);
+                link.Editors = ExtractEditors(theRestOfTheLine);
+                var desc = ExtractDescription(theRestOfTheLine);
                 if (desc == null)
                     continue;
                 link.Description = desc;
@@ -47,7 +49,26 @@ namespace miniBBS.TextFiles
             } while (true);
         }
 
-        public static IList<Link> GetLinksFromIndex(BbsSession session, Link indexLocation)
+        private static ICollection<string> ExtractEditors(string theRestOfTheLine)
+        {
+            const string editors = "editors:";
+            int pos = theRestOfTheLine.IndexOf(editors);
+            if (pos < 0) return null;
+            pos += editors.Length;
+            int end = theRestOfTheLine.IndexOf("<", pos);
+            if (end <= pos) return null;
+            int len = end - pos;
+            string usernames = theRestOfTheLine.Substring(pos, len);
+            if (!string.IsNullOrWhiteSpace(usernames))
+                return usernames
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Distinct()
+                    .ToArray();
+            return null;
+        }
+
+        public static IList<Link> GetLinksFromIndex(BbsSession session, Link indexLocation, bool includeBackups = false)
         {
             string dir = Constants.TextFileRootDirectory;
             if (indexLocation.Parent != null)
@@ -62,7 +83,7 @@ namespace miniBBS.TextFiles
                 links = GetLinks(txt).ToList();
                 if (indexLocation.IsOwnedByUser(session.User))
                 {
-                    var unpublished = GetUnindexedLinks(dir, indexLocation)
+                    var unpublished = GetUnindexedLinks(dir, indexLocation, includeBackups)
                         ?.Where(l => !l.IsDirectory && !links.Any(x => x.DisplayedFilename.Equals(l.DisplayedFilename)))
                         ?.Select(l =>
                         {
@@ -74,14 +95,14 @@ namespace miniBBS.TextFiles
                 }
             }
             else
-                links = GetUnindexedLinks(dir, indexLocation);
+                links = GetUnindexedLinks(dir, indexLocation, includeBackups);
 
             foreach (var link in links)
                 link.Parent = indexLocation;
             return links;
         }
 
-        private static List<Link> GetUnindexedLinks(string dir, Link indexLocation)
+        private static List<Link> GetUnindexedLinks(string dir, Link indexLocation, bool includeBackups)
         {
             List<Link> links = new List<Link>();
             dir = dir
@@ -99,6 +120,9 @@ namespace miniBBS.TextFiles
                 });
 
             foreach (FileInfo file in di.GetFiles())
+            {
+                if (!includeBackups && file.Name.Contains(".bkup"))
+                    continue;
                 links.Add(new Link
                 {
                     DisplayedFilename = file.Name,
@@ -106,6 +130,7 @@ namespace miniBBS.TextFiles
                     Parent = indexLocation,
                     Description = string.Empty
                 });
+            }
 
             return links;
         }

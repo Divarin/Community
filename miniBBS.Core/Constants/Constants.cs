@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "2.5 - 2022.07.18";
+        public const string Version = "2.7 - 2022.07.22";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
@@ -27,7 +27,9 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"F:\";
             }
         }
-        
+
+        public const int MaxFileBackups = 9;
+
         public const string local_TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
         public const string local_UploadDirectory = @"c:\work\";
 

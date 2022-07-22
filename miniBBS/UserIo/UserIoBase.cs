@@ -242,6 +242,8 @@ namespace miniBBS.UserIo
                 {
                     // handle wordwrap and pause
                     var lines = text.SplitAndWrap(session, flags).ToList();
+                    if (flags.HasFlag(OutputHandlingFlag.PauseAtEnd))
+                        lines.Add(" --- End of Document ---");
                     int totalLines = lines.Count;
                     int row = 0;
                     var keywordSearch = new KeywordSearch();
@@ -270,12 +272,12 @@ namespace miniBBS.UserIo
                         }
                     };
 
-                    for (int l = 0; l < lines.Count; l++)
+                    for (int l = 0; l <= lines.Count; l++)
                     {
                         row++;
-                        var line = lines[l];
+                        var line = l < lines.Count ? lines[l] : null;
 
-                        if (!continuousOutput && row >= session.Rows-3)
+                        if (!continuousOutput && (row >= session.Rows-3) || (l >= lines.Count && flags.HasFlag(OutputHandlingFlag.PauseAtEnd)))
                         {
                             var pcent = (double)l / totalLines;
                             var pauseResult = Pause(session, keywordSearch, pcent);
@@ -312,9 +314,12 @@ namespace miniBBS.UserIo
                             pageMarkers.Push(l);
                             row = 0;
                         }
-                        
-                        var r = GetBytes(line);
-                        session.Stream.Write(r, 0, r.Length);
+
+                        if (line != null)
+                        {
+                            var r = GetBytes(line);
+                            session.Stream.Write(r, 0, r.Length);
+                        }
                     }
                 }
                 else 

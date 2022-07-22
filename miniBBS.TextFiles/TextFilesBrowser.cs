@@ -26,6 +26,7 @@ namespace miniBBS.TextFiles
         };
 
         public Action<string> OnChat { get; set; }
+        private TextFilesSessionFlags _sessionFlags = TextFilesSessionFlags.None;
 
         public void Browse(BbsSession session)
         {
@@ -34,6 +35,8 @@ namespace miniBBS.TextFiles
 
             var origionalShowPrompt = _session.ShowPrompt;
             var originalDnd = _session.DoNotDisturb;
+            var originalLocation = _session.CurrentLocation;
+            _session.CurrentLocation = Module.TextFilesBrowser;
 
             try
             {
@@ -60,7 +63,7 @@ namespace miniBBS.TextFiles
                     {
                         links = string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
                             TopLevel.GetLinks().ToList() :
-                            LinkParser.GetLinksFromIndex(session, _currentLocation);
+                            LinkParser.GetLinksFromIndex(session, _currentLocation, includeBackups: _sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles));
                     }
 
                     _session.Io.SetForeground(ConsoleColor.Gray);
@@ -84,6 +87,7 @@ namespace miniBBS.TextFiles
             {
                 _session.ShowPrompt = origionalShowPrompt;
                 _session.DoNotDisturb = originalDnd;
+                _session.CurrentLocation = originalLocation;
             }
         }
 
@@ -95,6 +99,8 @@ namespace miniBBS.TextFiles
             bool linkFound = false;
             _session = session;
             var originalDnd = session.DoNotDisturb;
+            var originalLocation = _session.CurrentLocation;
+            _session.CurrentLocation = Module.TextFilesBrowser;
 
             try
             {
@@ -108,7 +114,10 @@ namespace miniBBS.TextFiles
                     DescribeFile(link);
                     var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
                     if (inp == 'Y' || inp == 'C')
+                    {
+                        session.DoNotDisturb = true;
                         ReadFile(link, nonstop: inp == 'C');
+                    }
                 }
                 else
                     session.Io.OutputLine("Sorry I was unable to find that file.");
@@ -118,6 +127,7 @@ namespace miniBBS.TextFiles
             finally
             {
                 session.DoNotDisturb = originalDnd;
+                session.CurrentLocation = originalLocation;
             }
         }
 
@@ -136,12 +146,16 @@ namespace miniBBS.TextFiles
             string path = msg.Substring(pos, len);
             var parts = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-            Link link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
+            Link link = links.FirstOrDefault(l =>
+                l.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase) ||
+                l.ActualFilename.Replace("/index.html", "").Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
             for (int i=1; i < parts.Length && true == link?.IsDirectory; i++)
             {
                 _currentLocation = link;
                 links = LinkParser.GetLinksFromIndex(_session, _currentLocation);
-                link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(parts[i], StringComparison.CurrentCultureIgnoreCase));
+                link = links.FirstOrDefault(l =>
+                    l.DisplayedFilename.Equals(parts[i], StringComparison.CurrentCultureIgnoreCase) ||
+                    l.ActualFilename.Replace("/index.html", "").Equals(parts[i], StringComparison.CurrentCultureIgnoreCase));
             }
 
             return link;
@@ -165,7 +179,7 @@ namespace miniBBS.TextFiles
                     FromUserId = _session.User.Id,
                     SentUtc = DateTime.UtcNow,
                     Subject = "Exception during Textfiles browse",
-                    Message = ex.Message
+                    Message = $"{ex.Message}{Environment.NewLine}{ex.StackTrace}"
                 });
 
         }
@@ -218,6 +232,22 @@ namespace miniBBS.TextFiles
                         break;
                     case "ls":
                         WideDirectory(links, FilterFlags.Filename, parts.Skip(1));
+                        break;
+                    case "backups":
+                    case "backup":
+                    case "bkups":
+                    case "bkup":
+                        if (_sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles))
+                        {
+                            _sessionFlags &= ~TextFilesSessionFlags.ShowBackupFiles;
+                            _session.Io.OutputLine("Hiding backup files.");
+                        }
+                        else
+                        {
+                            _sessionFlags |= TextFilesSessionFlags.ShowBackupFiles;
+                            _session.Io.OutputLine("Showing backup files.");
+                        }
+                        result = CommandResult.ReadDirectory;
                         break;
                     case "chdir":
                     case "cd":
@@ -283,13 +313,11 @@ namespace miniBBS.TextFiles
                     case "nano":
                         if (parts.Length < 2)
                             _session.Io.OutputLine("Please supply a file name or number.");
-                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        else 
                         {
                             FileWriter.Edit(_session, _currentLocation, parts[1], links);
                             result = CommandResult.ReadDirectory;
                         }
-                        else
-                            _session.Io.OutputLine("You may not create or edit files in this directory.");
                         break;
                     case "mkdir":
                     case "md":
@@ -329,6 +357,19 @@ namespace miniBBS.TextFiles
                         else
                             _session.Io.OutputLine("You may not delete directories in this directory.");
                         break;
+                    case "rename":
+                    case "ren":
+                    case "rn":
+                        if (parts.Length < 3)
+                            _session.Io.OutputLine($"Usage: {parts[0]} (file/dir name/num) (destination)");
+                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        {
+                            FileWriter.Rename(_session, _currentLocation, parts[1], parts[2], links);
+                            result = CommandResult.ReadDirectory;
+                        }
+                        else
+                            _session.Io.OutputLine("You may not move/rename files/directories in this directory.");
+                        break;
                     case "publish":
                     case "pub":
                         if (parts.Length < 2)
@@ -353,6 +394,23 @@ namespace miniBBS.TextFiles
                         else
                             _session.Io.OutputLine("You may not publish files in this directory.");
                         break;
+                    case "contrib":
+                    case "editor":
+                    case "uncontrib":
+                    case "uneditor":
+                        if (parts.Length < 3)
+                            _session.Io.OutputLine($"Usage: {parts[0]} (filename/number) (username)");
+                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        {
+                            bool add =
+                                "contrib".Equals(parts[0], StringComparison.CurrentCultureIgnoreCase) ||
+                                "editor".Equals(parts[0], StringComparison.CurrentCultureIgnoreCase);
+
+                            Publisher.SetEditor(_session, _currentLocation, parts[1], parts[2], add, links);
+                            result = CommandResult.ReadDirectory;
+                        }
+                        else
+                            _session.Io.OutputLine("You may not alter contributors to files in this directory.");
                         break;
                     default:
                         var link = links.FirstOrDefault(x => x.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
@@ -416,7 +474,7 @@ namespace miniBBS.TextFiles
                 _session.Io.OutputLine();
                 if (k == 'y' || k == 'Y')
                 {
-                    string msg = $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file.";
+                    string msg = $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file. {Environment.NewLine}{link.Description}";
                     _session.Io.SetForeground(ConsoleColor.Yellow);
                     _session.Io.OutputLine("Link posted.");
                     OnChat?.Invoke(msg);
@@ -451,6 +509,11 @@ namespace miniBBS.TextFiles
             {
                 _session.Io.OutputLine(link.Path);
                 _session.Io.SetForeground(ConsoleColor.Cyan);
+                string owner = link.GetOwningUser();
+                if (!string.IsNullOrWhiteSpace(owner))
+                    _session.Io.OutputLine($"Owner: {owner}");
+                if (true == link.Editors?.Any())
+                    _session.Io.OutputLine($"Editors: {string.Join(", ", link.Editors)}");
                 _session.Io.OutputLine(link.Description);
             }
         }
@@ -494,8 +557,13 @@ namespace miniBBS.TextFiles
                 {
                     var flags = OutputHandlingFlag.None;
                     if (!link.IsUserGeneratedContent()) flags |= OutputHandlingFlag.DoNotTrimStart;
-                    if (nonstop) flags |= OutputHandlingFlag.Nonstop;
+                    if (nonstop)
+                        flags |= OutputHandlingFlag.Nonstop;
+                    else
+                        flags |= OutputHandlingFlag.PauseAtEnd;
                     _session.Io.OutputLine(body, flags);
+                    _session.Io.SetForeground(ConsoleColor.Magenta);
+                    _session.Io.OutputLine($"You have just read '{link.DisplayedFilename}'.");
                 }
             } 
             finally
@@ -671,19 +739,6 @@ namespace miniBBS.TextFiles
             _session.Io.OutputLine();
             return line;
         }
-
-        //private IList<Link> GetLinksFromIndex(Link parentDirectory)
-        //{
-        //    string dir = Constants.TextFileRootDirectory;
-        //    if (_currentLocation.Parent != null)
-        //        dir += _currentLocation.Parent.Path;
-        //    var txt = FileReader.ReadFile(new FileInfo(JoinPathParts(dir, _currentLocation.ActualFilename)));
-        //    var links = LinkParser.GetLinks(txt).ToList();
-        //    foreach (var link in links)
-        //        link.Parent = parentDirectory;
-        //    return links;
-        //}
-
 
     }
 }

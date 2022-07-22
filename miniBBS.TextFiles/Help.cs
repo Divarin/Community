@@ -55,7 +55,6 @@ namespace miniBBS.TextFiles
             }
         }
 
-
         private static readonly IDictionary<string, string> _commands = new Dictionary<string, string>
         {
             {"?, help", _help},
@@ -71,10 +70,12 @@ namespace miniBBS.TextFiles
             {"users", _users},
             {"md, mkdir", _mkdir},
             {"edit, nano", _edit},
+            {"rename, ren, rn", _rename},
             {"del, rm", _del},
             {"deltree, rd, rmdir", _rd},
             {"publish, pub, unpublish, unpub", _pub},
-
+            {"contrib, uncontrib, editor, uneditor", _contrib},
+            {"backups, backup, bkups, bkup", _backups}
         };
 
         private const string _help =
@@ -145,6 +146,11 @@ namespace miniBBS.TextFiles
             "will only be visible to you until you publish it.  " +
             "Please also see 'help publish' for information about publishing.";
 
+        private const string _rename =
+            "The 'rename', 'ren', or 'rn' commands can be used to rename directories and files.  This command can not be used to move directories " +
+            "or files into other directories but only to change their names.\r\n\r\n" +
+            "Example: rename foo.txt bar.txt\r\n";
+
         private const string _del =
             "For use only in your own user file area.  Please see the help topic on Community Users area.\r\n\r\n" +
             "Examples: del 13, del example.txt\r\n\r\n" +
@@ -173,7 +179,7 @@ namespace miniBBS.TextFiles
             "sub-directory just send me (" + Constants.SysopName + ") an email requesting it.  You will then be able to use commands like " +
             "md, edit, and publish to create your own text files here on Mutiny Community!";
 
-        private readonly static string _searching = string.Join("\r\n", new[]
+        private static readonly string _searching = string.Join("\r\n", new[]
         {
             "Searching: ",
             "You can search the current directory using 'dir', 'ls', and 'grep' by passing search terms to these commands.  ",
@@ -200,5 +206,32 @@ namespace miniBBS.TextFiles
             "While reading a document you can search for a keyword while at the pause (More?) prompt.",
             "To do this hit slash (/) and then type the keyword you want to find.  If a match is found after your current page then the text will move to a few lines before the match.  ",
             "To search for the next occurance of the keyword you can type a slash (/) and hit enter without typing the word.  If you do this the search is repeated with the same keyword you searched for previously."});
+
+        private static readonly string _contrib = string.Join("\r\n", new[]
+        {
+            "Contributors / Editors: ",
+            "You can allow other users to edit a text file in your area by using the 'contrib' or 'editor' commands.  You can also use the " +
+            "'uncontrib' or 'uneditor' commands to remove such access.  The file must be in a published state.  This is how it works: ",
+            $"{Constants.Spaceholder}contrib ourstory.txt jimbob",
+            "This allows the user 'jimbob' to edit the file 'ourstory.txt'.",
+            $"{Constants.Spaceholder}uncontrib ourstory.txt jimbob",
+            "This removes jimbob's access to edit the file.",
+            $"{Constants.Spaceholder}contrib ourstory.txt *",
+            "This allows all users to edit the file.",
+            "If an 'uncontrib' command is on a file which allows anyone to edit, then that user will be blacklisted, for example:",
+            $"{Constants.Spaceholder}contrib ourstory.txt *",
+            $"{Constants.Spaceholder}uncontrib ourstory.txt jimbob",
+            "These commands will make it so that the file 'ourstory.txt' can be edited by anyone *except* for jimbob.",
+            $"{Constants.Spaceholder}uncontrib ourstory.txt *",
+            "This command will remove all access to edit the file to any user except yourself.",
+            $"{Constants.Spaceholder}",
+            "When viewing the description of the file the list of editors is shown.  Any blacklisted users are shown with a minus (-) in front of their name.",
+            $"{Constants.Spaceholder}Example: 'Editors: *, -jimbob'  -- meaning, everyone except jimbob",
+            $"{Constants.Spaceholder}Example: 'Editors: Albert, Betty, Charlie  -- meaning, only the users Albert, Betty, and Charlie (and of course you since you're the owner)."
+        });
+
+        private const string _backups =
+            "Toggles whether or not backup files are shown on directory lists.  Backup files are automatically created " +
+            "when you save a file in the editor.  You can use this feature to recover a backup file if needed.";
     }
 }

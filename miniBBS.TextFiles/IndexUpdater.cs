@@ -58,7 +58,13 @@ namespace miniBBS.TextFiles
             using (StreamWriter writer = new StreamWriter(fs))
             {
                 foreach (var link in links)
-                    writer.WriteLine($"<A HREF=\"{link.ActualFilename.Replace("\\", "/")}\">{link.DisplayedFilename}</A><BR>{link.Description}");
+                {
+                    string editors = true == link.Editors?.Any() ?
+                        $"editors: {string.Join(", ", link.Editors)}" :
+                        string.Empty;
+
+                    writer.WriteLine($"<A HREF=\"{link.ActualFilename.Replace("\\", "/")}\">{link.DisplayedFilename}</A>{editors}<BR>{link.Description}");
+                }
             }
         }
     }

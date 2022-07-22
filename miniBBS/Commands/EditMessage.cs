@@ -16,21 +16,63 @@ namespace miniBBS.Commands
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
             {
-                Chat toBeEdited = null;
-                int n = -1;
-                string msgNum = args?.Length >= 3 ? args[0] : null;
-                string search = args?.Length >= 3 ? args[1] : args[0];
-                string replace = args?.Length >= 3 ? args[2] : args[1];
-
-                if (string.IsNullOrWhiteSpace(search) || string.IsNullOrWhiteSpace(replace))
+                if (args?.Length < 2)
                 {
-                    session.Io.OutputLine("Usage 1 (edit last chat)     : /edit (search) (replace)");
-                    session.Io.OutputLine("Usage 2 (edit specific chat) : /edit # (search) (replace)");
+                    ShowUsage(session);
                     return;
                 }
 
-                search = search.Replace('-', ' ');
-                replace = replace.Replace('-', ' ');
+                Chat toBeEdited = null;
+                int n = -1;
+                string msgNum = null;
+                if (args.Length >= 3 && int.TryParse(args[0], out int _))
+                {
+                    msgNum = args[0];
+                    args = args.Skip(1).ToArray();
+                }
+
+                string search = args[0];
+                string replace = args[1];
+
+                string line = string.Join(" ", args);
+                bool parsedWithSpaceDelim = true;
+                if (line.Count(c => c == '"') == 4)
+                {
+                    var parts = line
+                        .Split(new[] { '"' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToArray();
+                    if (parts?.Length == 2)
+                    {
+                        search = parts[0];
+                        replace = parts[1];
+                        parsedWithSpaceDelim = false;
+                    }
+                } else if (line.Count(c => c == '/') == 1)
+                {
+                    var parts = line
+                        .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .ToArray();
+                    if (parts?.Length == 2)
+                    {
+                        search = parts[0];
+                        replace = parts[1];
+                        parsedWithSpaceDelim = false;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(search) || string.IsNullOrWhiteSpace(replace))
+                {
+                    ShowUsage(session);
+                    return;
+                }
+
+                if (parsedWithSpaceDelim)
+                {
+                    search = search.Replace('-', ' ');
+                    replace = replace.Replace('-', ' ');
+                }
 
                 if (!string.IsNullOrWhiteSpace(msgNum) && int.TryParse(msgNum, out n))
                 {
@@ -78,6 +120,19 @@ namespace miniBBS.Commands
                     }
                 }
             }
+        }
+
+        private static void ShowUsage(BbsSession session)
+        {
+            string msg = string.Join(Environment.NewLine, new[]
+            {
+                "Usage 1 (edit last chat)     : /edit \"(search)\" \"(replace)\"",
+                "Usage 2 (edit specific chat) : /edit # \"(search)\" \"(replace)\"",
+                "Where # = the chat message number.",
+                "Alternatively the quotes can be omitted if neither the search nor replace contain spaces.  If *either* the search or " +
+                "the replace terms contain one or more spaces then *both* must be wrapped in quotes."
+            });
+            session.Io.OutputLine(msg);
         }
     }
 }

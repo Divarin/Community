@@ -26,6 +26,11 @@ namespace miniBBS.TextFiles.Models
                 }
             }
         }
+
+        /// <summary>
+        /// Users who can edit this document (besides the owner)
+        /// </summary>
+        public ICollection<string> Editors { get; set; }
         public string Description { get; set; }
         public Link Parent { get; set; }
 

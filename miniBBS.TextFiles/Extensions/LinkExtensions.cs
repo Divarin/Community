@@ -1,5 +1,6 @@
 ﻿using miniBBS.TextFiles.Models;
 using System;
+using System.Linq;
 
 namespace miniBBS.TextFiles.Extensions
 {
@@ -42,6 +43,18 @@ namespace miniBBS.TextFiles.Extensions
         public static bool IsOwnedByUser(this Link link, Core.Models.Data.User user)
         {
             return user.Name.Equals(GetOwningUser(link), StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Gets whether this user may edit the file (does not check if they are the owner)
+        /// </summary>
+        public static bool IsEditor(this Link link, Core.Models.Data.User user)
+        {
+            bool allowAll = true == link.Editors?.Any(c => "*".Equals(c, StringComparison.CurrentCultureIgnoreCase));
+            bool allowThisUserSpecifically = true == link.Editors?.Any(c => user.Name.Equals(c, StringComparison.CurrentCultureIgnoreCase));
+            bool rejectThisUserSpecifically = true == link.Editors?.Any(c => $"-{user.Name}".Equals(c, StringComparison.CurrentCultureIgnoreCase));
+            bool result = allowThisUserSpecifically || (allowAll && !rejectThisUserSpecifically);
+            return result;
         }
     }
 }
