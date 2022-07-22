@@ -31,7 +31,7 @@ namespace miniBBS.Commands
                     session.Io.OutputLine(msg);
                 }
 
-                session.Messager.Publish(new ChannelMessage(session.Id, chan, msg));
+                session.Messager.Publish(new ChannelMessage(session.Id, chan, msg, disturb: true));
             }
         }
     }

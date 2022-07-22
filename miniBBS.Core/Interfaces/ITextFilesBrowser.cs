@@ -10,5 +10,10 @@ namespace miniBBS.Core.Interfaces
         /// </summary>
         Action<string> OnChat { get; set; }
         void Browse(BbsSession session);
+
+        /// <summary>
+        /// Returns true if a link was found in the <paramref name="msg"/>
+        /// </summary>
+        bool ReadLink(BbsSession session, string msg);
     }
 }

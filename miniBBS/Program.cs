@@ -26,10 +26,15 @@ namespace miniBBS
         private static ILogger _logger;
         private static List<string> _ipBans;
 
+        public static Module ConfigureEmulation { get; private set; }
+
         static void Main(string[] args)
         {
             if (args?.Length < 1 || !int.TryParse(args[0], out int port))
                 port = 23;
+
+            if (args?.Length >= 2 && args[1] == "local")
+                Constants.IsLocal = true;
 
             _logger = DI.Get<ILogger>();
 
@@ -45,7 +50,7 @@ namespace miniBBS
                 .Select(x => x.IpMask)
                 .ToList();
 
-            while (!sysControl.HasFlag(SystemControlFlag.Shutdown))// && Constants.EndOfTime > DateTime.Now)
+            while (!sysControl.HasFlag(SystemControlFlag.Shutdown))
             {
                 try
                 {
@@ -119,7 +124,8 @@ namespace miniBBS
                         Stream = stream,
                         Messager = nodeParams.Messager,
                         IpAddress = ip,
-                        PingType = PingPongType.Invisible
+                        PingType = PingPongType.Invisible,
+                        CurrentLocation = Module.Connecting
                     };
                     session.ShowPrompt = () => Prompt(session);
                     session.OnPingPong = () =>
@@ -222,76 +228,88 @@ namespace miniBBS
 
         private static void SetEmulation(BbsSession session)
         {
-            session.Rows = session.User.Rows;
-            session.Cols = session.User.Cols;
-            var emulation = session.User.Emulation;
+            var originalLocation = session.CurrentLocation;
+            session.CurrentLocation = ConfigureEmulation;
 
-            if (session.Rows < 5)
-                session.Rows = 24;
-            if (session.Cols < 5)
-                session.Cols = 80;
-
-            while (true)
+            try
             {
-                session.Io.OutputLine($"{Environment.NewLine} -- Emulation Setup --");
-                session.Io.OutputLine($"(R)ows      : {session.Rows}");
-                session.Io.OutputLine($"(C)ols      : {session.Cols}");
-                session.Io.OutputLine($"(E)mulation : {emulation}");                
-                session.Io.Output("Enter = Continue > ");
-                var chr = session.Io.InputKey();
-                session.Io.OutputLine();
-                switch (chr)
+                session.Rows = session.User.Rows;
+                session.Cols = session.User.Cols;
+                var emulation = session.User.Emulation;
+
+                if (session.Rows < 5)
+                    session.Rows = 24;
+                if (session.Cols < 5)
+                    session.Cols = 80;
+
+                while (true)
                 {
-                    case 'r':
-                    case 'R':
-                        {
-                            session.Io.Output($"Rows [{session.Rows}] : ");
-                            string s = session.Io.InputLine();
-                            if (int.TryParse(s, out int r) && r > 5 && r < 255)
-                                session.Rows = r;
-                        }
-                        break;
-                    case 'c':
-                    case 'C':
-                        {
-                            session.Io.Output($"Cols [{session.Cols}] : ");
-                            string s = session.Io.InputLine();
-                            if (int.TryParse(s, out int c) && c > 10 && c < 255)
-                                session.Cols = c;
-                        }
-                        break;
-                    case 'e':
-                    case 'E':
-                        {
-                            session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}Emulation [{1}] : ", Environment.NewLine, emulation.ToString()));
-                            char? s = session.Io.InputKey();
-                            switch (s)
+                    session.Io.OutputLine($"{Environment.NewLine} -- Emulation Setup --");
+                    session.Io.OutputLine($"(R)ows      : {session.Rows}");
+                    session.Io.OutputLine($"(C)ols      : {session.Cols}");
+                    session.Io.OutputLine($"(E)mulation : {emulation}");
+                    session.Io.Output("Enter = Continue > ");
+                    var chr = session.Io.InputKey();
+                    session.Io.OutputLine();
+                    switch (chr)
+                    {
+                        case 'r':
+                        case 'R':
                             {
-                                case '1': emulation = TerminalEmulation.Ascii; break;
-                                case '2': emulation = TerminalEmulation.Ansi; break;
-                                case '3': emulation = TerminalEmulation.Cbm; break;
+                                session.Io.Output($"Rows [{session.Rows}] : ");
+                                string s = session.Io.InputLine();
+                                if (int.TryParse(s, out int r) && r > 5 && r < 255)
+                                    session.Rows = r;
                             }
-                        }
-                        break;
-                    default:
-                        session.Io.OutputLine();
-                        switch (emulation)
-                        {
-                            case TerminalEmulation.Ascii: session.Io = new Ascii(session); break;
-                            case TerminalEmulation.Ansi: session.Io = new ANSI(session); break;
-                            case TerminalEmulation.Cbm: session.Io = new Cbm(session); break;
-                        }
-                        session.User.Rows = session.Rows;
-                        session.User.Cols = session.Cols;
-                        session.User.Emulation = emulation;
-                        session.UserRepo.Update(session.User);
-                        return;
+                            break;
+                        case 'c':
+                        case 'C':
+                            {
+                                session.Io.Output($"Cols [{session.Cols}] : ");
+                                string s = session.Io.InputLine();
+                                if (int.TryParse(s, out int c) && c > 10 && c < 255)
+                                    session.Cols = c;
+                            }
+                            break;
+                        case 'e':
+                        case 'E':
+                            {
+                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}Emulation [{1}] : ", Environment.NewLine, emulation.ToString()));
+                                char? s = session.Io.InputKey();
+                                switch (s)
+                                {
+                                    case '1': emulation = TerminalEmulation.Ascii; break;
+                                    case '2': emulation = TerminalEmulation.Ansi; break;
+                                    case '3': emulation = TerminalEmulation.Cbm; break;
+                                }
+                            }
+                            break;
+                        default:
+                            session.Io.OutputLine();
+                            switch (emulation)
+                            {
+                                case TerminalEmulation.Ascii: session.Io = new Ascii(session); break;
+                                case TerminalEmulation.Ansi: session.Io = new ANSI(session); break;
+                                case TerminalEmulation.Cbm: session.Io = new Cbm(session); break;
+                            }
+                            session.User.Rows = session.Rows;
+                            session.User.Cols = session.Cols;
+                            session.User.Emulation = emulation;
+                            session.UserRepo.Update(session.User);
+                            return;
+                    }
                 }
+            } 
+            finally
+            {
+                session.CurrentLocation = originalLocation;
             }
         }
 
         private static void RunSession(BbsSession session)
         {
+            session.CurrentLocation = Module.Chat;
+
             bool notifiedAboutHowToDeleteOwnMessages = false;
             bool notifiedAboutNoOneInChannel = false;
 
@@ -327,7 +345,7 @@ namespace miniBBS
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
                 session.StartPingPong(Constants.DefaultPingPongDelayMin);
-                session.Io.OutputLine($"Welcome Mutiny Community version {Constants.Version}.");
+                session.Io.OutputLine($"Welcome to Mutiny Community version {Constants.Version}.");
                 session.Io.OutputLine("Type '/?' for help (DON'T FORGET THE SLASH!!!!).");
                 session.Io.SetForeground(ConsoleColor.Cyan);
                 session.Io.OutputLine(" ------------------- ");
@@ -474,7 +492,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyNewPost(Chat chat, BbsSession session)
         {
-            if (chat == null || chat.ChannelId != session.Channel.Id)
+            if (session.DoNotDisturb || chat == null || chat.ChannelId != session.Channel.Id)
                 return;
 
             bool isAtEndOfMessages = session.MsgPointer == session.Chats.Keys.Max();
@@ -516,7 +534,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyChannelMessage(BbsSession session, ChannelMessage message)
         {
-            if (session.DoNotDisturb || message.ChannelId != session.Channel.Id)
+            if ((session.DoNotDisturb && !message.Disturb) || message.ChannelId != session.Channel.Id)
                 return;
 
             Action action = () =>
@@ -616,6 +634,8 @@ namespace miniBBS
 
         private static void Logon(BbsSession session, IRepository<User> userRepo)
         {
+            session.CurrentLocation = Module.Login;
+
             if (DI.Get<ISessionsList>().Sessions.Count() >= Constants.MaxSessions)
             {
                 session.Io.OutputLine("Sorry, too many people are online right now!  Try again later.");
@@ -666,6 +686,7 @@ namespace miniBBS
                 if (k != 'y' && k != 'Y')
                     return;
                 user = RegisterNewUser(session, username, userRepo);
+                session.CurrentLocation = Module.Login;
                 if (user == null)
                     return;
                 session.Io.Output("Do you want to read the new user documentation now?: ");
@@ -714,6 +735,8 @@ namespace miniBBS
 
         private static User RegisterNewUser(BbsSession session, string username, IRepository<User> userRepo)
         {
+            session.CurrentLocation = Module.NewUserRegistration;
+
             session.Io.Output("Choose a password (and don't forget it): ");
             string pw = session.Io.InputLine('*')?.ToLower();
 
@@ -747,6 +770,15 @@ namespace miniBBS
 
             if (string.IsNullOrWhiteSpace(command))
                 return;
+
+            if (command.StartsWith("/s/", StringComparison.CurrentCultureIgnoreCase))
+            {
+                // replace "/s/(search)/(replace)" with "/s (search)/(replace)"
+                var chars = command.ToArray();
+                chars[2] = ' ';
+                command = new string(chars);
+            }
+
             var parts = command.Split(' ');
             if (parts?.Length < 1)
                 return;
@@ -796,6 +828,11 @@ namespace miniBBS
                         DeleteMessage.Execute(session, arg);
                         return;
                     }
+                case "/typo":
+                case "/edit":
+                case "/s":
+                    EditMessage.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case "/dnd":
                     session.DoNotDisturb = !session.DoNotDisturb;
                     session.Io.OutputLine($"Do not disturb mode is : {(session.DoNotDisturb ? "On" : "Off")}");
@@ -870,14 +907,14 @@ namespace miniBBS
                         session.Io.OutputLine($"Added '{mask}' to IP ban list.");
                     }
                     return;
-                //case "/pp":
-                //    {
-                //        if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
-                //            session.StartPingPong(i);
-                //        else
-                //            session.StartPingPong(0);
-                //    }
-                //    return;
+                case "/pp":
+                    {
+                        if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
+                            session.StartPingPong(i, silently: false);
+                        else
+                            session.StartPingPong(0, silently: false);
+                    }
+                    return;
                 case "/newuser":
                     ReadFile.Execute(session, Constants.Files.NewUser);
                     return;
@@ -908,6 +945,25 @@ namespace miniBBS
                             AddToChatLog(session, DI.GetRepository<Chat>(), line);
                         };
                         browser.Browse(session);
+                    }
+                    return;
+                case "/textread":
+                case "/tr":
+                    {
+                        bool linkFound = false;
+                        var browser = DI.Get<ITextFilesBrowser>();
+                        Chat msg = null;
+                        if (session.LastReadMessageNumber.HasValue && session.Chats.ContainsKey(session.LastReadMessageNumber.Value))
+                        {
+                            msg = session.Chats[session.LastReadMessageNumber.Value];
+                            linkFound = browser.ReadLink(session, msg.Message);
+                        }
+
+                        if (!linkFound && session.ContextPointer.HasValue && session.Chats.ContainsKey(session.ContextPointer.Value))
+                        {
+                            msg = session.Chats[session.ContextPointer.Value];
+                            browser.ReadLink(session, msg.Message);
+                        }
                     }
                     return;
             }

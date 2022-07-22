@@ -52,7 +52,7 @@ namespace miniBBS.Core.Models.Control
         public ISubscriber<ChannelMessage> ChannelMessageSubscriber { get; set; }
         public ISubscriber<UserMessage> UserMessageSubscriber { get; set; }
         public ISubscriber<EmoteMessage> EmoteSubscriber { get; set; }
-
+        public Module CurrentLocation { get; set; }
         public Action OnDispose { get; set; }
         public bool DoNotDisturb { get; set; }
         public string IpAddress { get; set; }
@@ -94,15 +94,18 @@ namespace miniBBS.Core.Models.Control
 
         public bool NoPingPong { get; set; }
 
-        public void StartPingPong(int delayMinutes)
+        public void StartPingPong(int delayMinutes, bool silently = true)
         {
-            //using (Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
-            //{
-            //    if (delayMinutes <= 0)
-            //        Io.OutputLine("Stopping ping pong.");
-            //    else
-            //        Io.OutputLine($"Starting ping pong every {delayMinutes} minutes, use '/pp' to stop.");
-            //}
+            if (!silently)
+            {
+                using (Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+                {
+                    if (delayMinutes <= 0)
+                        Io.OutputLine("Stopping ping pong.");
+                    else
+                        Io.OutputLine($"Setting ping pong every {delayMinutes} minutes.");
+                }
+            }
 
             if (_pingPongThread != null && _pingPongThread.IsAlive)
                 _pingPongThread.Abort();

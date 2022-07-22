@@ -24,6 +24,7 @@ namespace miniBBS.Commands
                     builder.AppendLine($"Session ID: {s.Id}");
                     builder.AppendLine($"Sesssion Start: {s.SessionStartUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm:ss}");
                     builder.AppendLine($"User: {s.User?.Name}");
+                    builder.AppendLine($"Doing?: {s.CurrentLocation}");
                     builder.AppendLine($"Total Logins: {s.User?.TotalLogons}");
                     builder.AppendLine($"Channel: {s.Channel?.Name}");
                     builder.AppendLine($"User Access: {s.User?.Access}");

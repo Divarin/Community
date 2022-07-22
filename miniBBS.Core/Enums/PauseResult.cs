@@ -5,6 +5,7 @@
         No,
         Yes,
         Continuous,
-        PageUp
+        PageUp,
+        ExecuteKeywordSearch
     }
 }

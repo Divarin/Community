@@ -4,6 +4,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -18,15 +19,17 @@ namespace miniBBS.Services.Services
         {
             bool wasDnd = session.DoNotDisturb;
             session.DoNotDisturb = true;
+            List<string> lines = null;
+
             try
             {
-                var lines = new List<string>();
+                lines = new List<string>();
                 if (!string.IsNullOrWhiteSpace(existingText))
                     lines.AddRange(existingText
                         .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
                         .Select(l => l.TrimEnd()));
 
-                _savedText = String.Join(Environment.NewLine, lines);
+                _savedText = string.Join(Environment.NewLine, lines);
                 _session = session;
 
                 var cmdResult = CommandResult.None;
@@ -51,11 +54,14 @@ namespace miniBBS.Services.Services
                             _savedText = String.Join(Environment.NewLine, lines);
                         if (cmdResult.HasFlag(CommandResult.RevertToOriginal))
                         {
-                            lines.Clear();
-                            if (!string.IsNullOrWhiteSpace(_savedText))
-                                lines.AddRange(existingText
-                                .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
-                                .Select(l => l.TrimEnd()));
+                            if ('Y' == _session.Io.Ask("Are you sure you want to undo changes since your last save?: "))
+                            {
+                                lines.Clear();
+                                if (!string.IsNullOrWhiteSpace(_savedText))
+                                    lines.AddRange(_savedText
+                                        .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
+                                        .Select(l => l.TrimEnd()));
+                            }
                         }
                     }
                     else
@@ -67,6 +73,16 @@ namespace miniBBS.Services.Services
                 var result = string.Join(Environment.NewLine, lines);
                 return result;
             } 
+            catch (Exception)
+            {
+                // something went wrong, possibly a connection failure, auto-save before throwing exception
+                if (OnSave != null && HasUnsavedChanges(lines))
+                {
+                    var body = Compile(lines);
+                    OnSave(body);
+                }
+                throw;
+            }
             finally
             {
                 session.DoNotDisturb = wasDnd;
@@ -75,7 +91,10 @@ namespace miniBBS.Services.Services
 
         private bool HasUnsavedChanges(List<string> lines)
         {
-            string text = String.Join(Environment.NewLine, lines);
+            if (lines == null)
+                return false;
+
+            string text = string.Join(Environment.NewLine, lines);
             return text != _savedText;
         }
 
@@ -94,13 +113,17 @@ namespace miniBBS.Services.Services
             {
                 case "save":
                 case "s":
+                case "sq":
                     // save
                     if (OnSave != null)
                     {
                         var body = Compile(lines);
                         var status = OnSave(body);
                         Notify(status);
-                        return CommandResult.Saved;
+                        var result = CommandResult.Saved;
+                        if ("sq".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
+                            result |= CommandResult.ExitEditor;
+                        return result;
                     }
                     break;
                 case "abort":
@@ -187,6 +210,9 @@ namespace miniBBS.Services.Services
                     // replace
                     Replace(lines, args.Skip(1)?.ToArray());
                     break;
+                case "import":
+                    Import(lines, args.Skip(1)?.FirstOrDefault());
+                    break;
                 case "help":
                 case "h":
                 case "?":
@@ -198,6 +224,54 @@ namespace miniBBS.Services.Services
             return CommandResult.None;
         }
 
+        private void Import(List<string> lines, string filename)
+        {
+            var dir = $"{Constants.UploadDirectory}{_session.User.Name.MaxLength(8, false)}";
+
+            if (!Directory.Exists(dir))
+            {
+                _session.Io.OutputLine("Sorry you don't seem to have a dedicated upload directory on Mutiny BBS.  Please ask the sysop to create one for you.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                _session.Io.OutputLine($"Files found in your upload directory: {Environment.NewLine}{string.Join(", ", GetFiles(dir))}");
+                return;
+            }    
+
+            if (!Directory.Exists(dir) ||
+                filename.Any(c => c == '/' || c == '\\'))
+            {
+                _session.Io.OutputLine("Invalid import filename.");
+                return;
+            }
+
+            filename = $"{Constants.UploadDirectory}{_session.User.Name.MaxLength(8, false)}\\{filename}";
+            if (!File.Exists(filename))
+            {
+                _session.Io.OutputLine("Invalid import filename.");
+                return;
+            }
+
+            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            using (StreamReader reader = new StreamReader(fs))
+            {
+                var data = reader.ReadToEnd();
+                lines.AddRange(data.Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
+                        .Select(l => l.TrimEnd()));
+
+                _session.Io.OutputLine("File contents imported, use '/l' to list.");
+            }
+        }
+
+        private IEnumerable<string> GetFiles(string dir)
+        {
+            return new DirectoryInfo(dir)
+                .GetFiles()
+                .Select(f => f.Name);
+        }
+
         private void Help()
         {
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
@@ -205,6 +279,7 @@ namespace miniBBS.Services.Services
                 _session.Io.OutputLine(String.Join(Environment.NewLine, new[]
                 {
                     "/save, /s : Save file (does not exit, use '/q' to quit)",
+                    "/sq : Saves and then exits",
                     "/abort, /abt, /a : Abort (undoes all changes since your last save)",
                     "/quit, /exit, /q, /x : Exit the editor, if you have unsaved changes you're asked if you also want to save",
                     "/list, /l [range] : Lists the file's contents.  You will be asked if you want to show line numbers.  Optional range can be a line number or a range of lines (such as '/list 5' or '/list 5-10' or '/list 5-' or '/list -5'",
@@ -218,6 +293,7 @@ namespace miniBBS.Services.Services
                     $"{Constants.Spaceholder}/edit foo bar - replaces instances of 'foo' with 'bar' on the last line (case sensitive)",
                     "/find, /f (search) : Lists all lines containing the (search)",
                     "/replace, /r (search) (replace) : Replaces all occurances of (search) with (replace) throughout the document (case sensitive).  Asks you for confirmation.",
+                    "/import, /imp (filename) : Loads in the contents of a file uploaded to Mutiny BBS if it was uploaded to your text files upload area",
                     "/help, /h, /? : This menu"
                 }));
             }
@@ -225,9 +301,30 @@ namespace miniBBS.Services.Services
 
         private void Replace(List<string> lines, string[] args)
         {
-            if (args?.Length != 2)
+            string search, replace;
+            search = replace = null;
+            if (args?.Length == 1)
             {
-                Notify("Please use '/r (old) (new)' where (old) is the word to find and (new) is what to replace it with.");
+                var arr = args[0]
+                    .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .ToArray();
+                if (arr.Length == 2)
+                {
+                    search = arr[0];
+                    replace = arr[1];
+                }
+            }
+            else if (args?.Length == 2)
+            {
+                search = args[0].Trim();
+                replace = args[1].Trim();
+            }
+            else
+            {
+                Notify(
+                    $"Please use '/r (old) (new)' where (old) is the word to find and (new) is what to replace it with.{Environment.NewLine}" +
+                    "You can also use '/r (old)/(new)' (separated by a slash) if either (old) or (new) contains spaces.");
                 return;
             }
 

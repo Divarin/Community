@@ -1,4 +1,6 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Models.Control;
+using miniBBS.TextFiles.Extensions;
 using miniBBS.TextFiles.Models;
 using System;
 using System.Collections.Generic;
@@ -34,7 +36,9 @@ namespace miniBBS.TextFiles
                 if (end <= pos)
                     continue;
                 len = end - pos;
-                var desc = ExtractDescription(body.Substring(pos, len));
+                string theRestOfTheLine = body.Substring(pos, len);
+                link.Editors = ExtractEditors(theRestOfTheLine);
+                var desc = ExtractDescription(theRestOfTheLine);
                 if (desc == null)
                     continue;
                 link.Description = desc;
@@ -45,15 +49,89 @@ namespace miniBBS.TextFiles
             } while (true);
         }
 
-        public static IList<Link> GetLinksFromIndex(Link indexLocation)
+        private static ICollection<string> ExtractEditors(string theRestOfTheLine)
+        {
+            const string editors = "editors:";
+            int pos = theRestOfTheLine.IndexOf(editors);
+            if (pos < 0) return null;
+            pos += editors.Length;
+            int end = theRestOfTheLine.IndexOf("<", pos);
+            if (end <= pos) return null;
+            int len = end - pos;
+            string usernames = theRestOfTheLine.Substring(pos, len);
+            if (!string.IsNullOrWhiteSpace(usernames))
+                return usernames
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Distinct()
+                    .ToArray();
+            return null;
+        }
+
+        public static IList<Link> GetLinksFromIndex(BbsSession session, Link indexLocation, bool includeBackups = false)
         {
             string dir = Constants.TextFileRootDirectory;
             if (indexLocation.Parent != null)
                 dir += indexLocation.Parent.Path;
-            var txt = FileReader.ReadFile(new FileInfo(JoinPathParts(dir, indexLocation.ActualFilename)));
-            var links = GetLinks(txt).ToList();
+
+            dir = JoinPathParts(dir, indexLocation.ActualFilename);
+
+            List<Link> links;
+            if (File.Exists(dir))
+            {
+                var txt = FileReader.ReadFile(new FileInfo(dir));
+                links = GetLinks(txt).ToList();
+                if (indexLocation.IsOwnedByUser(session.User))
+                {
+                    var unpublished = GetUnindexedLinks(dir, indexLocation, includeBackups)
+                        ?.Where(l => !l.IsDirectory && !links.Any(x => x.DisplayedFilename.Equals(l.DisplayedFilename)))
+                        ?.Select(l =>
+                        {
+                            l.Description = "(UNPUBLISHED)";
+                            return l;
+                        });
+                    if (true == unpublished?.Any())
+                        links.AddRange(unpublished);
+                }
+            }
+            else
+                links = GetUnindexedLinks(dir, indexLocation, includeBackups);
+
             foreach (var link in links)
                 link.Parent = indexLocation;
+            return links;
+        }
+
+        private static List<Link> GetUnindexedLinks(string dir, Link indexLocation, bool includeBackups)
+        {
+            List<Link> links = new List<Link>();
+            dir = dir
+                .ToLower()
+                .Replace("index.html", "");
+
+            DirectoryInfo di = new DirectoryInfo(dir);
+            foreach (DirectoryInfo subdir in di.GetDirectories())
+                links.Add(new Link
+                {
+                    DisplayedFilename = subdir.Name,
+                    ActualFilename = subdir.Name + "/index.html",
+                    Parent = indexLocation,
+                    Description = string.Empty
+                });
+
+            foreach (FileInfo file in di.GetFiles())
+            {
+                if (!includeBackups && file.Name.Contains(".bkup"))
+                    continue;
+                links.Add(new Link
+                {
+                    DisplayedFilename = file.Name,
+                    ActualFilename = file.Name,
+                    Parent = indexLocation,
+                    Description = string.Empty
+                });
+            }
+
             return links;
         }
 

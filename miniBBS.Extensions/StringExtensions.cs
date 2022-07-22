@@ -91,7 +91,7 @@ namespace miniBBS.Extensions
                             substring = substring.Substring(2);
                         if (!string.IsNullOrWhiteSpace(substring))
                         {
-                            if (!flags.HasFlag(OutputHandlingFlag.DoNotTrimRight))
+                            if (!flags.HasFlag(OutputHandlingFlag.DoNotTrimStart))
                                 substring = substring.TrimStart(' ');
                             yield return substring.Replace(Constants.Spaceholder, ' ');
                         }
@@ -106,11 +106,14 @@ namespace miniBBS.Extensions
             }
         }
 
-        public static string MaxLength(this string str, int maxLength)
+        public static string MaxLength(this string str, int maxLength, bool addElipsis = true)
         {
             if (string.IsNullOrWhiteSpace(str) || str.Length <= maxLength)
                 return str;
-            return str.Substring(0, maxLength) + "...";
+            if (addElipsis)
+                return str.Substring(0, maxLength) + "...";
+            else
+                return str.Substring(0, maxLength);
         }
 
         public static bool IsPrintable(this string str)

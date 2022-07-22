@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
@@ -13,50 +14,60 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, params string[] args)
         {
-            if (true != args?.Any())
-            {
-                PrintUsage(session);
-                return;
-            }
+            var originalLocation = session.CurrentLocation;
+            session.CurrentLocation = Module.Email;
 
-            IList<Core.Models.Data.Mail> mails = GetMails(session);
-
-            switch (args[0].ToLower())
+            try
             {
-                case "list":
-                    if (args.Length >= 2 && "sent".Equals(args[1], StringComparison.CurrentCultureIgnoreCase))
-                        ListSentMails(session);
-                    else
-                        ListMails(session, mails);
-                    break;
-                case "read":
-                    {
-                        if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
-                            ReadMail(session, mails[n-1]);
-                        else
-                            Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
-                    }
-                    break;
-                case "del":
-                    {
-                        if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
-                            DeleteMail(session, mails[n - 1]);
-                        else
-                            Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
-                    }
-                    break;
-                case "send":
-                    if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
-                        SendMail(session, args[1].Trim());
-                    else
-                        Error(session, "Please provide who the send the mail to: /mail send jimbob");
-                    break;
-                case "feedback":
-                    SendMail(session, Constants.SysopName);
-                    break;
-                default:
+                if (true != args?.Any())
+                {
                     PrintUsage(session);
-                    break;
+                    return;
+                }
+
+                IList<Core.Models.Data.Mail> mails = GetMails(session);
+
+                switch (args[0].ToLower())
+                {
+                    case "list":
+                        if (args.Length >= 2 && "sent".Equals(args[1], StringComparison.CurrentCultureIgnoreCase))
+                            ListSentMails(session);
+                        else
+                            ListMails(session, mails);
+                        break;
+                    case "read":
+                        {
+                            if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
+                                ReadMail(session, mails[n - 1]);
+                            else
+                                Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
+                        }
+                        break;
+                    case "del":
+                        {
+                            if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
+                                DeleteMail(session, mails[n - 1]);
+                            else
+                                Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
+                        }
+                        break;
+                    case "send":
+                        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
+                            SendMail(session, args[1].Trim());
+                        else
+                            Error(session, "Please provide who the send the mail to: /mail send jimbob");
+                        break;
+                    case "feedback":
+                        SendMail(session, Constants.SysopName);
+                        break;
+                    default:
+                        PrintUsage(session);
+                        break;
+                }
+            }
+            finally
+            {
+                session.CurrentLocation = originalLocation;
             }
         }
 
@@ -137,12 +148,22 @@ namespace miniBBS.Commands
 
         public static void SysopFeedback(BbsSession session, string subject, string feedback)
         {
-            int toId = DI.GetRepository<Core.Models.Data.User>()
-                .Get(u => u.Name, Constants.SysopName)
-                .First()
-                .Id;
+            var originalLocation = session.CurrentLocation;
+            session.CurrentLocation = Module.Email;
 
-            SendMail(session, toId, subject, feedback);
+            try
+            {
+                int toId = DI.GetRepository<Core.Models.Data.User>()
+                    .Get(u => u.Name, Constants.SysopName)
+                    .First()
+                    .Id;
+
+                SendMail(session, toId, subject, feedback);
+            }
+            finally
+            {
+                session.CurrentLocation = originalLocation;
+            }
         }
 
         private static void ReadMail(BbsSession session, Core.Models.Data.Mail mail)
@@ -212,7 +233,7 @@ namespace miniBBS.Commands
             }
             else
             {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow)) ;
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
                 {
                     session.Io.OutputLine("You have no mail, sorry.");
                 }
