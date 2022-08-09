@@ -2,6 +2,7 @@
 using miniBBS.Core.Models.Control;
 using miniBBS.UserIo;
 using System;
+using System.Linq;
 
 namespace miniBBS.Commands
 {
@@ -29,15 +30,13 @@ namespace miniBBS.Commands
                 if (session.Cols < _minCols)
                     session.Cols = _defaultCols;
 
-                var detected = TryAutoDetectRowsAndCols(session);
-
                 int lastCols, lastRows;
                 lastCols = session.Cols;
                 lastRows = session.Rows;
 
                 var emulation = detEmu == TerminalEmulation.Cbm ? detEmu : lastEmu;
-                var cols = detected.WasDetected ? detected.Cols : lastCols;
-                var rows = detected.WasDetected ? detected.Rows : lastRows;
+                var cols = lastCols;
+                var rows = lastRows;
 
                 Action ApplySettings = () =>
                 {
@@ -50,6 +49,8 @@ namespace miniBBS.Commands
                     session.User.Rows = rows >= _minRows ? rows : session.Rows;
                     session.User.Cols = cols >= _minCols ? cols : session.Cols;
                     session.User.Emulation = emulation;
+                    session.Cols = session.User.Cols;
+                    session.Rows = session.User.Rows;
                 };
 
                 ApplySettings();
@@ -61,10 +62,7 @@ namespace miniBBS.Commands
                     session.Io.OutputLine($"(R)ows (height) : {rows}");
                     session.Io.OutputLine($"(E)mulation     : {emulation}");
                     session.Io.OutputLine(" --- Presets --- ");
-                    if (detected.WasDetected)
-                        session.Io.OutputLine($"1) Auto    : {detected.Cols}c, {detected.Rows}r, {emulation}");
-                    else
-                        session.Io.OutputLine("1) Auto    : Not Available");
+                    session.Io.OutputLine("1) Try Auto-Detect");
                     session.Io.OutputLine($"2) Last    : {lastCols}c, {lastRows}r, {lastEmu}");
                     session.Io.OutputLine("3) 80c std : 80c, 24r");
                     session.Io.OutputLine("4) 40c std : 40c, 24r");
@@ -109,12 +107,14 @@ namespace miniBBS.Commands
                             ApplySettings();
                             break;
                         case '1':
-                            if (detected.WasDetected)
                             {
-                                cols = detected.Cols;
-                                rows = detected.Rows;
-                                emulation = detEmu;
-                                ApplySettings();
+                                var detected = TryAutoDetectRowsAndCols(session);
+                                if (detected.WasDetected)
+                                {
+                                    cols = detected.Cols;
+                                    rows = detected.Rows;
+                                    ApplySettings();
+                                }
                             }
                             break;
                         case '2':
@@ -161,35 +161,53 @@ namespace miniBBS.Commands
 
         private static TermSize TryAutoDetectRowsAndCols(BbsSession session)
         {
+            var result = new TermSize();
+            var willNegotiate = new byte[] { 255, 251, 31 };
+            var negotiation = new byte[] { 255, 250, 31 };
+
+            Func<byte[], bool> WillNegotiate = _b =>
+                _b?.Length >= 3 &&
+                _b[0] == willNegotiate[0] &&
+                _b[1] == willNegotiate[1] &&
+                _b[2] == willNegotiate[2];
+
+            Func<byte[], bool> Negotiation = _b =>
+                _b?.Length >= 3 &&
+                _b[0] == negotiation[0] &&
+                _b[1] == negotiation[1] &&
+                _b[2] == negotiation[2];
+
             session.Io.OutputLine("Trying to auto-detect your terminal's rows & columns.  If this appears to hang just press enter/return.");
 
             session.Io.OutputRaw(255, 253, 31);
             var autoDetectBytes = session.Io.InputRaw();
+            //session.Io.OutputLine($"Got: {string.Join(", ", autoDetectBytes.Select(x => (int)x))}");
 
             int? detCols, detRows;
             detCols = detRows = null;
-            if (autoDetectBytes.Length >= 3 && autoDetectBytes[0] == 255 && autoDetectBytes[1] == 251 && autoDetectBytes[2] == 31)
+            if (WillNegotiate(autoDetectBytes) && autoDetectBytes.Length < 12)
             {
-                int offset = 6;
-                if (autoDetectBytes.Length < 12)
-                {
-                    autoDetectBytes = session.Io.InputRaw();
-                    offset = 3;
-                }
+                // only responded with 'will negotate' the actual negotation isn't in this packet
+                // so fetch another packet
+                autoDetectBytes = session.Io.InputRaw();
+                //session.Io.OutputLine($"Got: {string.Join(", ", autoDetectBytes.Select(x => (int)x))}");
+            }
+            else if (autoDetectBytes.Length >= 12)
+            {
+                // got both the "will negotate" and the negotation in one packet, strip off the "will negotitate" bit
+                autoDetectBytes = autoDetectBytes.Skip(3).ToArray();
+            }
 
-                if (autoDetectBytes.Length >= offset + 4 && autoDetectBytes[0] == 255 && autoDetectBytes[1] == 250 && autoDetectBytes[2] == 31)
-                {
-                    detCols = (autoDetectBytes[offset] << 8) + autoDetectBytes[offset + 1];
-                    detRows = (autoDetectBytes[offset + 2] << 8) + autoDetectBytes[offset + 3];
-                }
+            if (Negotiation(autoDetectBytes) && autoDetectBytes.Length >= 9)
+            {
+                int offset = 3;
+                detCols = (autoDetectBytes[offset] << 8) + autoDetectBytes[offset + 1];
+                detRows = (autoDetectBytes[offset + 2] << 8) + autoDetectBytes[offset + 3];
             }
             session.Stream.Flush();
 
-            var result = new TermSize
-            {
-                Rows = detRows ?? default,
-                Cols = detCols ?? default
-            };
+            result.Rows = detRows ?? default;
+            result.Cols = detCols ?? default;
 
             return result;
         }

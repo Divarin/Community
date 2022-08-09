@@ -1,4 +1,5 @@
-﻿using miniBBS.Core;
+﻿using miniBBS.Commands;
+using miniBBS.Core;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -61,8 +62,8 @@ namespace miniBBS.Persistence
             if (!consoleOnly)
                 _unwritten.Enqueue(entry);
 
-            Console.WriteLine($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
-
+            //Console.WriteLine($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
+            SysopScreen.AddLogMessage($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
             if (_unwritten.Count > Constants.NumberOfLogEntriesUntilWriteToDatabase)
                 Flush();
         }

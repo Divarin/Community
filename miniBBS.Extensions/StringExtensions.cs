@@ -124,5 +124,22 @@ namespace miniBBS.Extensions
                 return true;
             return false;
         }
+
+        public static string PadAndCenter(this string str, int totalLength)
+        {
+            int spacesToAdd = totalLength - str.Length;
+            if (spacesToAdd > 0)
+            {
+                var pad = ' '.Repeat(spacesToAdd / 2);
+                str = $"{pad}{str}{pad}";
+            }
+
+            if (str.Length < totalLength)
+                str = str.PadRight(totalLength);
+            else if (str.Length > totalLength)
+                str = str.Substring(totalLength);
+
+            return str;
+        }
     }
 }

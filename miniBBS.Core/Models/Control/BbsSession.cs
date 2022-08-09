@@ -26,6 +26,8 @@ namespace miniBBS.Core.Models.Control
             _sessionsList.AddSession(this);
             TimeZone = 0;
 
+            ResetIdleTimer();
+
             Thread thread = new Thread(new ThreadStart(BeginSuicideTimer));
             thread.Start();
         }
@@ -182,7 +184,7 @@ namespace miniBBS.Core.Models.Control
             {
                 if ((DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin)
                 {
-                    _logger?.Log($"{IpAddress} session terminated because user sat idle at login.", consoleOnly: true);
+                    //_logger?.Log($"{IpAddress} session terminated because user sat idle at login.", consoleOnly: true);
                     ForceLogout = true;
                     Stream.Close();
                     Dispose();

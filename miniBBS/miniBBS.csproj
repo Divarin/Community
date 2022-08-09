@@ -95,6 +95,7 @@
     <Compile Include="Commands\Mail.cs" />
     <Compile Include="Commands\ReadFile.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
+    <Compile Include="Commands\SysopScreen.cs" />
     <Compile Include="Commands\TermSetup.cs" />
     <Compile Include="Commands\TimeZone.cs" />
     <Compile Include="Commands\ToggleChannelInvite.cs" />
