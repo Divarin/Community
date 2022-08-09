@@ -33,8 +33,11 @@ namespace miniBBS.TextFiles.Extensions
             var parent = link;
             while (parent.Parent != null)
             {
-                if ("users/index.html".Equals(parent.Parent.ActualFilename, StringComparison.CurrentCultureIgnoreCase))
+                if ("users/index.html".Equals(parent.Parent.ActualFilename, StringComparison.CurrentCultureIgnoreCase)
+                    && !parent.DisplayedFilename.Equals(link.DisplayedFilename, StringComparison.CurrentCultureIgnoreCase))
+                {
                     return parent.DisplayedFilename;
+                }
                 parent = parent.Parent;
             }
             return string.Empty;

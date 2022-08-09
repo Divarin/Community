@@ -143,7 +143,11 @@ namespace miniBBS.Core.Models.Control
                     }
                 }
                 else
-                    Thread.Sleep(session._pingPongTimeMin * 1000);
+                {
+                    var delay = session._pingPongTimeMin * 1000;
+                    if (delay > 0 && delay < int.MaxValue)
+                        Thread.Sleep(delay);
+                }
             }
         }
 

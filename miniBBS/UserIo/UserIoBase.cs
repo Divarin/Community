@@ -43,6 +43,14 @@ namespace miniBBS.UserIo
             }
         }
 
+        public virtual void OutputRaw(params byte[] bytes)
+        {
+            if (_session.Stream.CanWrite)
+            {
+                _session.Stream.Write(bytes, 0, bytes.Length);
+            }
+        }
+
         public virtual void Output(char c)
         {
             StreamOutput(_session, $"{c}", OutputHandlingFlag.None);
@@ -355,6 +363,18 @@ namespace miniBBS.UserIo
         protected virtual void StreamOutputLine(BbsSession session, string text, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
             StreamOutput(session, text:$"{text}{Environment.NewLine}", flags);
+        }
+
+        public virtual byte[] InputRaw()
+        {
+            if (_session.Stream.CanRead && _session.Stream.CanWrite)
+            {
+                byte[] buffer = new byte[1024];
+                var bytesRead = _session.Stream.Read(buffer, 0, buffer.Length);
+                var result = buffer.Take(bytesRead).ToArray();
+                return result;
+            }
+            return new byte[] { };
         }
 
         protected virtual char? StreamInput(BbsSession session)

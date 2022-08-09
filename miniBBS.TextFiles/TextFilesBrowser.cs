@@ -61,9 +61,11 @@ namespace miniBBS.TextFiles
                 {
                     if (cmd == CommandResult.ReadDirectory)
                     {
-                        links = string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
-                            TopLevel.GetLinks().ToList() :
-                            LinkParser.GetLinksFromIndex(session, _currentLocation, includeBackups: _sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles));
+                        links = ReadDirectory();
+                            
+                            //string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
+                            //TopLevel.GetLinks().ToList() :
+                            //LinkParser.GetLinksFromIndex(session, _currentLocation, includeBackups: _sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles));
                     }
 
                     _session.Io.SetForeground(ConsoleColor.Gray);
@@ -600,6 +602,22 @@ namespace miniBBS.TextFiles
 
         private void ChangeDirectory(string dirNameOrNumber, IList<Link> links)
         {
+            if (string.IsNullOrWhiteSpace(dirNameOrNumber))
+                return;
+
+            if (dirNameOrNumber.Length > 1 && (dirNameOrNumber.StartsWith("/") || dirNameOrNumber.StartsWith("\\")))
+            {
+                ChangeDirectory("/", links);
+                links = ReadDirectory();
+                dirNameOrNumber = dirNameOrNumber.Substring(1);
+            }
+
+            var dirs = dirNameOrNumber.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            if (dirs.Length > 1)
+            {
+                dirNameOrNumber = dirs[0];
+            }
+
             if (int.TryParse(dirNameOrNumber, out int n))
             {
                 if (n >= 1 && n <= links.Count)
@@ -622,6 +640,21 @@ namespace miniBBS.TextFiles
                         ChangeDirectory(links[linkNum]);
                 }
             }
+
+            if (dirs.Length > 1)
+            {
+                var next = string.Join("/", dirs.Skip(1));
+                links = ReadDirectory();
+
+                ChangeDirectory(next, links);
+            }
+        }
+
+        private IList<Link> ReadDirectory()
+        {
+            return string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
+                TopLevel.GetLinks().ToList() :
+                LinkParser.GetLinksFromIndex(_session, _currentLocation, includeBackups: _sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles));
         }
 
         private void ChangeDirectory(Link link, bool goingUp = false)

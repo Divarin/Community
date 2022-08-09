@@ -85,6 +85,7 @@
     <Compile Include="Commands\DeleteMessage.cs" />
     <Compile Include="Commands\EditMessage.cs" />
     <Compile Include="Commands\Emote.cs" />
+    <Compile Include="Commands\FauxMain.cs" />
     <Compile Include="Commands\FindMessages.cs" />
     <Compile Include="Commands\IndexBy.cs" />
     <Compile Include="Commands\KickUser.cs" />
@@ -94,6 +95,7 @@
     <Compile Include="Commands\Mail.cs" />
     <Compile Include="Commands\ReadFile.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
+    <Compile Include="Commands\TermSetup.cs" />
     <Compile Include="Commands\TimeZone.cs" />
     <Compile Include="Commands\ToggleChannelInvite.cs" />
     <Compile Include="Commands\SetMessagePointer.cs" />
@@ -101,6 +103,7 @@
     <Compile Include="Commands\Shutdown.cs" />
     <Compile Include="Commands\ToggleChannelModerator.cs" />
     <Compile Include="Commands\ToggleInviteOnly.cs" />
+    <Compile Include="Commands\UpdatePassword.cs" />
     <Compile Include="Commands\UserInfo.cs" />
     <Compile Include="Commands\WhoIsAll.cs" />
     <Compile Include="Commands\WhoIsOn.cs" />
