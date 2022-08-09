@@ -1,16 +1,17 @@
 ﻿using miniBBS.Core.Enums;
 using System;
-using System.Collections.Generic;
 
 namespace miniBBS.Interfaces
 {
     public interface IUserIo
     {
+        void OutputRaw(params byte[] bytes);
         void Output(char c);
         void Output(string s, OutputHandlingFlag flags = OutputHandlingFlag.None);
         void OutputLine(string s = null, OutputHandlingFlag flags = OutputHandlingFlag.None);
         void OutputBackspace();
 
+        byte[] InputRaw();
         char? InputKey();
         string InputLine(char? echoChar = null);
 

@@ -9,6 +9,8 @@
         Chat,
         Email,
         TextFilesBrowser,
-        TextFileEditor
+        TextFileEditor,
+        FauxMain,
+        ConfigureEmulation
     }
 }

@@ -108,7 +108,13 @@ namespace miniBBS.Commands
                     session.Io.OutputLine();
                     if (k == 'y' || k == 'Y')
                     {
-                        string message = $"{session.User.Name} edited message # {session.Chats.ItemNumber(toBeEdited.Id)} in channel {session.Channel.Name}";
+                        string message = string.Join(Environment.NewLine, new[]
+                        {
+                            $"{session.User.Name} edited message # {session.Chats.ItemNumber(toBeEdited.Id)} in channel {session.Channel.Name}",
+                            "The message now reads:",
+                            newMessage
+                        }); ;
+
                         toBeEdited.Message = newMessage;
                         session.Io.OutputLine("Done.");
                         DI.GetRepository<Chat>().Update(toBeEdited);

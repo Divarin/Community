@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "2.7 - 2022.07.22";
+        public const string Version = "2.8d - 2022.08.09";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
@@ -24,7 +24,7 @@ namespace miniBBS.Core
         {
             get
             {
-                return IsLocal ? local_TextFileRootDirectory : @"F:\";
+                return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
 

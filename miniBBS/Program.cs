@@ -26,8 +26,6 @@ namespace miniBBS
         private static ILogger _logger;
         private static List<string> _ipBans;
 
-        public static Module ConfigureEmulation { get; private set; }
-
         static void Main(string[] args)
         {
             if (args?.Length < 1 || !int.TryParse(args[0], out int port))
@@ -144,7 +142,7 @@ namespace miniBBS
                             session.Io.OutputLine("Sorry the system is currently in maintenence mode, only system administators may log in at this time.  Please try again later.");
                         else
                         {
-                            SetEmulation(session);
+                            TermSetup.Execute(session);
                             ShowNotifications(session);
 
                             int unreadMail = Commands.Mail.CountUnread(session);
@@ -226,88 +224,19 @@ namespace miniBBS
             }
         }
 
-        private static void SetEmulation(BbsSession session)
-        {
-            var originalLocation = session.CurrentLocation;
-            session.CurrentLocation = ConfigureEmulation;
-
-            try
-            {
-                session.Rows = session.User.Rows;
-                session.Cols = session.User.Cols;
-                var emulation = session.User.Emulation;
-
-                if (session.Rows < 5)
-                    session.Rows = 24;
-                if (session.Cols < 5)
-                    session.Cols = 80;
-
-                while (true)
-                {
-                    session.Io.OutputLine($"{Environment.NewLine} -- Emulation Setup --");
-                    session.Io.OutputLine($"(R)ows      : {session.Rows}");
-                    session.Io.OutputLine($"(C)ols      : {session.Cols}");
-                    session.Io.OutputLine($"(E)mulation : {emulation}");
-                    session.Io.Output("Enter = Continue > ");
-                    var chr = session.Io.InputKey();
-                    session.Io.OutputLine();
-                    switch (chr)
-                    {
-                        case 'r':
-                        case 'R':
-                            {
-                                session.Io.Output($"Rows [{session.Rows}] : ");
-                                string s = session.Io.InputLine();
-                                if (int.TryParse(s, out int r) && r > 5 && r < 255)
-                                    session.Rows = r;
-                            }
-                            break;
-                        case 'c':
-                        case 'C':
-                            {
-                                session.Io.Output($"Cols [{session.Cols}] : ");
-                                string s = session.Io.InputLine();
-                                if (int.TryParse(s, out int c) && c > 10 && c < 255)
-                                    session.Cols = c;
-                            }
-                            break;
-                        case 'e':
-                        case 'E':
-                            {
-                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}Emulation [{1}] : ", Environment.NewLine, emulation.ToString()));
-                                char? s = session.Io.InputKey();
-                                switch (s)
-                                {
-                                    case '1': emulation = TerminalEmulation.Ascii; break;
-                                    case '2': emulation = TerminalEmulation.Ansi; break;
-                                    case '3': emulation = TerminalEmulation.Cbm; break;
-                                }
-                            }
-                            break;
-                        default:
-                            session.Io.OutputLine();
-                            switch (emulation)
-                            {
-                                case TerminalEmulation.Ascii: session.Io = new Ascii(session); break;
-                                case TerminalEmulation.Ansi: session.Io = new ANSI(session); break;
-                                case TerminalEmulation.Cbm: session.Io = new Cbm(session); break;
-                            }
-                            session.User.Rows = session.Rows;
-                            session.User.Cols = session.Cols;
-                            session.User.Emulation = emulation;
-                            session.UserRepo.Update(session.User);
-                            return;
-                    }
-                }
-            } 
-            finally
-            {
-                session.CurrentLocation = originalLocation;
-            }
-        }
-
         private static void RunSession(BbsSession session)
         {
+            if (session.User.TotalLogons == 1)
+            {
+                session.CurrentLocation = Module.FauxMain;
+                if (!FauxMain.Execute(session))
+                {
+                    session.Io.OutputLine("Goodbye!");
+                    session.Stream.Close();
+                    return;
+                }    
+            }
+
             session.CurrentLocation = Module.Chat;
 
             bool notifiedAboutHowToDeleteOwnMessages = false;
@@ -800,8 +729,22 @@ namespace miniBBS
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
                     return;
+                case "/pass":
+                case "/pw":
+                case "/password":
+                case "/pwd":
+                    UpdatePassword.Execute(session);
+                    return;
+                case "/fauxmain":
+                    if (!FauxMain.Execute(session))
+                    {
+                        // logoff
+                        session.Io.OutputLine("Goodbye!");
+                        session.Stream.Close();
+                    }
+                    return;
                 case "/term":
-                    SetEmulation(session);
+                    TermSetup.Execute(session);
                     return;
                 case "/bell":
                     Bell.Execute(session, parts.Length >= 2 ? parts[1] : null);
