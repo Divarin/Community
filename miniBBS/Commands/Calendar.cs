@@ -15,8 +15,10 @@ namespace miniBBS.Commands
         public static void Execute(BbsSession session)
         {
             var originalForegroundColor = session.Io.GetForeground();
+            var previousLocation = session.CurrentLocation;
             try
             {
+                session.CurrentLocation = Module.Calendar;
                 MenuItem menuSelection = MenuItem.Quit;
                 var channelNames = DI.GetRepository<Channel>()
                     .Get()
@@ -47,6 +49,7 @@ namespace miniBBS.Commands
             finally
             {
                 session.Io.SetForeground(originalForegroundColor);
+                session.CurrentLocation = previousLocation;
             }
         }
 

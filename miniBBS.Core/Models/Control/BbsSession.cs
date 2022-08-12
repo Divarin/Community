@@ -26,6 +26,8 @@ namespace miniBBS.Core.Models.Control
             _sessionsList.AddSession(this);
             TimeZone = 0;
 
+            ResetIdleTimer();
+
             Thread thread = new Thread(new ThreadStart(BeginSuicideTimer));
             thread.Start();
         }
@@ -178,17 +180,21 @@ namespace miniBBS.Core.Models.Control
         /// </summary>
         private void BeginSuicideTimer()
         {
-            while (User == null)
+            const int threadSleepTimeMs = 60 * Constants.MaxLoginTimeMin * 1000;
+
+            while (true)
             {
-                if ((DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin)
+                bool shouldHangUp = (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin;
+                shouldHangUp &= User == null || !Stream.CanRead || !Stream.CanWrite;
+
+                if (shouldHangUp)
                 {
-                    _logger?.Log($"{IpAddress} session terminated because user sat idle at login.", consoleOnly: true);
                     ForceLogout = true;
                     Stream.Close();
                     Dispose();
                     break;
                 }
-                Thread.Sleep(1000);
+                Thread.Sleep(threadSleepTimeMs);
             }
         }
 

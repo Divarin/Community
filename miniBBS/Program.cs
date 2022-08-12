@@ -48,16 +48,19 @@ namespace miniBBS
                 .Select(x => x.IpMask)
                 .ToList();
 
+            SysopScreen.Initialize(sessionsList);
+
             while (!sysControl.HasFlag(SystemControlFlag.Shutdown))
             {
                 try
                 {
-                    Console.WriteLine($" -- {DateTime.Now} --");
-                    Console.WriteLine("Sessions:");
-                    foreach (var s in sessionsList.Sessions)
-                        Console.WriteLine($"{s.IpAddress} {s.User?.Name} [{s.Channel?.Name}] {s.SessionStartUtc:yy-MM-dd HH:mm:ss}");
-                    Console.WriteLine($"Waiting for a connection on port {port} @ {DateTime.Now}");                    
 
+                    //Console.WriteLine($" -- {DateTime.Now} --");
+                    //Console.WriteLine("Sessions:");
+                    //foreach (var s in sessionsList.Sessions)
+                    //Console.WriteLine($"{s.IpAddress} {s.User?.Name} [{s.Channel?.Name}] {s.SessionStartUtc:yy-MM-dd HH:mm:ss}");
+                    //Console.WriteLine($"Waiting for a connection on port {port} @ {DateTime.Now}");                    
+                    
                     TcpClientFactory clientFactory = new TcpClientFactory(listener);
                     clientFactory.AwaitConnection();
                     while (clientFactory.Client == null)
@@ -89,7 +92,9 @@ namespace miniBBS
             NodeParams nodeParams = (NodeParams)o;
 
             try
-            {   
+            {
+                var sessionsList = DI.Get<ISessionsList>();
+
                 var client = nodeParams.Client;
                 var sysControl = nodeParams.SysControl;
 
@@ -100,9 +105,8 @@ namespace miniBBS
                     return;
                 }
 
-                _logger.Log($"{ip} connected.", consoleOnly: true);
+                //_logger.Log($"{ip} connected.", consoleOnly: true);
 
-                var sessionsList = DI.Get<ISessionsList>();
                 if (sessionsList.Sessions.Count(s => !string.IsNullOrWhiteSpace(s.IpAddress) && s.IpAddress.Equals(ip)) > Constants.MaxSessionsPerIpAddress)
                 {
                     Console.WriteLine("Too many connections from this address.");
@@ -137,7 +141,7 @@ namespace miniBBS
 
                     if (session.User != null)
                     {
-                        _logger.Log(session, "User logged in", consoleOnly: true);
+                        //_logger.Log(session, "User logged in", consoleOnly: true);
                         if (sysControl.HasFlag(SystemControlFlag.AdministratorLoginOnly) && !session.User.Access.HasFlag(AccessFlag.Administrator))
                             session.Io.OutputLine("Sorry the system is currently in maintenence mode, only system administators may log in at this time.  Please try again later.");
                         else
@@ -163,7 +167,7 @@ namespace miniBBS
                                 session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, false));
                             }
                         }
-                        _logger.Log(session, "User logged out", consoleOnly: true);
+                        //_logger.Log(session, "User logged out", consoleOnly: true);
                         _logger.Flush();
                     }
 
@@ -278,7 +282,7 @@ namespace miniBBS
                 session.Io.OutputLine("Type '/?' for help (DON'T FORGET THE SLASH!!!!).");
                 session.Io.SetForeground(ConsoleColor.Cyan);
                 session.Io.OutputLine(" ------------------- ");
-                session.Io.OutputLine("Feel free to loiter, linger, hang out as long as you want, there's no time limit.");
+                session.Io.OutputLine("Feel free to hang out as long as you want, there is no time limit!");
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
             }
@@ -389,7 +393,7 @@ namespace miniBBS
 
             bool isAtEndOfMessages = true != session.Chats?.Any() || session.MsgPointer == session.Chats.Keys.Max();
             chat = chatRepo.Insert(chat);
-            _logger.Log(session, $"posted {chat.Id} in {session.Channel.Name}", consoleOnly: true);            
+            //_logger.Log(session, $"posted {chat.Id} in {session.Channel.Name}", consoleOnly: true);            
             session.Chats[chat.Id] = chat;
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
