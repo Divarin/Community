@@ -11,6 +11,7 @@
         TextFilesBrowser,
         TextFileEditor,
         FauxMain,
-        ConfigureEmulation
+        ConfigureEmulation,
+        Calendar
     }
 }

@@ -28,13 +28,13 @@ namespace miniBBS.Commands
                     builder.AppendLine($"Total Logins: {s.User?.TotalLogons}");
                     builder.AppendLine($"Channel: {s.Channel?.Name}");
                     builder.AppendLine($"User Access: {s.User?.Access}");
-                    builder.AppendLine($"Channel Flags: {s.UcFlag.Flags}");
+                    builder.AppendLine($"Channel Flags: {s.UcFlag?.Flags}");
                     if (session.User.Access.HasFlag(AccessFlag.Administrator))
                         builder.AppendLine($"IP Address: {s.IpAddress}");
                     builder.AppendLine($"Idle Time: {s.IdleTime:hh\\:mm\\:ss}");
                     builder.AppendLine($"Do Not Disturb?: {s.DoNotDisturb}");
                     builder.AppendLine($"Time Zone: {s.TimeZone}");
-                    builder.AppendLine($"Terminal: {s.Cols} x {s.Rows}  {s.Io.EmulationType}");
+                    builder.AppendLine($"Terminal: {s.Cols} x {s.Rows}  {s.Io?.EmulationType}");
                     builder.AppendLine("---------------------------------------");
                 }
 
