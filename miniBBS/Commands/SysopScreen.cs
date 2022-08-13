@@ -12,13 +12,24 @@ namespace miniBBS.Commands
         private static ISessionsList _sessionsList;
         const int _numSessionsToList = 16;
         private static readonly string _blankLine = ' '.Repeat(80);
+        private enum Col
+        {
+            Flags,
+            Username,
+            ChannelName,
+            SessionStart,
+            IdleTime,
+            CurrentLocation
+        };
+
         private static readonly int[] _colWidths = new[]
         {
-            17, // username             
-            17, // channel name         
+            3, // flags
+            16, // username             
+            16, // channel name         
             14, // session start        
             11,  // idle time in minutes
-            20  // current location      
+            19  // current location      
         };
 
         private static readonly IList<string> _logMessages = new List<string>();
@@ -66,11 +77,12 @@ namespace miniBBS.Commands
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("║╚══════════════════════════════════════════════════════════════════════════════╝");
 
-            Console.Write("Username".PadRight(_colWidths[0]));
-            Console.Write("Channel".PadRight(_colWidths[1]));
-            Console.Write("Start".PadRight(_colWidths[2]));
-            Console.Write("Idle".PadRight(_colWidths[3]));
-            Console.WriteLine("Location".PadRight(_colWidths[4]));
+            Console.Write("DA".PadRight(_colWidths[(int)Col.Flags]));
+            Console.Write("Username".PadRight(_colWidths[(int)Col.Username]));
+            Console.Write("Channel".PadRight(_colWidths[(int)Col.ChannelName]));
+            Console.Write("Start".PadRight(_colWidths[(int)Col.SessionStart]));
+            Console.Write("Idle".PadRight(_colWidths[(int)Col.IdleTime]));
+            Console.WriteLine("Location".PadRight(_colWidths[(int)Col.CurrentLocation]));
         }
 
         private static void DrawLoop()
@@ -108,12 +120,14 @@ namespace miniBBS.Commands
                 else
                     Console.ForegroundColor = ConsoleColor.Gray;
 
-                Console.Write((session.User?.Name ?? string.Empty).PadRight(_colWidths[0]));
-                Console.Write((session.Channel?.Name ?? string.Empty).PadRight(_colWidths[1]));
-                Console.Write($"{session.SessionStartUtc:MM-dd HH:mm}".PadRight(_colWidths[2]));
+                var flags = $"{(session.DoNotDisturb ? "D" : " ")}{(session.Afk ? "A" : " ")}";
+                Console.Write(flags.PadRight(_colWidths[(int)Col.Flags]));
+                Console.Write((session.User?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.Username]));
+                Console.Write((session.Channel?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.ChannelName]));
+                Console.Write($"{session.SessionStartUtc:MM-dd HH:mm}".PadRight(_colWidths[(int)Col.SessionStart]));
                 string idle = $"{Math.Min(99, session.IdleTime.Days)}d {session.IdleTime.Hours}h {session.IdleTime.Minutes}m";
-                Console.Write(idle.PadRight(_colWidths[3]));
-                Console.WriteLine(session.CurrentLocation.ToString().PadRight(_colWidths[4]));
+                Console.Write(idle.PadRight(_colWidths[(int)Col.IdleTime]));
+                Console.WriteLine(session.CurrentLocation.ToString().PadRight(_colWidths[(int)Col.CurrentLocation]));
 
                 i++;
             }

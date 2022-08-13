@@ -94,6 +94,7 @@
     <Compile Include="Commands\ListModerators.cs" />
     <Compile Include="Commands\Mail.cs" />
     <Compile Include="Commands\ReadFile.cs" />
+    <Compile Include="Commands\Roll.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
     <Compile Include="Commands\SysopScreen.cs" />
     <Compile Include="Commands\TermSetup.cs" />

@@ -56,7 +56,22 @@ namespace miniBBS.Core.Models.Control
         public ISubscriber<EmoteMessage> EmoteSubscriber { get; set; }
         public Module CurrentLocation { get; set; }
         public Action OnDispose { get; set; }
-        public bool DoNotDisturb { get; set; }
+
+        private bool _doNotDisturb = false;
+        public bool DoNotDisturb
+        {
+            get
+            {
+                return _doNotDisturb;
+            }
+            set
+            {
+                _doNotDisturb = value;
+                if (!_doNotDisturb && DndMessages.Count > 0)
+                    ShowDndMessages();
+            }
+        }
+
         public string IpAddress { get; set; }
         
         private DateTime _lastActivityUtc = new DateTime();
@@ -81,6 +96,7 @@ namespace miniBBS.Core.Models.Control
         public bool Afk { get; set; }
         public string AfkReason { get; set; }
         public int? LastReadMessageNumber { get; set; }
+        public int? LastReadMessageNumberWhenStartedTyping { get; set; }
 
         private int _pingPongTimeMin = 0;
         private Thread _pingPongThread = null;
@@ -95,6 +111,8 @@ namespace miniBBS.Core.Models.Control
         public string BellAlerts { get; set; }
 
         public bool NoPingPong { get; set; }
+        
+        public Queue<Action> DndMessages { get; } = new Queue<Action>();
 
         public void StartPingPong(int delayMinutes, bool silently = true)
         {
@@ -196,6 +214,39 @@ namespace miniBBS.Core.Models.Control
                 }
                 Thread.Sleep(threadSleepTimeMs);
             }
+        }
+
+        private void ShowDndMessages()
+        {
+            char? key;
+            do
+            {
+                using (Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                {
+                    Io.OutputLine($"While you where in 'Do Not Disturb' mode, {DndMessages.Count} things happened.");
+                    Io.OutputLine("What do you want to do about it?");
+                    Io.SetForeground(ConsoleColor.Yellow);
+                    Io.OutputLine("R) Read all the things that happened.");
+                    Io.OutputLine("Q) Quit and forget about all those things.");
+                    Io.SetForeground(ConsoleColor.Cyan);
+                    Io.Output("What now? (R, Q): ");
+                    key = Io.InputKey();
+                    Io.OutputLine();
+                }
+
+                switch (key)
+                {
+                    case 'R':
+                    case 'r':
+                        while (DndMessages.Count > 0)
+                            DndMessages.Dequeue().Invoke();
+                        return;
+                    case 'Q':
+                    case 'q':
+                        DndMessages.Clear();
+                        return;
+                }
+            } while (true);
         }
 
     }
