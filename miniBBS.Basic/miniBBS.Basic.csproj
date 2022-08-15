@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{596B7354-9EA5-4E40-A2DC-854E8EC32846}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>miniBBS.Basic</RootNamespace>
+    <AssemblyName>miniBBS.Basic</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Data.SQLite, Version=1.0.111.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Program Files (x86)\System.Data.SQLite\2008\bin\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SQLite.Linq">
+      <HintPath>..\..\..\Program Files (x86)\System.Data.SQLite\2008\bin\System.Data.SQLite.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Exceptions\IdleTimeoutException.cs" />
+    <Compile Include="Exceptions\RuntimeException.cs" />
+    <Compile Include="Executors\Color.cs" />
+    <Compile Include="Executors\Data.cs" />
+    <Compile Include="Executors\Dir.cs" />
+    <Compile Include="Executors\Edit.cs" />
+    <Compile Include="Executors\Evaluate.cs" />
+    <Compile Include="Executors\For.cs" />
+    <Compile Include="Executors\Function.cs" />
+    <Compile Include="Executors\Get.cs" />
+    <Compile Include="Executors\Gosub.cs" />
+    <Compile Include="Executors\Goto.cs" />
+    <Compile Include="Executors\Help.cs" />
+    <Compile Include="Executors\If.cs" />
+    <Compile Include="Executors\Input.cs" />
+    <Compile Include="Executors\Instr.cs" />
+    <Compile Include="Executors\Int.cs" />
+    <Compile Include="Executors\Len.cs" />
+    <Compile Include="Executors\Let.cs" />
+    <Compile Include="Executors\Load.cs" />
+    <Compile Include="Executors\On.cs" />
+    <Compile Include="Executors\Position.cs" />
+    <Compile Include="Executors\Print.cs" />
+    <Compile Include="Executors\ProgramData.cs" />
+    <Compile Include="Executors\Range.cs" />
+    <Compile Include="Executors\Renum.cs" />
+    <Compile Include="Executors\Rnd.cs" />
+    <Compile Include="Executors\Save.cs" />
+    <Compile Include="Executors\Scoped.cs" />
+    <Compile Include="Executors\Sql.cs" />
+    <Compile Include="Executors\Sqr.cs" />
+    <Compile Include="Executors\Words.cs" />
+    <Compile Include="Extensions\ModelExtensions.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Interfaces\IDataModel.cs" />
+    <Compile Include="Interfaces\IRepository.cs" />
+    <Compile Include="Interfaces\IScoped.cs" />
+    <Compile Include="Interfaces\IStructuredQuery.cs" />
+    <Compile Include="Interfaces\IUserIo.cs" />
+    <Compile Include="Models\Disk.cs" />
+    <Compile Include="Models\EditResult.cs" />
+    <Compile Include="Models\ProgramLine.cs" />
+    <Compile Include="Models\StatementPointer.cs" />
+    <Compile Include="Models\User.cs" />
+    <Compile Include="Models\Variables.cs" />
+    <Compile Include="MutantBasic.cs" />
+    <Compile Include="Persistence\DatabaseInitializer.cs" />
+    <Compile Include="Persistence\SqliteRepository.cs" />
+    <Compile Include="Persistence\StructuredQuery.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\miniBBS.Core\miniBBS.Core.csproj">
+      <Project>{36b12940-0f2c-4b2a-8f69-3bc4fe872390}</Project>
+      <Name>miniBBS.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\miniBBS.Extensions\miniBBS.Extensions.csproj">
+      <Project>{206838c7-deb0-44df-bd83-5cc75c3aee6a}</Project>
+      <Name>miniBBS.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\miniBBS.Services\miniBBS.Services.csproj">
+      <Project>{77C102F0-F7A0-4560-850A-189C81FC3284}</Project>
+      <Name>miniBBS.Services</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

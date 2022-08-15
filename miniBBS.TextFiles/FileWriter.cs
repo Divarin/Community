@@ -1,4 +1,5 @@
-﻿using miniBBS.Core;
+﻿using miniBBS.Basic;
+using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
@@ -69,7 +70,7 @@ namespace miniBBS.TextFiles
 
                 if (!isOwner && !isEditor)
                 {
-                    session.Io.OutputLine("You may not create or edit files in this directory.");
+                    session.Io.OutputLine("Access denied.");
                     return;
                 }
 
@@ -77,24 +78,27 @@ namespace miniBBS.TextFiles
                 if (!isNewFile)
                     body = FileReader.LoadFileContents(currentLocation, file);
 
-                var editor = GlobalDependencyResolver.Get<ITextEditor>();
+                ITextEditor editor = file.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase) ?
+                    new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Path) + "/", autoStart: false) :
+                    GlobalDependencyResolver.Get<ITextEditor>();
+
                 editor.OnSave = (UpdatedBody) =>
                 {
-                // save file
-                SaveFile(currentLocation, file, UpdatedBody);
+                    // save file
+                    SaveFile(currentLocation, file, UpdatedBody);
 
-                // check if stream is still in a valid state because we might call this on a connection failure
-                if (true == session.Stream?.CanWrite && true == session.Stream?.CanRead)
-                    {
-                        session.Io.OutputLine($"Current Description: {file.Description}");
-                        session.Io.Output($"Enter description{(string.IsNullOrEmpty(file.Description) ? "" : " Enter=Keep Current")}: ");
-                        string descr = session.Io.InputLine();
-                        if (!string.IsNullOrWhiteSpace(descr))
+                    // check if stream is still in a valid state because we might call this on a connection failure
+                    if (true == session.Stream?.CanWrite && true == session.Stream?.CanRead)
                         {
-                            file.Description = descr;
-                            IndexUpdater.UpdateIndex(currentLocation, file);
+                            session.Io.OutputLine($"Current Description: {file.Description}");
+                            session.Io.Output($"Enter description{(string.IsNullOrEmpty(file.Description) ? "" : " Enter=Keep Current")}: ");
+                            string descr = session.Io.InputLine();
+                            if (!string.IsNullOrWhiteSpace(descr))
+                            {
+                                file.Description = descr;
+                                IndexUpdater.UpdateIndex(currentLocation, file);
+                            }
                         }
-                    }
 
                     return $"Saved as '{file.DisplayedFilename}'";
                 };

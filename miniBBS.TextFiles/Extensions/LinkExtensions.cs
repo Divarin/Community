@@ -1,5 +1,6 @@
 ﻿using miniBBS.TextFiles.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace miniBBS.TextFiles.Extensions
@@ -57,6 +58,16 @@ namespace miniBBS.TextFiles.Extensions
             bool rejectThisUserSpecifically = true == link.Editors?.Any(c => $"-{user.Name}".Equals(c, StringComparison.CurrentCultureIgnoreCase));
             bool result = allowThisUserSpecifically || (allowAll && !rejectThisUserSpecifically);
             return result;
+        }
+
+        public static Link GetLink(this IList<Link> links, string filenameOrNumber)
+        {
+            Link link = null;
+            if (int.TryParse(filenameOrNumber, out int n) && n >= 1 && n <= links.Count)
+                link = links[n - 1];
+            else 
+                link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+            return link;
         }
     }
 }

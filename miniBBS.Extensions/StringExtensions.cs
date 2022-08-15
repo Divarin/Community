@@ -22,6 +22,22 @@ namespace miniBBS.Extensions
             return result;
         }
 
+        public static string Repeat(this string str, int count)
+        {
+            char[] array = new char[str.Length * count];
+            int offset = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                for (int c = 0; c < str.Length; c++)
+                {
+                    array[offset++] = str[c];
+                }
+            }
+
+            return new string(array, 0, array.Length);
+        }
+
         public static string Repeat(this char c, int numRepeats)
         {
             char[] arr = new char[numRepeats];
@@ -140,6 +156,24 @@ namespace miniBBS.Extensions
                 str = str.Substring(totalLength);
 
             return str;
+        }
+
+        public static string JoinPathParts(params string[] parts)
+        {
+            if (true != parts?.Any())
+                return string.Empty;
+
+            var result = string.Join("/", parts.Select(p =>
+            {
+                p = p.Replace("\\", "/");
+                if (p.StartsWith("/"))
+                    p = p.Substring(1);
+                if (p.EndsWith("/"))
+                    p = p.Substring(0, p.Length - 1);
+                return p;
+            }));
+
+            return result;
         }
     }
 }

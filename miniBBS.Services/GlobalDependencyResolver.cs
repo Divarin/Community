@@ -8,7 +8,10 @@ namespace miniBBS.Services
 {
     public static class GlobalDependencyResolver
     {
-        private static Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
+        private static Dictionary<Type, object> _singletons = new Dictionary<Type, object>()
+        {
+            {typeof(ICompressor), new Compressor()}
+        };
 
         private static Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
@@ -25,7 +28,9 @@ namespace miniBBS.Services
         {
             Type type = typeof(T);
 
-            if (_dictionary.ContainsKey(type))
+            if (_singletons.ContainsKey(type))
+                return (T)_singletons[type];
+            else if (_dictionary.ContainsKey(type))
                 return (T)_dictionary[type]();
 
             return default(T);

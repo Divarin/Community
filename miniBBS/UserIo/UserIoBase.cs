@@ -379,18 +379,32 @@ namespace miniBBS.UserIo
 
         protected virtual char? StreamInput(BbsSession session)
         {
+            if (_pollingOn)
+            {
+                while (_polledTicks < _ticksWhenPolledKeyAppendedToGetLine)
+                {
+                    Thread.Sleep(25);
+                }
+                _ticksWhenPolledKeyAppendedToGetLine = _polledTicks;
+                return _polledKey;
+            }
+
             var bytes = new byte[256];
             int i;
-
+            char? result = null;
             session.Stream.Flush();
             if (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
             {
                 session.ResetIdleTimer();
                 var data = Encoding.ASCII.GetString(bytes, 0, i);
                 if (data?.Length >= 1)
-                    return data[0];
+                    result = data[0];
             }
-            return null;
+
+            //if (_pollingOn && _polledKey != default && !_ticksWhenPolledKeyAppendedToGetLine.HasValue || _polledTicks > _ticksWhenPolledKeyAppendedToGetLine)
+            //    _ticksWhenPolledKeyAppendedToGetLine = _polledTicks;
+
+            return result;
         }
 
         protected string StreamInputLine(BbsSession session, char? echoChar = null)
@@ -408,10 +422,16 @@ namespace miniBBS.UserIo
                 session.Stream.Flush();
 
                 var bytes = new byte[256];
-                int i;
+                int i = 0;
+                char? c = null;
                 StringBuilder lineBuilder = new StringBuilder();
 
-                while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
+                while (
+                    !session.ForceLogout && 
+                    session.Stream.CanRead && 
+                    session.Stream.CanWrite &&
+                    (_pollingOn && TryGetKeyFromPoll(out c)) || (!_pollingOn && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
+                    )
                 {
                     session.ResetIdleTimer();
                     
@@ -419,6 +439,11 @@ namespace miniBBS.UserIo
                         session.LastReadMessageNumberWhenStartedTyping = session.LastReadMessageNumber;
 
                     IsInputting = lineBuilder.Length > 0;
+                    if (c.HasValue)
+                    {
+                        bytes = new[] { (byte)c.Value };
+                        i = 1;
+                    }
 
                     if (bytes[0] == 3)
                     {
@@ -486,6 +511,89 @@ namespace miniBBS.UserIo
         {
             _session.Stream.Flush();
         }
+
+        #region KeyPolling
+        public bool IsPolling => _pollingOn;
+        private bool _pollingOn = false;
+        private char? _polledKey;
+        private long _polledTicks;
+        private long? _ticksWhenPolledKeyAppendedToGetLine;
+        private Thread _pollKeyThread = null;
+
+        public char? GetPolledKey()
+        {
+            return _polledKey;
+        }
+
+        public void PollKey()
+        {
+            if (_pollKeyThread == null || !_pollKeyThread.IsAlive)
+            {
+                ThreadStart start = new ThreadStart(PollKeyInternal);
+                _pollKeyThread = new Thread(start);
+                _pollingOn = true;
+                _pollKeyThread.Start();
+            }
+        }
+
+        public void ClearPolledKey()
+        {
+            _polledKey = null;
+        }
+
+        public void AbortPollKey()
+        {
+            if (_pollKeyThread != null && _pollKeyThread.IsAlive)
+            {
+                _pollingOn = false;
+                _pollKeyThread.Abort();
+            }
+        }
+
+        public long GetPolledTicks()
+        {
+            return _polledTicks;
+        }
+
+        private void PollKeyInternal()
+        {
+            while (_pollingOn)
+            {
+                var bytes = new byte[256];
+                int i;
+                if (_session.ForceLogout || !_session.Stream.CanRead || !_session.Stream.CanWrite)
+                    break;
+
+                if ((i = _session.Stream.Read(bytes, 0, bytes.Length)) != 0)
+                {
+                    _session.ResetIdleTimer();
+                    var data = Encoding.ASCII.GetString(bytes, 0, i);
+                    if (data?.Length >= 1)
+                    {
+                        _polledKey = data[0];
+                        _polledTicks = DateTime.Now.Ticks;
+                    }
+                }
+            }
+        }
+
+        private bool TryGetKeyFromPoll(out char? c)
+        {
+            if (_pollingOn)
+            {
+                while (!_polledKey.HasValue || _ticksWhenPolledKeyAppendedToGetLine >= _polledTicks)
+                {
+                    Thread.Sleep(25);
+                }
+                _ticksWhenPolledKeyAppendedToGetLine = _polledTicks;
+                c = _polledKey;
+                return c.HasValue;
+            }
+            c = null;
+            return false;
+        }
+
+        #endregion
 
         protected virtual void StartDelayedNotificationsTimer()
         {

@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "2.9 - 2022.08.13";
+        public const string Version = "3.0 - 2022.08.13";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
@@ -102,7 +102,7 @@ namespace miniBBS.Core
         public const int MaxSnippetLength = 25;
 
         public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
-        
+        public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 15;
 
         /// <summary>

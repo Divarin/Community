@@ -25,6 +25,7 @@ namespace miniBBS.Persistence
                 CreateCalendarTable(db);
                 CreateIpBansTable(db);
                 CreateMailTable(db);
+                CreateProgramsTable(db);
 
                 db.Close();
             }
@@ -135,5 +136,13 @@ namespace miniBBS.Persistence
             }
         }
 
+        private void CreateProgramsTable(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE Programs (Id integer primary key autoincrement, Name TEXT not null, Data TEXT null, Published INT not null, SourceVisible INT not null, Tags TEXT null, Rating INT not null)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
     }
 }

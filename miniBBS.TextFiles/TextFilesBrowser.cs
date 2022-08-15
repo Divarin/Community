@@ -1,4 +1,5 @@
-﻿using miniBBS.Core;
+﻿using miniBBS.Basic;
+using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
@@ -114,12 +115,7 @@ namespace miniBBS.TextFiles
                 {
                     linkFound = true;
                     DescribeFile(link);
-                    var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                    if (inp == 'Y' || inp == 'C')
-                    {
-                        session.DoNotDisturb = true;
-                        ReadFile(link, nonstop: inp == 'C');
-                    }
+                    AskLaunchFile(link);
                 }
                 else
                     session.Io.OutputLine("Sorry I was unable to find that file.");
@@ -213,9 +209,7 @@ namespace miniBBS.TextFiles
                     else
                     {
                         DescribeFile(link);
-                        var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                        if (inp == 'Y' || inp == 'C')
-                            ReadFile(link, nonstop: inp=='C');
+                        AskLaunchFile(link);
                     }
                 }
                 else
@@ -315,10 +309,23 @@ namespace miniBBS.TextFiles
                     case "nano":
                         if (parts.Length < 2)
                             _session.Io.OutputLine("Please supply a file name or number.");
-                        else 
+                        else
                         {
                             FileWriter.Edit(_session, _currentLocation, parts[1], links);
                             result = CommandResult.ReadDirectory;
+                        }
+                        break;
+                    case "run":
+                    case "exec":
+                        if (parts.Length < 2)
+                            _session.Io.OutputLine("Please supply a file name or number.");
+                        else
+                        {
+                            var basicProgram = links.GetLink(parts[1]);
+                            if (true == basicProgram?.ActualFilename?.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
+                                RunBasicProgram(basicProgram);
+                            else
+                                _session.Io.OutputLine("Invalid Basic program.");
                         }
                         break;
                     case "mkdir":
@@ -426,9 +433,7 @@ namespace miniBBS.TextFiles
                             else
                             {
                                 DescribeFile(link);
-                                var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                                if (inp == 'Y' || inp == 'C')
-                                    ReadFile(link, nonstop: inp == 'C');
+                                AskLaunchFile(link);
                             }
                         }
                         else
@@ -438,6 +443,32 @@ namespace miniBBS.TextFiles
             }
 
             return result;
+        }
+
+        private void AskLaunchFile(Link link)
+        {
+            var originalDnd = _session.DoNotDisturb;
+            _session.DoNotDisturb = true;
+
+            try
+            {
+                if (link.ActualFilename.EndsWith(".bas"))
+                {
+                    var inp = _session.Io.Ask("Run Basic Program?");
+                    if (inp == 'Y')
+                        RunBasicProgram(link);
+                }
+                else
+                {
+                    var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
+                    if (inp == 'Y' || inp == 'C')
+                        ReadFile(link, nonstop: inp == 'C');
+                }
+            }
+            finally
+            {
+                _session.DoNotDisturb = originalDnd;
+            }
         }
 
         private void LinkFile(string filenameOrNumber, IList<Link> links)
@@ -573,6 +604,23 @@ namespace miniBBS.TextFiles
             finally
             {
                 //_session.NoPingPong = false;
+                _session.CurrentLocation = previousLocation;
+            }
+        }
+
+        private void RunBasicProgram(Link link)
+        {
+            string body = FileReader.LoadFileContents(_currentLocation, link);
+            var previousLocation = _session.CurrentLocation;
+            _session.CurrentLocation = Module.BasicInterpreter;
+
+            try
+            {
+                ITextEditor basic = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Path) + "/", autoStart: true);
+                basic.EditText(_session, body);
+            }
+            finally
+            {
                 _session.CurrentLocation = previousLocation;
             }
         }

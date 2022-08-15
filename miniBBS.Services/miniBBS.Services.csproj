@@ -55,6 +55,7 @@
     <Compile Include="Persistence\SqliteRepository.cs" />
     <Compile Include="Persistence\StructuredQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\Compressor.cs" />
     <Compile Include="Services\LineEditor.cs" />
   </ItemGroup>
   <ItemGroup>

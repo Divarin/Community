@@ -909,6 +909,7 @@ namespace miniBBS
                 case "/txt":
                 case "/file":
                 case "/files":
+                case "/filez":
                     {
                         var browser = DI.Get<ITextFilesBrowser>();
                         browser.OnChat = line =>

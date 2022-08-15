@@ -62,6 +62,7 @@ namespace miniBBS.TextFiles
             {"dir, ls, grep", _dir},
             {"cd, chdir", _cd},
             {"read, type, cat, more, less, nonstop, ns", _read},
+            {"run, exec", _run},
             {"searching", _searching},
             {"quit, exit, /o", _exit},
             {"dnd", _dnd},
@@ -233,5 +234,8 @@ namespace miniBBS.TextFiles
         private const string _backups =
             "Toggles whether or not backup files are shown on directory lists.  Backup files are automatically created " +
             "when you save a file in the editor.  You can use this feature to recover a backup file if needed.";
+
+        private const string _run =
+            "The 'run' and 'exec' commands can be used to execute basic programs, that is programs with .bas extensions.";
     }
 }

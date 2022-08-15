@@ -74,6 +74,7 @@
     <Compile Include="Enums\TerminalEmulation.cs" />
     <Compile Include="Enums\TextFilesSessionFlags.cs" />
     <Compile Include="Enums\UCFlag.cs" />
+    <Compile Include="Interfaces\ICompressor.cs" />
     <Compile Include="Interfaces\IDataModel.cs" />
     <Compile Include="Interfaces\IHasher.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Interfaces\IUserIo.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
+    <Compile Include="Models\Data\BasicProgram.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
     <Compile Include="Models\Data\LogEntry.cs" />

@@ -16,7 +16,7 @@ namespace miniBBS.Services.Services
         private BbsSession _session;
         private string _savedText = null;
 
-        public string EditText(BbsSession session, string existingText = null)
+        public void EditText(BbsSession session, string existingText = null)
         {
             bool wasDnd = session.DoNotDisturb;
             session.DoNotDisturb = true;
@@ -71,8 +71,8 @@ namespace miniBBS.Services.Services
                     }
                 };
 
-                var result = string.Join(Environment.NewLine, lines);
-                return result;
+                //var result = string.Join(Environment.NewLine, lines);
+                //return result;
             } 
             catch (Exception)
             {

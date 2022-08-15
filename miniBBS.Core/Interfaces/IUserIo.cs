@@ -49,6 +49,13 @@ namespace miniBBS.Interfaces
         void DelayNotification(Action action);
 
         void Flush();
-        
+
+        #region KeyPolling
+        char? GetPolledKey();
+        void PollKey();
+        void ClearPolledKey();
+        void AbortPollKey();
+        long GetPolledTicks();
+        #endregion
     }
 }
