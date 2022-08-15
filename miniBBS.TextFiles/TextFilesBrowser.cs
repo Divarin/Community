@@ -551,10 +551,12 @@ namespace miniBBS.TextFiles
 
             string body = FileReader.LoadFileContents(_currentLocation, link);
             body = ReplaceLinefeedsWithEnters(body);
+            var previousLocation = _session.CurrentLocation;
+            _session.CurrentLocation = Module.TextFileReader;
 
             try
             {
-                _session.NoPingPong = true;
+                //_session.NoPingPong = true;
                 using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                 {
                     var flags = OutputHandlingFlag.None;
@@ -570,7 +572,8 @@ namespace miniBBS.TextFiles
             } 
             finally
             {
-                _session.NoPingPong = false;
+                //_session.NoPingPong = false;
+                _session.CurrentLocation = previousLocation;
             }
         }
 

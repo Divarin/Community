@@ -15,7 +15,10 @@ namespace miniBBS.Commands
         public static void Execute(BbsSession session, params string[] args)
         {
             var originalLocation = session.CurrentLocation;
+            var originalDnd = session.DoNotDisturb;
+            
             session.CurrentLocation = Module.Email;
+            session.DoNotDisturb = true;
 
             try
             {
@@ -68,6 +71,7 @@ namespace miniBBS.Commands
             finally
             {
                 session.CurrentLocation = originalLocation;
+                session.DoNotDisturb = originalDnd;
             }
         }
 

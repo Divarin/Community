@@ -1,6 +1,8 @@
 ﻿using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Core.Models.Data;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -10,7 +12,7 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session)
         {
-            var users = session.UserRepo.Get().OrderByDescending(u => u.LastLogonUtc);
+            IEnumerable<User> users = session.UserRepo.Get().OrderByDescending(u => u.LastLogonUtc);
 
             var online = DI.Get<ISessionsList>()
                 .Sessions
@@ -25,11 +27,19 @@ namespace miniBBS.Commands
                 .GroupBy(s => s.Username)
                 .ToDictionary(k => k.Key, v => v.ToList());
 
+            session.Io.OutputLine("Slack-er (/ˈslakər/) : One who has failed to call in the past 30 days.");
+            session.Io.Output("Filter out slackers?: ");
+            var key = session.Io.InputKey();
+            session.Io.OutputLine();
+            if (key == 'Y' || key == 'y')
+                users = users.Where(u => u.LastLogonUtc >= DateTime.UtcNow.AddMonths(-1));
+
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine("* Community users (most recent logon) *");
+            builder.AppendLine("* Community users *");
+            builder.AppendLine("Last Login      Total Logins   Username");
             foreach (var u in users)
             {
-                string l = $"{u.LastLogonUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm} {u.Name} ";
+                string l = $"{u.LastLogonUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}   {u.TotalLogons,4}, {u.Name}";
                 if (online.ContainsKey(u.Name))
                 {
                     var usl = online[u.Name];

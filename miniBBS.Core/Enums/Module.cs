@@ -10,6 +10,7 @@
         Email,
         TextFilesBrowser,
         TextFileEditor,
+        TextFileReader,
         FauxMain,
         ConfigureEmulation,
         Calendar

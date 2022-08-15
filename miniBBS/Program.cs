@@ -388,7 +388,7 @@ namespace miniBBS
                 ChannelId = session.Channel.Id,
                 FromUserId = session.User.Id,
                 Message = line,
-                ResponseToId = isNewTopic ? null : session.LastReadMessageNumber
+                ResponseToId = isNewTopic ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber
             };
 
             bool isAtEndOfMessages = true != session.Chats?.Any() || session.MsgPointer == session.Chats.Keys.Max();
@@ -425,14 +425,11 @@ namespace miniBBS
         /// </summary>
         private static void NotifyNewPost(Chat chat, BbsSession session)
         {
-            if (session.DoNotDisturb || chat == null || chat.ChannelId != session.Channel.Id)
+            if (chat == null || chat.ChannelId != session.Channel.Id)
                 return;
-
+            
             bool isAtEndOfMessages = session.MsgPointer == session.Chats.Keys.Max();
             session.Chats[chat.Id] = chat;
-
-            if (session.DoNotDisturb)
-                return;
 
             Action action = () =>
             {
@@ -444,13 +441,17 @@ namespace miniBBS
                     if (isAtEndOfMessages)
                         SetMessagePointer.Execute(session, chat.Id);
                 }
-                session.ShowPrompt();
             };
 
-            if (session.Io.IsInputting)
+            if (session.DoNotDisturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
                 session.Io.DelayNotification(action);
             else
+            {
                 action();
+                session.ShowPrompt();
+            }
         }
 
         private static void TryBell(BbsSession session, int userId)
@@ -467,7 +468,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyChannelMessage(BbsSession session, ChannelMessage message)
         {
-            if ((session.DoNotDisturb && !message.Disturb) || message.ChannelId != session.Channel.Id)
+            if (message.ChannelId != session.Channel.Id)
                 return;
 
             Action action = () =>
@@ -477,13 +478,17 @@ namespace miniBBS
                     session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
                     message.OnReceive?.Invoke(session);
                 }
-                session.ShowPrompt();
             };
 
-            if (session.Io.IsInputting)
+            if (session.DoNotDisturb && !message.Disturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
                 session.Io.DelayNotification(action);
             else
+            {
                 action();
+                session.ShowPrompt();
+            }
         }
 
         /// <summary>
@@ -491,27 +496,28 @@ namespace miniBBS
         /// </summary>
         private static void NotifyUserMessage(BbsSession session, string message)
         {
-            if (session.DoNotDisturb)
-                return;
-
             Action action = () =>
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 {
                     session.Io.OutputLine($"{Environment.NewLine}{message}");
                 }
-                session.ShowPrompt();
             };
 
-            if (session.Io.IsInputting)
+            if (session.DoNotDisturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
                 session.Io.DelayNotification(action);
             else
+            {
                 action();
+                session.ShowPrompt();
+            }
         }
 
         private static void NotifyUserLoginOrOut(User user, BbsSession session, bool isLogin)
         {
-            if (user == null || session.DoNotDisturb)
+            if (user == null)
                 return;
 
             Action action = () =>
@@ -523,24 +529,28 @@ namespace miniBBS
                         ?.Where(s => user.Id == s.User?.Id)
                         ?.Count();
 
-                    string message = $"{Environment.NewLine}{user.Name} has just {(isLogin ? "logged in" : "logged out")}";
+                    string message = $"{Environment.NewLine}{user.Name} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm:ss}";
                     if (sessionsForThisUser > 1)
                         message += $" ({sessionsForThisUser})";
 
                     session.Io.OutputLine(message);
                 }
-                session.ShowPrompt();
             };
 
-            if (session.Io.IsInputting)
+            if (session.DoNotDisturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
                 session.Io.DelayNotification(action);
             else
+            {
                 action();
+                session.ShowPrompt();
+            }
         }
 
         private static void NotifyEmote(BbsSession session, EmoteMessage message)
         {
-            if (session.User == null || session.DoNotDisturb)
+            if (session.User == null)
                 return;
             if (message.ChannelId != session.Channel?.Id)
                 return;
@@ -556,13 +566,17 @@ namespace miniBBS
                 {
                     session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
                 }
-                session.ShowPrompt();
             };
 
-            if (session.Io.IsInputting)
+            if (session.DoNotDisturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
                 session.Io.DelayNotification(action);
             else
+            {
                 action();
+                session.ShowPrompt();
+            }
         }
 
         private static void Logon(BbsSession session, IRepository<User> userRepo)
@@ -877,6 +891,14 @@ namespace miniBBS
                 case "/bye":
                     Emote.Execute(session, parts);
                     return;
+                case "/roll":
+                case "/random":
+                case "/rnd":
+                case "/dice":
+                case "/die":
+                    if (parts.Length >= 2)
+                        Roll.Execute(session, parts[1]);
+                    return;
                 case "/mail":
                     Commands.Mail.Execute(session, parts.Length >= 2 ? parts.Skip(1).ToArray() : null);
                     return;
@@ -885,6 +907,8 @@ namespace miniBBS
                     return;
                 case "/text":
                 case "/txt":
+                case "/file":
+                case "/files":
                     {
                         var browser = DI.Get<ITextFilesBrowser>();
                         browser.OnChat = line =>

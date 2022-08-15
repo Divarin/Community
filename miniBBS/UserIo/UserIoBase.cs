@@ -395,6 +395,8 @@ namespace miniBBS.UserIo
 
         protected string StreamInputLine(BbsSession session, char? echoChar = null)
         {
+            session.LastReadMessageNumberWhenStartedTyping = null;
+
             Action EndInput = () =>
             {
                 IsInputting = false;
@@ -412,6 +414,9 @@ namespace miniBBS.UserIo
                 while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     session.ResetIdleTimer();
+                    
+                    if (!session.LastReadMessageNumberWhenStartedTyping.HasValue)
+                        session.LastReadMessageNumberWhenStartedTyping = session.LastReadMessageNumber;
 
                     IsInputting = lineBuilder.Length > 0;
 

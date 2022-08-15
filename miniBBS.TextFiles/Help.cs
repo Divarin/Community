@@ -31,7 +31,7 @@ namespace miniBBS.TextFiles
                 {
                     if (topic.Equals(cmd.Key, StringComparison.CurrentCultureIgnoreCase))
                         return cmd.Value;
-                    var parts = cmd.Key.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    var parts = cmd.Key.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim());
                     if (true == parts?.Any(p => topic.Equals(p, StringComparison.CurrentCultureIgnoreCase)))
                         return cmd.Value;
                 }
