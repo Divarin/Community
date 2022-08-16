@@ -82,6 +82,7 @@
     <Compile Include="Interfaces\INotificationHandler.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
     <Compile Include="Interfaces\ISessionsList.cs" />
+    <Compile Include="Interfaces\ISqlUi.cs" />
     <Compile Include="Interfaces\IStructuredQuery.cs" />
     <Compile Include="Interfaces\ITextEditor.cs" />
     <Compile Include="Interfaces\ITextFilesBrowser.cs" />

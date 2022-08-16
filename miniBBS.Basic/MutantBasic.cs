@@ -6,6 +6,9 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Extensions;
+using miniBBS.Services;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -176,90 +179,17 @@ namespace miniBBS.Basic
                 }
                 else if (line.StartsWith("run", StringComparison.CurrentCultureIgnoreCase) && true == progLines?.Any())
                 {
-                    StatementPointer sp = new StatementPointer();
-                    StatementPointer lastLine = new StatementPointer();
+                    var _previousLocation = _session.CurrentLocation;
+                    _session.CurrentLocation = Module.BasicInterpreter;
+
+                    try
                     {
-                        var _ll = progLines.Last();
-                        var last = GetStatements(_ll.Value);
-                        lastLine.LineNumber = _ll.Key;
-                        lastLine.StatementNumber = last.Count - 1;
+                        Run(ref progLines, ref variables, line);
                     }
-                    bool brk = false;
-                    var range = Range.Parse(line.Substring(3), variables);
-                    variables.ClearScoped();
-                    variables.Labels = FindLabels(progLines);
-                    _session.Io.AbortPollKey();
-                    _session.Io.ClearPolledKey();
-
-                    _session.Io.PollKey();
-
-                    int lastLineNumber = -1;
-                    List<string> currentLineStatements = null;
-
-                    variables.Data = Data.CreateFromDataStatements(progLines.Values);
-                    variables.Functions.Clear();
-
-                    var runTimer = Stopwatch.StartNew();
-                    while (true)
+                    finally
                     {
-                        // break conditions
-                        if (brk)
-                            break;
-                        if (sp.LineNumber < 0)
-                            break;
-                        if (sp.LineNumber > lastLine.LineNumber)
-                            break;
-                        if (sp.LineNumber == lastLine.LineNumber && sp.StatementNumber > lastLine.StatementNumber)
-                            break;
-                        if (runTimer.Elapsed.TotalMinutes > Constants.BasicMaxRuntimeMin)
-                        {
-                            _session.Io.OutputLine("Maximum program runtime reached.");
-                            break;
-                        }
-
-                        var polledKey = _session.Io.GetPolledKey();
-                        if (polledKey == (char)27 || polledKey == '\u0003') // escape or ctrl+c
-                        {
-                            brk = true;
-                            _session.Io.AbortPollKey();
-                            _session.Io.OutputLine();
-                            _session.Io.OutputLine($"? break at line {sp.LineNumber}");
-                        }
-
-                        if (!progLines.ContainsKey(sp.LineNumber) ||
-                            range[0].HasValue && sp.LineNumber < range[0].Value ||
-                            range[1].HasValue && sp.LineNumber > range[1].Value)
-                        {
-                            sp.LineNumber++;
-                            continue;
-                        }
-
-                        try
-                        {
-                            if (sp.LineNumber != lastLineNumber)
-                            {
-                                lastLineNumber = sp.LineNumber;
-                                currentLineStatements = GetStatements(progLines[sp.LineNumber]);
-                            }
-                            string statement = currentLineStatements[sp.StatementNumber];
-                            sp = Execute(statement, variables, sp, sp.StatementNumber < currentLineStatements.Count - 1, progLines);
-                        }
-                        catch (RuntimeException rex)
-                        {
-                            if (rex.ExceptionLocation.LineNumber >= 0)
-                                _session.Io.OutputLine($"Error in line {rex.ExceptionLocation.LineNumber} statement number {rex.ExceptionLocation.StatementNumber + 1}");
-                            _session.Io.OutputLine($"? {rex.Message}");
-                            brk = true;
-                        }
+                        _session.CurrentLocation = _previousLocation;
                     }
-
-                    _session.Io.AbortPollKey();
-
-                    //var _start = variables["INKEY"];
-                    //_session.Io.Output("Program run complete, press any key to continue: ");
-                    //while (variables["INKEY"] == _start) { Thread.Sleep(25); }
-                    //_session.Io.OutputLine();
-
                 }
                 else if (line.Equals("new", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -315,10 +245,10 @@ namespace miniBBS.Basic
                     foreach (var key in variables.Keys)
                         _session.Io.OutputLine($"{key} = {variables[key]}");
                 }
-                else if (line.StartsWith("load", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    TryLoad(ref progLines, ref variables);
-                }
+                //else if (line.StartsWith("load", StringComparison.CurrentCultureIgnoreCase))
+                //{
+                //    TryLoad(ref progLines, ref variables);
+                //}
                 else if (line.StartsWith("save", StringComparison.CurrentCultureIgnoreCase))
                 {
                     _loadedData = ProgramData.Serialize(progLines);
@@ -380,6 +310,89 @@ namespace miniBBS.Basic
             }
         }
 
+        private void Run(ref SortedList<int, string> progLines, ref Variables variables, string line)
+        {
+            StatementPointer sp = new StatementPointer();
+            StatementPointer lastLine = new StatementPointer();
+            {
+                var _ll = progLines.Last();
+                var last = GetStatements(_ll.Value);
+                lastLine.LineNumber = _ll.Key;
+                lastLine.StatementNumber = last.Count - 1;
+            }
+            bool brk = false;
+            var range = Range.Parse(line.Substring(3), variables);
+            variables.ClearScoped();
+            variables.Labels = FindLabels(progLines);
+            _session.Io.AbortPollKey();
+            _session.Io.ClearPolledKey();
+
+            _session.Io.PollKey();
+
+            int lastLineNumber = -1;
+            List<string> currentLineStatements = null;
+
+            variables.Data = Data.CreateFromDataStatements(progLines.Values);
+            variables.Functions.Clear();
+
+            var runTimer = Stopwatch.StartNew();
+            while (true)
+            {
+                // break conditions
+                if (brk)
+                    break;
+                if (sp.LineNumber < 0)
+                    break;
+                if (sp.LineNumber > lastLine.LineNumber)
+                    break;
+                if (sp.LineNumber == lastLine.LineNumber && sp.StatementNumber > lastLine.StatementNumber)
+                    break;
+                if (runTimer.Elapsed.TotalMinutes > Constants.BasicMaxRuntimeMin)
+                {
+                    _session.Io.OutputLine("Maximum program runtime reached.");
+                    break;
+                }
+
+                var polledKey = _session.Io.GetPolledKey();
+                if (polledKey == (char)27 || polledKey == '\u0003') // escape or ctrl+c
+                {
+                    brk = true;
+                    _session.Io.AbortPollKey();
+                    _session.Io.OutputLine();
+                    _session.Io.OutputLine($"? break at line {sp.LineNumber}");
+                }
+
+                if (!progLines.ContainsKey(sp.LineNumber) ||
+                    range[0].HasValue && sp.LineNumber < range[0].Value ||
+                    range[1].HasValue && sp.LineNumber > range[1].Value)
+                {
+                    sp.LineNumber++;
+                    continue;
+                }
+
+                try
+                {
+                    if (sp.LineNumber != lastLineNumber)
+                    {
+                        lastLineNumber = sp.LineNumber;
+                        currentLineStatements = GetStatements(progLines[sp.LineNumber]);
+                    }
+                    string statement = currentLineStatements[sp.StatementNumber];
+                    sp = Execute(statement, variables, sp, sp.StatementNumber < currentLineStatements.Count - 1, progLines);
+                }
+                catch (RuntimeException rex)
+                {
+                    if (rex.ExceptionLocation.LineNumber >= 0)
+                        _session.Io.OutputLine($"Error in line {rex.ExceptionLocation.LineNumber} statement number {rex.ExceptionLocation.StatementNumber + 1}");
+                    _session.Io.OutputLine($"? {rex.Message}");
+                    brk = true;
+                }
+            }
+
+            _session.Io.AbortPollKey();
+            _session.Io.OutputLine($"Program run complete, you may need to press a key to clear the input stream buffer.");
+        }
+
         private void TryLoad(ref SortedList<int, string> progLines, ref Variables variables)
         {
             if (string.IsNullOrWhiteSpace(_loadedData))
@@ -387,8 +400,10 @@ namespace miniBBS.Basic
             else
             {
                 progLines = ProgramData.Deserialize(_loadedData);
-                variables = new Variables(GetEnvironmentVaraibles(_session.User));
-                variables.Labels = FindLabels(progLines);
+                variables = new Variables(GetEnvironmentVaraibles(_session.User))
+                {
+                    Labels = FindLabels(progLines)
+                };
                 _session.Io.OutputLine("program loaded");
             }
         }
@@ -756,5 +771,19 @@ namespace miniBBS.Basic
             return nextSp;
         }
 
+        public static string Decompress(string body)
+        {
+            try
+            {
+                var json = GlobalDependencyResolver.Get<ICompressor>().Decompress(body);
+                var dict = JsonConvert.DeserializeObject<Dictionary<int, string>>(json);
+                var result = string.Join(Environment.NewLine, dict.Select(x => $"{x.Key} {x.Value}"));
+                return result;
+            }
+            catch
+            {
+                return body;
+            }
+        }
     }
 }

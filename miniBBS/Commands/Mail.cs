@@ -49,7 +49,9 @@ namespace miniBBS.Commands
                     case "del":
                         {
                             if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
-                                DeleteMail(session, mails[n - 1]);
+                                DeleteMail(mails[n - 1]);
+                            else if (args.Length >= 2 && "all".Equals(args[1], StringComparison.CurrentCultureIgnoreCase) && true == mails?.Any())
+                                DeleteAllMail(mails);
                             else
                                 Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
                         }
@@ -206,7 +208,7 @@ namespace miniBBS.Commands
                                 SendMail(session, mail.FromUserId, $"re: {mail.Subject.Replace("re: ", "")}");
                             break;
                         case 'D':
-                            DeleteMail(session, mail);
+                            DeleteMail(mail);
                             break;
                     }
                 }
@@ -270,10 +272,16 @@ namespace miniBBS.Commands
                     ReadMail(session, sentMails[n - 1]);
             }
         }
-        private static void DeleteMail(BbsSession session, Core.Models.Data.Mail mail)
+        private static void DeleteMail(Core.Models.Data.Mail mail)
         {
             var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
             mailRepo.Delete(mail);
+        }
+
+        private static void DeleteAllMail(IEnumerable<Core.Models.Data.Mail> mails)
+        {
+            var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
+            mailRepo.DeleteRange(mails);
         }
 
         private static IList<Core.Models.Data.Mail> GetMails(BbsSession session)
@@ -299,6 +307,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine("/mail list sent   : Lists mail you've sent.");
                 session.Io.OutputLine("/mail read n      : Reads message #n.");
                 session.Io.OutputLine("/mail del n       : Deletes message #n.");
+                session.Io.OutputLine("/mail del all     : Deletes all messages.");
                 session.Io.OutputLine("/mail send jimbob : Sends mail to the user 'jimbob'.");
                 session.Io.OutputLine($"/mail feedback    : Same as '/mail send {Constants.SysopName}.");
                 session.Io.OutputLine("/feedback         : Same as '/mail feedback'.");

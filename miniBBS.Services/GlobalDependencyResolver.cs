@@ -8,14 +8,15 @@ namespace miniBBS.Services
 {
     public static class GlobalDependencyResolver
     {
-        private static Dictionary<Type, object> _singletons = new Dictionary<Type, object>()
+        private static readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>()
         {
             {typeof(ICompressor), new Compressor()}
         };
 
-        private static Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
+        private static readonly Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
-            {typeof(ITextEditor), () => new LineEditor()}
+            {typeof(ITextEditor), () => new LineEditor()},
+            {typeof(ISqlUi), () => new SqlUi()}
         };
 
         public static IRepository<T> GetRepository<T>()

@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -37,7 +38,7 @@ namespace miniBBS.Commands
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                session.Io.OutputLine("# : Channel Name   (unread)");
+                session.Io.OutputLine("#   : (unread)   Channel Name");
             }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
@@ -55,7 +56,15 @@ namespace miniBBS.Commands
                     else
                         lastRead = -1;
                     var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
-                    builder.AppendLine($"{i+1} : {chan.Name} ({unread}) {(chan.RequiresInvite ? " (Invite Only)" : "")}");
+                    builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
+                    builder.Append($" : {Constants.InlineColorizer}");
+                    if (unread > 0)
+                        builder.Append($"{(int)ConsoleColor.Magenta}");
+                    else
+                        builder.Append($"{(int)ConsoleColor.Gray}");
+                    builder.Append($"{Constants.InlineColorizer}{unread, -10}{Constants.InlineColorizer}-1{Constants.InlineColorizer} ");
+                    builder.AppendLine($"{chan.Name} {(chan.RequiresInvite ? " (Invite Only)" : "")}");
+                    //builder.AppendLine($"{i + 1,4} : {chan.Name} ({unread}) {(chan.RequiresInvite ? " (Invite Only)" : "")}");
                 }
                 session.Io.OutputLine(builder.ToString());
             }

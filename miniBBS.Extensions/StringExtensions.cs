@@ -175,5 +175,39 @@ namespace miniBBS.Extensions
 
             return result;
         }
+
+        /// <summary>
+        /// returns only the extension of the <paramref name="filename"/>
+        /// </summary>
+        public static string FileExtension(this string filename)
+        {
+            string result = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(filename))
+            {
+                int pos = filename.LastIndexOf('.');
+                if (pos > 0)
+                    result = filename.Substring(pos + 1);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Returns the <paramref name="filename"/> without the extension
+        /// </summary>
+        public static string WithoutExtension(this string filename)
+        {
+            string result = filename;
+
+            if (!string.IsNullOrWhiteSpace(filename))
+            {
+                int pos = filename.LastIndexOf('.');
+                if (pos > 0)
+                    result = filename.Substring(0, pos);
+            }
+
+            return result;
+        }
     }
 }

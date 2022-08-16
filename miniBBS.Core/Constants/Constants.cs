@@ -28,6 +28,8 @@ namespace miniBBS.Core
             }
         }
 
+        public const string BasicSourceProtectedFlag = "(protect)";
+
         public const int MaxFileBackups = 9;
 
         public const string local_TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
@@ -86,15 +88,26 @@ namespace miniBBS.Core
 
         public const int MaxAfkReasonLength = 30;
 
-        public static readonly string NewUserMessage =
-            $"Welcome, new user, to Mutiny Community BBS! {Environment.NewLine}" +
-            "This is a chat system similar to IRC but also allows for 'one-user-at-a-time', messagebase-like, conversations retaining a full history " +
-            "of all previous chat messages.  So if no one is online to talk with feel free to respond to chats you read or start up your own topic and check " +
-            $"back later to see if anyone has responded.{Environment.NewLine}{Environment.NewLine}" +
-            $"Are you looking for a more traditional BBS?  Check out Mutiny BBS at this address port 2332 (mutinybbs.com:2332){Environment.NewLine}" +
-            "Are you looking to get here via SSH?  You can SSH into Mutiny BBS on port 2232 and then go to (X) Games & More -> Internet -> Community. " +
-            $"That will bring you here but through SSH.{Environment.NewLine}{Environment.NewLine}" +
-            "Once at the main prompt please type '/?' for help.";
+        //public static readonly string NewUserMessage = string.Join(Environment.NewLine, new[]
+        //{
+        //    "Welcome, new user, to Mutiny Community BBS! ",
+        //    "This is a chat system similar to IRC but also allows for 'one-user-at-a-time', messagebase-like, conversations retaining a full history " +
+        //    "of all previous chat messages.  So if no one is online to talk with feel free to respond to chats you read or start up your own topic and check " +
+        //    "back later to see if anyone has responded.",
+        //    "",
+        //    "Are you looking for a more traditional BBS?  Check out Mutiny BBS at this address port 2332 (mutinybbs.com:2332)",
+        //    "Are you looking to get here via SSH?  You can SSH into Mutiny BBS on port 2232 and then go to (X) Games & More -> Internet -> Community. " +
+        //    "That will bring you here but through SSH.",
+        //    "",
+        //    "Besides chat this system also has:",
+        //    "* A clone of Jason Scott's TextFiles.com archive",
+        //    "* The ability to create your own text files",
+        //    "* A Basic programming environment (make programs, run other users' programs)",
+        //    "* A SQL database engine (mostly for use in Basic programs but can be used separately)",
+        //    "* Text files, Basic programs, and SQL databases can be collaborated on by multiple users if you allow it.",
+        //    "",
+        //    "Once at the main prompt please type '/?' for help."
+        //});
 
         public const double MaxCalendarItemDays = 30;
 

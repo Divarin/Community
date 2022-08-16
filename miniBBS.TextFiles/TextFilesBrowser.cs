@@ -220,6 +220,11 @@ namespace miniBBS.TextFiles
                 var parts = command.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 switch (parts[0].ToLower())
                 {
+                    case "cls":
+                    case "clear":
+                    case "c":
+                        _session.Io.ClearScreen();
+                        break;
                     case "grep":
                         DescriptiveDirectory(links, FilterFlags.Contents, parts.Skip(1));
                         break;
@@ -311,6 +316,10 @@ namespace miniBBS.TextFiles
                             _session.Io.OutputLine("Please supply a file name or number.");
                         else
                         {
+                            //if (parts[1].EndsWith(".db", StringComparison.CurrentCultureIgnoreCase))
+                            //    GlobalDependencyResolver.Get<ISqlUi>().Execute(_session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, _currentLocation.Path, parts[1]));
+                            //else
+                                
                             FileWriter.Edit(_session, _currentLocation, parts[1], links);
                             result = CommandResult.ReadDirectory;
                         }
@@ -581,6 +590,13 @@ namespace miniBBS.TextFiles
             }
 
             string body = FileReader.LoadFileContents(_currentLocation, link);
+            if (link.ActualFilename.FileExtension().Equals("bas", StringComparison.CurrentCultureIgnoreCase))
+            {
+                if (true == link.Description?.EndsWith(Constants.BasicSourceProtectedFlag))
+                    body = "Source code protected from viewing.";
+                else
+                    body = MutantBasic.Decompress(body);
+            }
             body = ReplaceLinefeedsWithEnters(body);
             var previousLocation = _session.CurrentLocation;
             _session.CurrentLocation = Module.TextFileReader;
@@ -812,7 +828,7 @@ namespace miniBBS.TextFiles
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
             {
                 _session.Io.OutputLine();
-                _session.Io.Output($"[TEXTS] {Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{_currentLocation.Path}{Constants.InlineColorizer}-1{Constants.InlineColorizer}> ");
+                _session.Io.Output($"[FILES] {Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{_currentLocation.Path}{Constants.InlineColorizer}-1{Constants.InlineColorizer}> ");
             }
         }
 

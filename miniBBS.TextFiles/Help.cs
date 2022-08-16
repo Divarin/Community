@@ -145,7 +145,10 @@ namespace miniBBS.TextFiles
             "the editor by using the '/?' command.\r\n\r\n" +
             "When you save the file, if you leave the description blank the file will remain in an unpublished state.  This means that the file " +
             "will only be visible to you until you publish it.  " +
-            "Please also see 'help publish' for information about publishing.";
+            "Please also see 'help publish' for information about publishing.\r\n\r\n" + 
+            "To edit a Basic program in Mutant Basic, just make sure the file extension is '.bas'\r\n\r\n" +
+            "To edit a SQL database, just make sure the file extension is '.db'\r\n\r\n" +
+            "Any other file extension (or no extension at all) will start the text file line editor.";
 
         private const string _rename =
             "The 'rename', 'ren', or 'rn' commands can be used to rename directories and files.  This command can not be used to move directories " +

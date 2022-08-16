@@ -15,6 +15,7 @@
         ConfigureEmulation,
         Calendar,
         BasicEditor,
-        BasicInterpreter
+        BasicInterpreter,
+        SqlUi
     }
 }

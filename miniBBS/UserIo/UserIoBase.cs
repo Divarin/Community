@@ -439,7 +439,7 @@ namespace miniBBS.UserIo
                         session.LastReadMessageNumberWhenStartedTyping = session.LastReadMessageNumber;
 
                     IsInputting = lineBuilder.Length > 0;
-                    if (c.HasValue)
+                    if (c.HasValue && _pollingOn)
                     {
                         bytes = new[] { (byte)c.Value };
                         i = 1;

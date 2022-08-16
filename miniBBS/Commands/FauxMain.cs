@@ -50,9 +50,11 @@ namespace miniBBS.Commands
             "area by typing '/text'.";
 
         private static readonly string _mutiny =
-            "Okay so here's the deal.  There are no games or downloads here, at least not yet.  In the future I *might* integrate into Community an online BASIC programming " +
-            "environment / interpretter which I made.  This will allow users such as yourself to write your own games which other users " +
-            "can play.  But for now that system is too buggy.  If you *really* want to play door games then why not check out Mutiny BBS at this address " +
+            "Okay so here's the deal.  Are there games here?  Well potentially, you see this system has a built-in online Basic programming environment which allows users " +
+            "such as yourself to write your own games and other programs and let other users run them.  But before you can get to exploring those you first need to " +
+            "move beyond this faux-main-menu by 'taking off the training wheels' and then you'll be plopped into the main area which is a chat room with history " +
+            "and from there you can use the /files command to access the file system and start looking for those basic programs.  "+
+            "If you *really* want to play door games or download files then why not check out Mutiny BBS at this address " +
             "on port 2332 (mutinybbs.com:2332) or if you prefer SSH over Telnet then use port 2232.";
 
         /// <summary>

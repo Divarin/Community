@@ -1,4 +1,5 @@
-﻿using miniBBS.TextFiles.Models;
+﻿using miniBBS.Extensions;
+using miniBBS.TextFiles.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,7 +67,9 @@ namespace miniBBS.TextFiles.Extensions
             if (int.TryParse(filenameOrNumber, out int n) && n >= 1 && n <= links.Count)
                 link = links[n - 1];
             else 
-                link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+                link = 
+                    links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase)) ??
+                    links.FirstOrDefault(l => l.DisplayedFilename.WithoutExtension().Equals(filenameOrNumber.WithoutExtension(), StringComparison.CurrentCultureIgnoreCase));
             return link;
         }
     }

@@ -54,13 +54,6 @@ namespace miniBBS
             {
                 try
                 {
-
-                    //Console.WriteLine($" -- {DateTime.Now} --");
-                    //Console.WriteLine("Sessions:");
-                    //foreach (var s in sessionsList.Sessions)
-                    //Console.WriteLine($"{s.IpAddress} {s.User?.Name} [{s.Channel?.Name}] {s.SessionStartUtc:yy-MM-dd HH:mm:ss}");
-                    //Console.WriteLine($"Waiting for a connection on port {port} @ {DateTime.Now}");                    
-                    
                     TcpClientFactory clientFactory = new TcpClientFactory(listener);
                     clientFactory.AwaitConnection();
                     while (clientFactory.Client == null)
@@ -597,6 +590,7 @@ namespace miniBBS
             {
                 session.Io = new Cbm(session);
                 session.Cols = 40;
+                session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Green);
                 session.Io.OutputLine("Commodore PETSCII (CBM) mode activated.");
             }            
 
@@ -705,7 +699,7 @@ namespace miniBBS
                 Access = AccessFlag.MayLogon
             };
 
-            session.Io.OutputLine(Constants.NewUserMessage);
+            ReadFile.Execute(session, Constants.Files.NewUser);
 
             user = userRepo.Insert(user);
             return user;
@@ -746,6 +740,11 @@ namespace miniBBS
                     // logoff
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
+                    return;
+                case "/cls":
+                case "/clear":
+                case "/c":
+                    session.Io.ClearScreen();
                     return;
                 case "/pass":
                 case "/pw":
@@ -896,8 +895,7 @@ namespace miniBBS
                 case "/rnd":
                 case "/dice":
                 case "/die":
-                    if (parts.Length >= 2)
-                        Roll.Execute(session, parts[1]);
+                    Roll.Execute(session, parts.Skip(1)?.ToArray());
                     return;
                 case "/mail":
                     Commands.Mail.Execute(session, parts.Length >= 2 ? parts.Skip(1).ToArray() : null);
@@ -1041,7 +1039,6 @@ namespace miniBBS
                     break;
             }
         }
-
 
     }
 }

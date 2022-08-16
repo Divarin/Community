@@ -55,7 +55,6 @@
     <Compile Include="Exceptions\RuntimeException.cs" />
     <Compile Include="Executors\Color.cs" />
     <Compile Include="Executors\Data.cs" />
-    <Compile Include="Executors\Dir.cs" />
     <Compile Include="Executors\Edit.cs" />
     <Compile Include="Executors\Evaluate.cs" />
     <Compile Include="Executors\For.cs" />
@@ -70,7 +69,6 @@
     <Compile Include="Executors\Int.cs" />
     <Compile Include="Executors\Len.cs" />
     <Compile Include="Executors\Let.cs" />
-    <Compile Include="Executors\Load.cs" />
     <Compile Include="Executors\On.cs" />
     <Compile Include="Executors\Position.cs" />
     <Compile Include="Executors\Print.cs" />
@@ -78,28 +76,17 @@
     <Compile Include="Executors\Range.cs" />
     <Compile Include="Executors\Renum.cs" />
     <Compile Include="Executors\Rnd.cs" />
-    <Compile Include="Executors\Save.cs" />
     <Compile Include="Executors\Scoped.cs" />
     <Compile Include="Executors\Sql.cs" />
     <Compile Include="Executors\Sqr.cs" />
     <Compile Include="Executors\Words.cs" />
-    <Compile Include="Extensions\ModelExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Interfaces\IDataModel.cs" />
-    <Compile Include="Interfaces\IRepository.cs" />
     <Compile Include="Interfaces\IScoped.cs" />
-    <Compile Include="Interfaces\IStructuredQuery.cs" />
-    <Compile Include="Interfaces\IUserIo.cs" />
-    <Compile Include="Models\Disk.cs" />
     <Compile Include="Models\EditResult.cs" />
     <Compile Include="Models\ProgramLine.cs" />
     <Compile Include="Models\StatementPointer.cs" />
-    <Compile Include="Models\User.cs" />
     <Compile Include="Models\Variables.cs" />
     <Compile Include="MutantBasic.cs" />
-    <Compile Include="Persistence\DatabaseInitializer.cs" />
-    <Compile Include="Persistence\SqliteRepository.cs" />
-    <Compile Include="Persistence\StructuredQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

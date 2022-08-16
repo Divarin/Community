@@ -75,12 +75,10 @@ namespace miniBBS.TextFiles
                 }
 
                 string body = null;
-                if (!isNewFile)
-                    body = FileReader.LoadFileContents(currentLocation, file);
+                ITextEditor editor = GetEditor(file);
 
-                ITextEditor editor = file.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase) ?
-                    new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Path) + "/", autoStart: false) :
-                    GlobalDependencyResolver.Get<ITextEditor>();
+                if (!isNewFile && !(editor is ISqlUi))
+                    body = FileReader.LoadFileContents(currentLocation, file);
 
                 editor.OnSave = (UpdatedBody) =>
                 {
@@ -113,7 +111,10 @@ namespace miniBBS.TextFiles
                 try
                 {
                     _editLocks.TryAdd(lockKey, session.User.Name);
-                    editor.EditText(session, body);
+                    if (editor is ISqlUi)
+                        (editor as ISqlUi).Execute(session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, currentLocation.Path, file.Path));
+                    else
+                        editor.EditText(session, body);
                 }
                 finally
                 {
@@ -124,6 +125,27 @@ namespace miniBBS.TextFiles
             {
                 session.CurrentLocation = originalLocation;
             }
+        }
+
+        private static ITextEditor GetEditor(Link file)
+        {
+            ITextEditor result;
+
+            // GlobalDependencyResolver.Get<ISqlUi>().Execute(_session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, _currentLocation.Path, parts[1]));
+            switch (file.ActualFilename.FileExtension().ToLower())
+            {
+                case "bas":
+                    result = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Path) + "/", autoStart: false);
+                    break;
+                case "db":
+                    result = GlobalDependencyResolver.Get<ISqlUi>() as ITextEditor;
+                    break;
+                default:
+                    result = GlobalDependencyResolver.Get<ITextEditor>();
+                    break;
+            }
+
+            return result;
         }
 
         public static void Delete(BbsSession session, Link currentLocation, string filenameOrNumber, IList<Link> links, bool directory)

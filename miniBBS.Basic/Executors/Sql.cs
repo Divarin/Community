@@ -3,6 +3,7 @@ using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Interfaces;
 using miniBBS.Basic.Models;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -70,6 +71,8 @@ namespace miniBBS.Basic.Executors
         private string GetDatabaseFilename(Variables variables)
         {
             string dbFile = variables["DBFILE$"]?.Unquote();
+            if (!string.IsNullOrWhiteSpace(dbFile) && !dbFile.FileExtension().Equals("db", StringComparison.CurrentCultureIgnoreCase))
+                dbFile += ".db";
             return dbFile;
         }
 

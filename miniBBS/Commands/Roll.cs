@@ -11,20 +11,27 @@ namespace miniBBS.Commands
     {
         private static readonly Random _random = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
 
-        public static void Execute(BbsSession session, string dice)
+        public static void Execute(BbsSession session, params string[] dices)
         {
-            if (string.IsNullOrWhiteSpace(dice)) return;
-            dice = dice.ToLower();
-            if (!dice.Contains('d')) return;
-            if (dice.StartsWith("d")) dice = $"1{dice}";
-            var parts = dice.Split(new[] { 'd' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length != 2) return;
-            if (int.TryParse(parts[0], out int numDice) &&
-                int.TryParse(parts[1], out int numSides) &&
-                numDice > 0 && numDice < 20 &&
-                numSides > 0 && numSides < 200)
+            if (true != dices?.Any())
+                dices = new[] { "1d6" };
+
+            for (int d=0; d < dices?.Length; d++)
             {
-                RollDice(session, numDice, numSides);
+                var dice = dices[d];
+                if (string.IsNullOrWhiteSpace(dice)) return;
+                dice = dice.ToLower();
+                if (!dice.Contains('d')) return;
+                if (dice.StartsWith("d")) dice = $"1{dice}";
+                var parts = dice.Split(new[] { 'd' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 2) return;
+                if (int.TryParse(parts[0], out int numDice) &&
+                    int.TryParse(parts[1], out int numSides) &&
+                    numDice > 0 && numDice < 20 &&
+                    numSides > 0 && numSides < 200)
+                {
+                    RollDice(session, numDice, numSides);
+                }
             }
         }
 
