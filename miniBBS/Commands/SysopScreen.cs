@@ -124,7 +124,7 @@ namespace miniBBS.Commands
                 Console.Write(flags.PadRight(_colWidths[(int)Col.Flags]));
                 Console.Write((session.User?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.Username]));
                 Console.Write((session.Channel?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.ChannelName]));
-                Console.Write($"{session.SessionStartUtc:MM-dd HH:mm}".PadRight(_colWidths[(int)Col.SessionStart]));
+                Console.Write($"{session.SessionStartUtc.ToLocalTime():MM-dd HH:mm}".PadRight(_colWidths[(int)Col.SessionStart]));
                 string idle = $"{Math.Min(99, session.IdleTime.Days)}d {session.IdleTime.Hours}h {session.IdleTime.Minutes}m";
                 Console.Write(idle.PadRight(_colWidths[(int)Col.IdleTime]));
                 Console.WriteLine(session.CurrentLocation.ToString().PadRight(_colWidths[(int)Col.CurrentLocation]));

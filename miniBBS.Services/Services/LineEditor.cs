@@ -1,5 +1,4 @@
 ﻿using miniBBS.Core;
-using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
@@ -70,9 +69,6 @@ namespace miniBBS.Services.Services
                         lines.Add(line);
                     }
                 };
-
-                //var result = string.Join(Environment.NewLine, lines);
-                //return result;
             } 
             catch (Exception)
             {
@@ -416,14 +412,8 @@ namespace miniBBS.Services.Services
                 }
                 else
                 {
-                    _session.Io.OutputLine("Retype line (enter = keep existing)");
-                    string l = _session.Io.InputLine();
-                    if (string.IsNullOrWhiteSpace(l))
-                    {
-                        _session.Io.OutputLine("Aborting edit");
-                        return;
-                    }
-                    line = l;
+                    var option = _session.Io.Ask($"P)repend to beginning{Environment.NewLine}A)ppend to end{Environment.NewLine}S)earch & replace{Environment.NewLine}R)etype new line{Environment.NewLine}Q)uit{Environment.NewLine}How to edit?: ");
+                    line = Edit(line, option);
                 }
                 _session.Io.OutputLine("After:");
                 _session.Io.SetForeground(ConsoleColor.White);
@@ -437,6 +427,59 @@ namespace miniBBS.Services.Services
                     } }
                 });
             }
+        }
+
+        private string Edit(string line, char option)
+        {
+            switch (option)
+            {
+                case 'P':
+                    // prepend
+                    {
+                        _session.Io.Output("Text to prepend: ");
+                        var append = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        if (!string.IsNullOrWhiteSpace(append))
+                            line = append + line;
+                    }
+                    break;
+                case 'A':
+                    // append
+                    {
+                        _session.Io.Output("Text to append: ");
+                        var append = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        if (!string.IsNullOrWhiteSpace(append))
+                            line += append;
+                    }
+                    break;
+                case 'S':
+                    // search & replace
+                    {
+                        _session.Io.Output("Text to be replaced : ");
+                        var search = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        _session.Io.Output("Text to replace with: ");
+                        var replace = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        line = line.Replace(search, replace);
+                    }
+                    break;
+                case 'R':
+                    // re-type
+                    _session.Io.OutputLine("Retype line (enter = keep existing)");
+                    string l = _session.Io.InputLine();
+                    if (string.IsNullOrWhiteSpace(l))
+                        _session.Io.OutputLine("Aborting edit");
+                    else
+                        line = l;
+                    break;
+                default:
+                    _session.Io.OutputLine("Aborting edit");
+                    break;
+            }
+
+            return line;
         }
 
         private void Delete(List<string> lines, string args)
@@ -496,7 +539,6 @@ namespace miniBBS.Services.Services
             {
                 _session.Io.OutputLine(body);
             }
-
         }
 
         private Tuple<int, int> ParseRange(string range, int upperLimit)

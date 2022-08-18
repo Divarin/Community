@@ -16,7 +16,8 @@ namespace miniBBS.Services
         private static readonly Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
             {typeof(ITextEditor), () => new LineEditor()},
-            {typeof(ISqlUi), () => new SqlUi()}
+            {typeof(ISqlUi), () => new SqlUi()},
+            {typeof(IFileTransferProtocol), () => new Xmodem()}
         };
 
         public static IRepository<T> GetRepository<T>()

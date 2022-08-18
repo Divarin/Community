@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="Constants\Constants.cs" />
     <Compile Include="Enums\AccessFlag.cs" />
+    <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="Enums\UCFlag.cs" />
     <Compile Include="Interfaces\ICompressor.cs" />
     <Compile Include="Interfaces\IDataModel.cs" />
+    <Compile Include="Interfaces\IFileTransferProtocol.cs" />
     <Compile Include="Interfaces\IHasher.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IMessager.cs" />

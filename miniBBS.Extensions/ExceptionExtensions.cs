@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace miniBBS.Extensions
 {
@@ -9,6 +10,15 @@ namespace miniBBS.Extensions
             while (ex.InnerException != null)
                 ex = ex.InnerException;
             return ex;
+        }
+
+        public static IEnumerable<Exception> AllExceptions(this Exception ex)
+        {
+            while (ex != null)
+            {
+                yield return ex;
+                ex = ex.InnerException;
+            }
         }
     }
 }

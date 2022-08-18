@@ -29,7 +29,7 @@ namespace miniBBS.TextFiles
         public Action<string> OnChat { get; set; }
         private TextFilesSessionFlags _sessionFlags = TextFilesSessionFlags.None;
 
-        public void Browse(BbsSession session)
+        public void Browse(BbsSession session, FilesLaunchFlags flags = FilesLaunchFlags.None)
         {
             _session = session;
             _currentLocation = _topLevel;
@@ -61,17 +61,19 @@ namespace miniBBS.TextFiles
                 while (cmd != CommandResult.ExitSystem)
                 {
                     if (cmd == CommandResult.ReadDirectory)
-                    {
                         links = ReadDirectory();
-                            
-                            //string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
-                            //TopLevel.GetLinks().ToList() :
-                            //LinkParser.GetLinksFromIndex(session, _currentLocation, includeBackups: _sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles));
-                    }
 
                     _session.Io.SetForeground(ConsoleColor.Gray);
 
-                    string command = Prompt();
+                    string command;
+                    if (flags.HasFlag(FilesLaunchFlags.MoveToUserHomeDirectory))
+                    {
+                        flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
+                        command = $"cd /CommunityUsers/{_session.User.Name}";
+                    }
+                    else
+                        command = Prompt();
+
                     cmd = ProcessCommand(command, links);
                 }
             }
@@ -301,6 +303,7 @@ namespace miniBBS.TextFiles
                         break;
                     case "?":
                     case "help":
+                    case "man":
                         Help.Show(_session, parts.Length >= 2 ? parts[1] : null);
                         break;
                     case "chat":
@@ -315,11 +318,7 @@ namespace miniBBS.TextFiles
                         if (parts.Length < 2)
                             _session.Io.OutputLine("Please supply a file name or number.");
                         else
-                        {
-                            //if (parts[1].EndsWith(".db", StringComparison.CurrentCultureIgnoreCase))
-                            //    GlobalDependencyResolver.Get<ISqlUi>().Execute(_session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, _currentLocation.Path, parts[1]));
-                            //else
-                                
+                        {                                
                             FileWriter.Edit(_session, _currentLocation, parts[1], links);
                             result = CommandResult.ReadDirectory;
                         }
@@ -430,6 +429,22 @@ namespace miniBBS.TextFiles
                         else
                             _session.Io.OutputLine("You may not alter contributors to files in this directory.");
                         break;
+                    case "xfer":
+                    case "sx":
+                    case "download":
+                    case "transfer":
+                    case "xmodem":
+                    case "send":
+                        if (parts.Length >= 2)
+                            SendFile(LinkExtensions.GetLink(links, parts[1]));
+                        break;
+                    //case "rx":
+                    //case "upload":
+                    //case "receive":
+                    //    if (parts.Length >= 2)
+                    //        ReceiveFile(parts[1], links);
+                    //    result = CommandResult.ReadDirectory;
+                    //    break;
                     default:
                         var link = links.FirstOrDefault(x => x.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
                         if (link != null)
@@ -461,11 +476,17 @@ namespace miniBBS.TextFiles
 
             try
             {
-                if (link.ActualFilename.EndsWith(".bas"))
+                if (link.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
                 {
                     var inp = _session.Io.Ask("Run Basic Program?");
                     if (inp == 'Y')
                         RunBasicProgram(link);
+                }
+                else if (link.ActualFilename.EndsWith(".db", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    var inp = _session.Io.Ask("Run SQL engine on this database?");
+                    if (inp == 'Y')
+                        FileWriter.Edit(_session, _currentLocation, link);
                 }
                 else
                 {
@@ -603,7 +624,6 @@ namespace miniBBS.TextFiles
 
             try
             {
-                //_session.NoPingPong = true;
                 using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                 {
                     var flags = OutputHandlingFlag.None;
@@ -619,9 +639,49 @@ namespace miniBBS.TextFiles
             } 
             finally
             {
-                //_session.NoPingPong = false;
                 _session.CurrentLocation = previousLocation;
             }
+        }
+
+        private void SendFile(Link link)
+        {
+            if (link == null)
+            {
+                _session.Io.OutputLine("File not found");
+                return;
+            }
+
+            _session.Io.OutputLine($"Sending {link.DisplayedFilename} via X-Modem protocol, begin receiving now.");
+
+            var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
+            var str = FileReader.LoadFileContents(_currentLocation, link);
+            var data = Encoding.ASCII.GetBytes(str);
+            xfer.Data = data;
+            bool sentAllData = xfer.Send(_session);
+
+            _session.Io.OutputLine($"Sent {link.DisplayedFilename} {(sentAllData ? "successfully" : "unsuccessfully")}.");
+        }
+
+        private void ReceiveFile(string filename, IList<Link> links)
+        {
+            if (links.Any(l => l.DisplayedFilename.Equals(filename, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                _session.Io.OutputLine("Can't overwrite existing file.");
+                return;
+            }
+
+            Func<byte[]> getData = () =>
+            {
+                byte[] data = null;
+                var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
+                if (xfer.Receive(_session))
+                    data = xfer.Data;
+                return data;
+            };
+
+            _session.Io.OutputLine($"Receiving {filename} via X-Modem protocol, begin sending now.");
+
+            FileWriter.WriteUploadedData(_session, _currentLocation, filename, getData);
         }
 
         private void RunBasicProgram(Link link)

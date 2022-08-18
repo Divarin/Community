@@ -20,17 +20,9 @@ namespace miniBBS.Commands
             var userFlags = session.UcFlagRepo.Get(f => f.UserId, session.User.Id)
                 .ToDictionary(k => k.ChannelId);
 
-            //Func<Channel, bool> CanJoin = chan =>
-            //{
-            //    return !chan.RequiresInvite ||
-            //        session.User.Access.HasFlag(AccessFlag.Administrator) ||
-            //        session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
-            //        (userFlags.ContainsKey(chan.Id) && (userFlags[chan.Id].Flags & (UCFlag.Invited | UCFlag.Moderator)) > 0);
-            //};
-
             var chans = channelRepo
                 .Get()
-                .Where(c => c.CanJoin(session))// CanJoin(c))
+                .Where(c => c.CanJoin(session))
                 .OrderBy(c => c.Id)
                 .ToArray();
 
@@ -38,7 +30,7 @@ namespace miniBBS.Commands
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                session.Io.OutputLine("#   : (unread)   Channel Name");
+                session.Io.OutputLine("#   : Channel Name             Unread");
             }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
@@ -57,14 +49,13 @@ namespace miniBBS.Commands
                         lastRead = -1;
                     var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
                     builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
-                    builder.Append($" : {Constants.InlineColorizer}");
+                    builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
+                    builder.Append($"{chan.Name,-Constants.MaxChannelNameLength}");
                     if (unread > 0)
-                        builder.Append($"{(int)ConsoleColor.Magenta}");
+                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Magenta}{Constants.InlineColorizer}");
                     else
-                        builder.Append($"{(int)ConsoleColor.Gray}");
-                    builder.Append($"{Constants.InlineColorizer}{unread, -10}{Constants.InlineColorizer}-1{Constants.InlineColorizer} ");
-                    builder.AppendLine($"{chan.Name} {(chan.RequiresInvite ? " (Invite Only)" : "")}");
-                    //builder.AppendLine($"{i + 1,4} : {chan.Name} ({unread}) {(chan.RequiresInvite ? " (Invite Only)" : "")}");
+                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Gray}{Constants.InlineColorizer}");
+                    builder.AppendLine($"{unread}{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
                 }
                 session.Io.OutputLine(builder.ToString());
             }

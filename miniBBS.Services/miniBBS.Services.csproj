@@ -58,6 +58,7 @@
     <Compile Include="Services\Compressor.cs" />
     <Compile Include="Services\LineEditor.cs" />
     <Compile Include="Services\SqlUi.cs" />
+    <Compile Include="Services\Xmodem.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\miniBBS.Core\miniBBS.Core.csproj">

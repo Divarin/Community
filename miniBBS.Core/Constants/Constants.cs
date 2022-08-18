@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "3.0 - 2022.08.13";
+        public const string Version = "3.1 - 2022.08.18";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
@@ -116,7 +116,7 @@ namespace miniBBS.Core
 
         public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
         public const int BasicMaxRuntimeMin = 60;
-        public const int DefaultPingPongDelayMin = 15;
+        public const int DefaultPingPongDelayMin = 5;
 
         /// <summary>
         /// Maximum length of file or directory names for user generated text files

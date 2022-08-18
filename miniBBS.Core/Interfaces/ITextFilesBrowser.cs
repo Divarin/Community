@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Models.Control;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Models.Control;
 using System;
 
 namespace miniBBS.Core.Interfaces
@@ -9,7 +10,7 @@ namespace miniBBS.Core.Interfaces
         /// An action to perform when the user does a 'chat' command, this should post the chat message to the channel
         /// </summary>
         Action<string> OnChat { get; set; }
-        void Browse(BbsSession session);
+        void Browse(BbsSession session, FilesLaunchFlags flags = FilesLaunchFlags.None);
 
         /// <summary>
         /// Returns true if a link was found in the <paramref name="msg"/>
