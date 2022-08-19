@@ -12,8 +12,14 @@ namespace miniBBS.Extensions
                 io.Output($"{question}: ");
                 var result = io.InputKey();
                 io.OutputLine();
-                return Char.ToUpper(result ?? (char)0);
+                return char.ToUpper(result ?? (char)0);
             }
+        }
+
+        public static void Error(this IUserIo io, string message)
+        {
+            using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                io.OutputLine(message);
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace miniBBS.Commands
@@ -35,6 +37,9 @@ namespace miniBBS.Commands
         private static readonly IList<string> _logMessages = new List<string>();
         private static readonly DateTime _startedAtLoc = DateTime.Now;
         private static readonly DateTime _startedAtUtc = DateTime.UtcNow;
+
+        private static readonly List<LoginRecord> _logins = new List<LoginRecord>();
+
         public static void Initialize(ISessionsList sessionsList)
         {
             _sessionsList = sessionsList;
@@ -49,6 +54,27 @@ namespace miniBBS.Commands
         public static void AddLogMessage(string message)
         {
             _logMessages.Add(message);
+        }
+
+        public static void BeginLogin(BbsSession session)
+        {
+            _logins.Add(new LoginRecord
+            {
+                SessionId = session.Id,
+                IpAddress = session.IpAddress,
+                Username = session.User?.Name,
+                LoginAtLocal = session.SessionStartUtc.ToLocalTime()
+            });
+        }
+
+        public static void EndLogin(BbsSession session)
+        {
+            if (session == null)
+                return;
+
+            var record = _logins.FirstOrDefault(l => l.SessionId.Equals(session.Id));
+            if (record != null)
+                record.LogoutAtLocal = DateTime.Now;
         }
 
         private static void RedrawFromStart()
@@ -66,13 +92,13 @@ namespace miniBBS.Commands
             Console.Write("║║");
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"Started at {_startedAtLoc:yy-MM-dd HH:mm:ss} (loc) [{_startedAtUtc:HH:mm} (utc)]".PadAndCenter(78));
+            Console.Write($"Started at {_startedAtLoc:yy-MM-dd HH:mm:ss} (local) [{_startedAtUtc:HH:mm} (utc)]".PadAndCenter(78));
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("║║");
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"It is now  {DateTime.Now:yy-MM-dd HH:mm:ss} (loc) [{DateTime.UtcNow:HH:mm} (utc)]".PadAndCenter(78));
+            Console.Write($"It is now  {DateTime.Now:yy-MM-dd HH:mm:ss} (local) [{DateTime.UtcNow:HH:mm} (utc)]".PadAndCenter(78));
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("║╚══════════════════════════════════════════════════════════════════════════════╝");
@@ -102,7 +128,7 @@ namespace miniBBS.Commands
             Console.Write("║");
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"It is now  {DateTime.Now:yy-MM-dd HH:mm:ss} (loc) [{DateTime.UtcNow:HH:mm} (utc)]".PadAndCenter(78));
+            Console.Write($"It is now  {DateTime.Now:yy-MM-dd HH:mm:ss} (local) [{DateTime.UtcNow:HH:mm} (utc)]".PadAndCenter(78));
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("║");
@@ -139,17 +165,24 @@ namespace miniBBS.Commands
 
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($" (L)og entries: {_logMessages.Count} ");
+            Console.Write($" (L)og entries: {_logMessages.Count} | (C)lear Logs | (U)sers called: {_logins.Count}  ");
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true);
-                if (key.Key == ConsoleKey.L)
+                switch (key.Key)
                 {
-                    DisplayLogs();
-                    RedrawFromStart();
+                    case ConsoleKey.L:
+                        DisplayLogs();
+                        RedrawFromStart();
+                        break;
+                    case ConsoleKey.C:
+                        _logMessages.Clear();
+                        break;
+                    case ConsoleKey.U:
+                        DisplayLogins();
+                        RedrawFromStart();
+                        break;
                 }
-                else if (key.Key == ConsoleKey.C)
-                    _logMessages.Clear();
             }
 
             Console.BackgroundColor = ConsoleColor.Black;
@@ -163,6 +196,17 @@ namespace miniBBS.Commands
             Console.Clear();
             foreach (var log in _logMessages)
                 Console.WriteLine(log);
+            Console.WriteLine("press any key");
+            Console.ReadKey();
+        }
+
+        private static void DisplayLogins()
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.Clear();
+            foreach (var login in _logins)
+                Console.WriteLine(login);
             Console.WriteLine("press any key");
             Console.ReadKey();
         }

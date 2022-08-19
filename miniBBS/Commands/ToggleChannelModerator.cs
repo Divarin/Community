@@ -47,7 +47,7 @@ namespace miniBBS.Commands
                 messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message));
                 messager.Publish(new UserMessage(session.Id, user.Id, message));
                 DI.Get<INotificationHandler>().SendNotification(user.Id, message);
-                DI.Get<ILogger>().Log(message);
+                DI.Get<ILogger>().Log(session, message);
                 session.Io.OutputLine(message);
             }
         }

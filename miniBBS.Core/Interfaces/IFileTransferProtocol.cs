@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Models.Control;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Models.Control;
 
 namespace miniBBS.Core.Interfaces
 {
@@ -12,11 +13,11 @@ namespace miniBBS.Core.Interfaces
         /// <summary>
         /// Sends the Data and returns true if all data was sent successfully.
         /// </summary>
-        bool Send(BbsSession session);
+        bool Send(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None);
 
         /// <summary>
         /// Receives the Data and returns true if all data was received successfully.
         /// </summary>
-        bool Receive(BbsSession session);
+        bool Receive(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None);
     }
 }

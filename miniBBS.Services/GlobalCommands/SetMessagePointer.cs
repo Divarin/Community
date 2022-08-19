@@ -1,10 +1,10 @@
 ﻿using miniBBS.Core.Models.Control;
 using System.Linq;
 
-namespace miniBBS.Commands
+namespace miniBBS.Services.GlobalCommands
 {
     public static class SetMessagePointer
-    { 
+    {
         /// <summary>
         /// Tries to set the msg pointer to the <paramref name="msgPointer"/> or the nearest next message in the active channel. 
         /// Returns true if the message pointer has changed or false if it did not (at end of messages). 

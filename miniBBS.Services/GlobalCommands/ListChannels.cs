@@ -1,5 +1,4 @@
 ﻿using miniBBS.Core;
-using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -8,14 +7,14 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace miniBBS.Commands
+namespace miniBBS.Services.GlobalCommands
 {
     public static class ListChannels
     {
         public static void Execute(BbsSession session, IRepository<Channel> channelRepo = null)
         {
             if (channelRepo == null)
-                channelRepo = DI.GetRepository<Channel>();
+                channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
 
             var userFlags = session.UcFlagRepo.Get(f => f.UserId, session.User.Id)
                 .ToDictionary(k => k.ChannelId);
@@ -26,11 +25,13 @@ namespace miniBBS.Commands
                 .OrderBy(c => c.Id)
                 .ToArray();
 
-            var chatRepo = DI.GetRepository<Chat>();
+            var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
+
+            int longestChannelName = chans.Max(c => c.Name.Length)+1;
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                session.Io.OutputLine("#   : Channel Name             Unread");
+                session.Io.OutputLine($"#   : Channel Name {' '.Repeat(longestChannelName - "Channel Name".Length)}Unread");
             }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
@@ -50,14 +51,15 @@ namespace miniBBS.Commands
                     var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
                     builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
                     builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
-                    builder.Append($"{chan.Name,-Constants.MaxChannelNameLength}");
+                    builder.Append($"{chan.Name} {' '.Repeat(longestChannelName-chan.Name.Length)}");
                     if (unread > 0)
                         builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Magenta}{Constants.InlineColorizer}");
                     else
                         builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Gray}{Constants.InlineColorizer}");
                     builder.AppendLine($"{unread}{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
                 }
-                session.Io.OutputLine(builder.ToString());
+
+                session.Io.Output(builder.ToString());
             }
         }
     }

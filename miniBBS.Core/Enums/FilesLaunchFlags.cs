@@ -6,6 +6,7 @@ namespace miniBBS.Core.Enums
     public enum FilesLaunchFlags
     {
         None = 0,
-        MoveToUserHomeDirectory = 1
+        MoveToUserHomeDirectory = 1,
+        ReturnToPreviousDirectory = 2
     }
 }

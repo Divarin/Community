@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +20,11 @@ namespace miniBBS.Services.Services
         /// Start of Header
         /// </summary>
         private const byte SOH = 0x01;
+
+        /// <summary>
+        /// Start of TeXt
+        /// </summary>
+        private const byte STX = 0x02;
 
         /// <summary>
         /// End of Transmission
@@ -72,11 +78,15 @@ namespace miniBBS.Services.Services
             }
         }
 
+        private FileTransferProtocolOptions Options { get; set; }
+
         /// <summary>
         /// Sends the Data and returns true if all data was sent successfully.
         /// </summary>
-        public bool Send(BbsSession session)
+        public bool Send(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None)
         {
+            Options = options;
+
             var sendStarted = false;
             var waitToStartStopwatch = Stopwatch.StartNew();
             var waitForNextRequestStopwatch = new Stopwatch();
@@ -105,7 +115,7 @@ namespace miniBBS.Services.Services
 
                 if (!sendStarted && (C.Equals(req) || NAK.Equals(req)))
                 {
-                    use16bitChecksum = C.Equals(req);
+                    use16bitChecksum = Options.HasFlag(FileTransferProtocolOptions.XmodemCrc) || C.Equals(req);
                     sendStarted = true;
                     waitToStartStopwatch.Stop();
                     lastPacket = GetNextPacketToSend(data, use16bitChecksum);
@@ -143,8 +153,10 @@ namespace miniBBS.Services.Services
         /// <summary>
         /// Receives the Data and returns true if all data was received successfully.
         /// </summary>
-        public bool Receive(BbsSession session)
+        public bool Receive(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None)
         {
+            Options = options;
+
             _offset = 0;
             _data = new List<byte>();
 
@@ -211,6 +223,7 @@ namespace miniBBS.Services.Services
                 switch (header)
                 {
                     case SOH:
+                    case STX:
                         transferStarted = true;
                         if (ProcessIncomingPacket(inputBuffer, ref lastPacketNum))
                             session.Io.OutputRaw(ACK);
@@ -275,15 +288,19 @@ namespace miniBBS.Services.Services
             if (_offset >= data.Length)
                 return new[] { EOT };
 
-            var packet = new byte[use16bitChecksum ? 133 : 132];
-            packet[0] = SOH;
+            int payloadSize = Options.HasFlag(FileTransferProtocolOptions.Xmodem1k) ? 1024 : 128;
+            int checksumSize = use16bitChecksum ? 2 : 1;
+            int packetSize = 3 + payloadSize + checksumSize;
+
+            var packet = new byte[packetSize];
+            packet[0] = Options.HasFlag(FileTransferProtocolOptions.Xmodem1k) ? STX : SOH;
 
             // packet numbers start at 1 but wrap around to 0 so increment before using
             _packetNum = (byte)((_packetNum + 1) % 256);
             packet[1] = _packetNum;
             packet[2] = (byte)~_packetNum;
-            var payload = new byte[128];
-            for (int i = 0; i < 128; i++)
+            var payload = new byte[payloadSize];
+            for (int i = 0; i < payloadSize; i++)
             {
                 byte b = _offset >= data.Length ? PAD : data[_offset++];
                 payload[i] = b;
@@ -298,7 +315,7 @@ namespace miniBBS.Services.Services
             }
             else
             {
-                packet[131] = GetCrc8(payload);
+                packet[131] = Get8bitChecksum(payload);
             }
 
             return packet;
@@ -337,7 +354,7 @@ namespace miniBBS.Services.Services
             return crc;
         }
 
-        private static byte GetCrc8(byte[] data)
+        private static byte Get8bitChecksum(byte[] data)
         {
             return (byte)(data.Sum(b => b) % 256);
         }

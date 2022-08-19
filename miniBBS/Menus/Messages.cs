@@ -24,7 +24,11 @@ namespace miniBBS.Menus
             "/123 : Jump to message # 123.  Example: '/10825' jumps to message 10825.",
             "/e  : Jumps to end (high message number in this channel).",
             "/0  : Jumps to start (lowest message number in this channel).",
-            "/ctx : Reads previous message's 're:' message without altering message pointer.  Type '/? context' for detailed information about this feature.",
+            "/re : Reads previous message's 're:' message without altering message pointer.  Type '/? context' for detailed information about this feature.",
+            "/pin : Pins the last message you read. Optional 'p' can be added to make it a 'private' pin: '/pin p'",
+            "/pin (msg #) : Pins the specified message.  Optional 'p' can be added to make it a 'private' pin: '/pin 5051 p'",
+            "/pins : Views pinned messages",
+            "/unpin (msg #) : Removes one of your message pins",
             "/new (message) : Enters a message in the chat as normal but also omits the 'in response to' (re:) number.  " + 
             "This is a way to explicitly signify that this message is a new topic and not in response to the last message you read",
             "/f (keyword) : Searches for messages containing the keyword (most recent first).",

@@ -89,10 +89,10 @@
     <Compile Include="Commands\FindMessages.cs" />
     <Compile Include="Commands\IndexBy.cs" />
     <Compile Include="Commands\KickUser.cs" />
-    <Compile Include="Commands\ListChannels.cs" />
     <Compile Include="Commands\ListInvitations.cs" />
     <Compile Include="Commands\ListModerators.cs" />
     <Compile Include="Commands\Mail.cs" />
+    <Compile Include="Commands\Pin.cs" />
     <Compile Include="Commands\ReadFile.cs" />
     <Compile Include="Commands\Roll.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
@@ -100,8 +100,6 @@
     <Compile Include="Commands\TermSetup.cs" />
     <Compile Include="Commands\TimeZone.cs" />
     <Compile Include="Commands\ToggleChannelInvite.cs" />
-    <Compile Include="Commands\SetMessagePointer.cs" />
-    <Compile Include="Commands\SwitchOrMakeChannel.cs" />
     <Compile Include="Commands\Shutdown.cs" />
     <Compile Include="Commands\ToggleChannelModerator.cs" />
     <Compile Include="Commands\ToggleInviteOnly.cs" />
@@ -111,10 +109,8 @@
     <Compile Include="Commands\WhoIsOn.cs" />
     <Compile Include="DI.cs" />
     <Compile Include="Exceptions\IdleTimeoutException.cs" />
-    <Compile Include="Extensions\ModelExtensions.cs" />
     <Compile Include="Helpers\NotificationHandler.cs" />
     <Compile Include="Helpers\Messager.cs" />
-    <Compile Include="Helpers\SessionsList.cs" />
     <Compile Include="Helpers\TcpClientFactory.cs" />
     <Compile Include="Menus\About.cs" />
     <Compile Include="Menus\Bells.cs" />
@@ -165,5 +161,6 @@
   <ItemGroup>
     <Content Include="newuser.txt" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -3,8 +3,10 @@ using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using miniBBS.Services;
+using miniBBS.Services.GlobalCommands;
 using miniBBS.TextFiles.Enums;
 using miniBBS.TextFiles.Extensions;
 using miniBBS.TextFiles.Models;
@@ -71,8 +73,17 @@ namespace miniBBS.TextFiles
                         flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
                         command = $"cd /CommunityUsers/{_session.User.Name}";
                     }
+                    else if (flags.HasFlag(FilesLaunchFlags.ReturnToPreviousDirectory) && !string.IsNullOrWhiteSpace(_session.PreviousFilesDirectory))
+                    {
+                        flags &= ~FilesLaunchFlags.ReturnToPreviousDirectory;
+                        command = $"cd {_session.PreviousFilesDirectory}";
+                    }
                     else
+                    {
+                        flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
+                        flags &= ~FilesLaunchFlags.ReturnToPreviousDirectory;
                         command = Prompt();
+                    }
 
                     cmd = ProcessCommand(command, links);
                 }
@@ -297,9 +308,15 @@ namespace miniBBS.TextFiles
                         if (parts.Length >= 2)
                             ReadFile (parts[1], links, nonstop: true);
                         break;
+                    case "chl":
+                    case "chanlist":
+                    case "channellist":
+                    case "channelist":
+                        ListChannels.Execute(_session);
+                        break;
                     case "link":
                         if (parts.Length >= 2)
-                            LinkFile(parts[1], links);
+                            LinkFile(parts[1], links, parts.Length >= 3 ? parts[2] : null);
                         break;
                     case "?":
                     case "help":
@@ -501,14 +518,31 @@ namespace miniBBS.TextFiles
             }
         }
 
-        private void LinkFile(string filenameOrNumber, IList<Link> links)
+        private void LinkFile(string filenameOrNumber, IList<Link> links, string channelNameOrNumber = null)
         {
             if (string.IsNullOrWhiteSpace(filenameOrNumber))
                 return;
-            else if (int.TryParse(filenameOrNumber, out int n))
+
+            Channel channel = 
+                string.IsNullOrWhiteSpace(channelNameOrNumber) ?
+                _session.Channel :
+                GetChannel.Execute(_session, channelNameOrNumber);
+
+            if (channel == null)
+            {
+                _session.Io.OutputLine($"Invalid channel name or number: {channelNameOrNumber}.");
+                return;
+            }
+            else if (channel.Id != _session.Channel.Id && !SwitchOrMakeChannel.Execute(_session, channel.Name, allowMakeNewChannel: false))
+            {
+                _session.Io.OutputLine($"Unable to change to channel {channel.Name}.");
+                return;
+            }
+
+            if (int.TryParse(filenameOrNumber, out int n))
             {
                 if (n >= 1 && n <= links.Count)
-                    LinkFile(links[n - 1]);
+                    LinkFile(links[n - 1], channel);
                 else
                     _session.Io.OutputLine("Invalid file number");
             }
@@ -516,13 +550,13 @@ namespace miniBBS.TextFiles
             {
                 var link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
                 if (link != null)
-                    LinkFile(link);
+                    LinkFile(link, channel);
                 else
                     _session.Io.OutputLine("Invalid filename");
             }
         }
 
-        private void LinkFile(Link link)
+        private void LinkFile(Link link, Channel channel)
         {
             if (link.IsDirectory)
             {
@@ -532,7 +566,7 @@ namespace miniBBS.TextFiles
 
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                _session.Io.Output($"Post a link to {link.DisplayedFilename} on channel {_session.Channel.Name}?: ");
+                _session.Io.Output($"Post a link to {link.DisplayedFilename} on channel {channel.Name}?: ");
                 var k = _session.Io.InputKey();
                 _session.Io.OutputLine();
                 if (k == 'y' || k == 'Y')
@@ -657,7 +691,8 @@ namespace miniBBS.TextFiles
             var str = FileReader.LoadFileContents(_currentLocation, link);
             var data = Encoding.ASCII.GetBytes(str);
             xfer.Data = data;
-            bool sentAllData = xfer.Send(_session);
+            var options = FileTransferProtocolOptions.Xmodem1k | FileTransferProtocolOptions.XmodemCrc;
+            bool sentAllData = xfer.Send(_session, options);
 
             _session.Io.OutputLine($"Sent {link.DisplayedFilename} {(sentAllData ? "successfully" : "unsuccessfully")}.");
         }
@@ -762,6 +797,11 @@ namespace miniBBS.TextFiles
                 {
                     var linkNum = links.IndexOf(l => l.DisplayedFilename.Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
                     if (linkNum < 0)
+                        linkNum = links.IndexOf(l => l.ActualFilename.Replace("/index.html", "").Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+                    if (linkNum < 0)
+                        linkNum = links.IndexOf(l => l.Path.Replace("/", "").Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+
+                    if (linkNum < 0)
                         _session.Io.OutputLine("Invalid file/directory name.");
                     else
                         ChangeDirectory(links[linkNum]);
@@ -795,6 +835,7 @@ namespace miniBBS.TextFiles
                 if (!goingUp)
                     link.Parent = _currentLocation;
                 _currentLocation = link;
+                _session.PreviousFilesDirectory = _currentLocation.Path;
             }
         }
 

@@ -32,6 +32,8 @@ namespace miniBBS.Core.Models.Control
             thread.Start();
         }
 
+        public string PreviousFilesDirectory { get; set; }
+
         ~BbsSession()
         {
             Dispose();

@@ -122,7 +122,7 @@ namespace miniBBS.Commands
                         {
                             OnReceive = (s) => s.Chats[toBeEdited.Id].Message = newMessage
                         });
-                        DI.Get<ILogger>().Log(message);
+                        DI.Get<ILogger>().Log(session, message);
                     }
                 }
             }

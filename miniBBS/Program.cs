@@ -9,6 +9,7 @@ using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
+using miniBBS.Services.GlobalCommands;
 using miniBBS.Subscribers;
 using miniBBS.UserIo;
 using System;
@@ -72,7 +73,7 @@ namespace miniBBS
                 } 
                 catch (Exception ex)
                 {
-                    _logger.Log($"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                    _logger.Log(null, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 }
             }
 
@@ -153,10 +154,12 @@ namespace miniBBS
 
                             try
                             {
+                                SysopScreen.BeginLogin(session);
                                 RunSession(session);
                             }
                             finally
                             {
+                                SysopScreen.EndLogin(session);
                                 session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, false));
                             }
                         }
@@ -176,8 +179,12 @@ namespace miniBBS
             } 
             catch (Exception ex)
             {
-                if (!ex.AllExceptions().Any(x => x.Message.Contains("An established connection was aborted")))
-                    _logger.Log($"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                if (!ex.AllExceptions().Any(x =>
+                    x.Message.Contains("An established connection was aborted") ||
+                    x.Message.Contains("Unable to read data from transport connection")))
+                {
+                    _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
             }
             finally
             {
@@ -258,7 +265,7 @@ namespace miniBBS
 
             DatabaseMaint.RemoveSuperfluousUserChannelFlags(session.UcFlagRepo, session.User.Id);
 
-            if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName))
+            if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false))
             {
                 throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
             }
@@ -594,7 +601,7 @@ namespace miniBBS
             if (DI.Get<ISessionsList>().Sessions.Count() >= Constants.MaxSessions)
             {
                 session.Io.OutputLine("Sorry, too many people are online right now!  Try again later.");
-                _logger.Log($"{session.IpAddress} tried to log on but there are too many people online right now.");
+                _logger.Log(session, $"{session.IpAddress} tried to log on but there are too many people online right now.");
                 return;
             }
 
@@ -629,6 +636,7 @@ namespace miniBBS
             {
                 if (username.Length < Constants.MinUsernameLength ||
                     username.Length > Constants.MaxUsernameLength ||
+                    username.Any(c => !char.IsLetter(c)) ||
                     Constants.IllegalUsernames.Contains(username, StringComparer.CurrentCultureIgnoreCase))
                 {
                     session.Io.OutputLine($"Not allowed to use username {username}.  Minimum Length: {Constants.MinUsernameLength}, Maximum Length: {Constants.MaxUsernameLength}, only letters, and some names just aren't allowed at all.");
@@ -696,9 +704,9 @@ namespace miniBBS
             session.Io.Output("Choose a password (and don't forget it): ");
             string pw = session.Io.InputLine('*')?.ToLower();
 
-            if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength)
+            if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength || pw.Length > Constants.MaximumPasswordLength)
             {
-                session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters.");
+                session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters and not more than {Constants.MaximumPasswordLength} characters.");
                 return null;
             }
 
@@ -823,6 +831,15 @@ namespace miniBBS
                 case "/edit":
                 case "/s":
                     EditMessage.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/pin":
+                    Pin.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/pins":
+                    Pin.ShowPins(session, parts.Skip(1).ToArray());
+                    return;
+                case "/unpin":
+                    Pin.Unpin(session, parts.Skip(1).ToArray());
                     return;
                 case "/dnd":
                     session.DoNotDisturb = !session.DoNotDisturb;
@@ -980,7 +997,7 @@ namespace miniBBS
                         FilesLaunchFlags flags = 
                             "/myfiles".Equals(command, StringComparison.CurrentCultureIgnoreCase) ? 
                             FilesLaunchFlags.MoveToUserHomeDirectory : 
-                            FilesLaunchFlags.None;
+                            FilesLaunchFlags.ReturnToPreviousDirectory;
 
                         browser.Browse(session, flags);
                     }
@@ -1047,7 +1064,7 @@ namespace miniBBS
                     case "m": ListModerators.Execute(session); break;
                     case "i": ListInvitations.Execute(session); break;
                     case "del": DeleteChannel.Execute(session); break;
-                    default: SwitchOrMakeChannel.Execute(session, args[0]); break;
+                    default: SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); break;
                 }
             }
             else if (args.Length == 2)

@@ -4,11 +4,13 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "3.1 - 2022.08.18";
+        public const string Version = "3.2 - 2022.08.19";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
         public const int MinimumPasswordLength = 5;
+        public const int MaximumPasswordLength = 30;
+
         public const string DatabaseFilename = "community.db";
 
         public static bool IsLocal { get; set; } = false;
@@ -27,6 +29,8 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const int MaxPinsPerUser = 25;
 
         public const string BasicSourceProtectedFlag = "(protect)";
 
@@ -88,27 +92,6 @@ namespace miniBBS.Core
 
         public const int MaxAfkReasonLength = 30;
 
-        //public static readonly string NewUserMessage = string.Join(Environment.NewLine, new[]
-        //{
-        //    "Welcome, new user, to Mutiny Community BBS! ",
-        //    "This is a chat system similar to IRC but also allows for 'one-user-at-a-time', messagebase-like, conversations retaining a full history " +
-        //    "of all previous chat messages.  So if no one is online to talk with feel free to respond to chats you read or start up your own topic and check " +
-        //    "back later to see if anyone has responded.",
-        //    "",
-        //    "Are you looking for a more traditional BBS?  Check out Mutiny BBS at this address port 2332 (mutinybbs.com:2332)",
-        //    "Are you looking to get here via SSH?  You can SSH into Mutiny BBS on port 2232 and then go to (X) Games & More -> Internet -> Community. " +
-        //    "That will bring you here but through SSH.",
-        //    "",
-        //    "Besides chat this system also has:",
-        //    "* A clone of Jason Scott's TextFiles.com archive",
-        //    "* The ability to create your own text files",
-        //    "* A Basic programming environment (make programs, run other users' programs)",
-        //    "* A SQL database engine (mostly for use in Basic programs but can be used separately)",
-        //    "* Text files, Basic programs, and SQL databases can be collaborated on by multiple users if you allow it.",
-        //    "",
-        //    "Once at the main prompt please type '/?' for help."
-        //});
-
         public const double MaxCalendarItemDays = 30;
 
         // used for search results when searching chat history
@@ -124,8 +107,6 @@ namespace miniBBS.Core
         public const int MaxUserFilenameLength = 50;
 
         public const int MaxLinesToInsertInLineEditor = 50;
-
-        
 
         public static class Files
         {

@@ -38,15 +38,15 @@ namespace miniBBS.Persistence
                 consoleOnly: consoleOnly);
         }
 
-        public void Log(string message, bool consoleOnly = false)
-        {
-            Log(sessionId: null,
-                ipAddress: null,
-                userId: null,
-                username: null,
-                message: message,
-                consoleOnly: consoleOnly);
-        }
+        //public void Log(string message, bool consoleOnly = false)
+        //{
+        //    Log(sessionId: null,
+        //        ipAddress: null,
+        //        userId: null,
+        //        username: null,
+        //        message: message,
+        //        consoleOnly: consoleOnly);
+        //}
 
         private void Log(Guid? sessionId, string ipAddress, int? userId, string username, string message, bool consoleOnly = false)
         {
