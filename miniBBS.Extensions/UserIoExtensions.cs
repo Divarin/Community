@@ -1,4 +1,5 @@
-﻿using miniBBS.Interfaces;
+﻿using miniBBS.Core;
+using miniBBS.Interfaces;
 using System;
 
 namespace miniBBS.Extensions
@@ -20,6 +21,11 @@ namespace miniBBS.Extensions
         {
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 io.OutputLine(message);
+        }
+
+        public static string WrapInColor(string message, ConsoleColor color)
+        {
+            return $"{Constants.InlineColorizer}{(int)color}{Constants.InlineColorizer}{message}{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
         }
     }
 }

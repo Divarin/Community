@@ -2,6 +2,7 @@
 using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using System;
+using System.Text;
 
 namespace miniBBS.UserIo
 {
@@ -91,15 +92,29 @@ namespace miniBBS.UserIo
 
         protected override string ReplaceInlineColors(string line)
         {
-            var result = line;
-            result = result.Replace($"{Constants.InlineColorizer}-1{Constants.InlineColorizer}", GetForegroundString(_currentForeground));
-
-            foreach (ConsoleColor clr in Enum.GetValues(typeof(ConsoleColor)))
+            var resultBuilder = new StringBuilder();
+            var codeBuilder = new StringBuilder();
+            bool inCode = false;
+            
+            foreach (var c in line)
             {
-                result = result.Replace($"{Constants.InlineColorizer}{(int)clr}{Constants.InlineColorizer}", GetForegroundString(clr));
+                if (c == Constants.InlineColorizer)
+                {
+                    inCode = !inCode;
+                    if (!inCode && int.TryParse(codeBuilder.ToString(), out int code) && code >= -1 && code <= 15)
+                    {
+                        var clr = code == -1 ? _currentForeground : (ConsoleColor)code;
+                        resultBuilder.Append(GetForegroundString(clr));
+                    }
+                    codeBuilder.Clear();
+                }
+                else if (inCode)
+                    codeBuilder.Append(c);
+                else
+                    resultBuilder.Append(c);
             }
 
-            return result;
+            return resultBuilder.ToString();
         }
     }
 

@@ -304,6 +304,16 @@ namespace miniBBS
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
                 session.Io.OutputLine("Press Enter/Return to read next message.");
+                if (session.User.TotalLogons < 10)
+                {
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
+                    {
+                        session.Io.OutputLine($"There are {UserIoExtensions.WrapInColor(GetUnreadMessageCount(session).ToString(), ConsoleColor.Red)} unread messages in this channel.");
+                        session.Io.OutputLine($"To read, just {UserIoExtensions.WrapInColor("Press Enter", ConsoleColor.Magenta)}.");
+                        session.Io.OutputLine($"To respond, just {UserIoExtensions.WrapInColor("Type your Response", ConsoleColor.Magenta)}.");
+                        session.Io.OutputLine($"More complex usage is explained in the {UserIoExtensions.WrapInColor("/help (/?)", ConsoleColor.Magenta)} menus but these are the basics.");
+                    }
+                }
             }
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
@@ -315,28 +325,9 @@ namespace miniBBS
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     // enter (advance to next n lines)
-                    if (!session.Chats.ContainsKey(session.MsgPointer))
-                    {
-                        using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
-                        {
-                            session.Io.OutputLine("No more messages in this channel.");
-                        }
-                    }
-                    else
-                    {
-                        Chat nextMessage = session.Chats[session.MsgPointer];
-                        nextMessage.Write(session);
-
-                        if (!SetMessagePointer.Execute(session, session.MsgPointer + 1))
-                        {
-                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                            {
-                                session.Io.OutputLine("No more messages in this channel.");
-                            }
-                        }
-                    }
+                    ShowNextMessage(session);
                 }
-                else if (line[0] == '/')
+                else if (line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
                     ExecuteCommand(session, line);
                 else if (session.UcFlag.Flags.HasFlag(UCFlag.ReadyOnly) && (session.User.Access & (AccessFlag.Administrator | AccessFlag.GlobalModerator)) == 0)
                     session.Io.OutputLine("You are not allowed to talk in this channel at this time.");
@@ -388,6 +379,30 @@ namespace miniBBS
 
         }
 
+        private static void ShowNextMessage(BbsSession session)
+        {
+            if (!session.Chats.ContainsKey(session.MsgPointer))
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
+                {
+                    session.Io.OutputLine("No more messages in this channel.");
+                }
+            }
+            else
+            {
+                Chat nextMessage = session.Chats[session.MsgPointer];
+                nextMessage.Write(session);
+
+                if (!SetMessagePointer.Execute(session, session.MsgPointer + 1))
+                {
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                    {
+                        session.Io.OutputLine("No more messages in this channel.");
+                    }
+                }
+            }
+        }
+
         private static Chat AddToChatLog(BbsSession session, IRepository<Chat> chatRepo, string line, bool isNewTopic = false)
         {
             Chat chat = new Chat
@@ -420,14 +435,20 @@ namespace miniBBS
 
         private static void Prompt(BbsSession session)
         {
+            int unreadMessageCount = GetUnreadMessageCount(session);
+
+            session.Io.SetForeground(ConsoleColor.Cyan);
+            session.Io.Output($"(/?=help) ({unreadMessageCount}){(session.Cols <= 40 ? Environment.NewLine : " ")}<{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}> [{session.Channel.Id}:{session.Channel.Name}] ");
+            session.Io.SetForeground(ConsoleColor.White);
+        }
+
+        private static int GetUnreadMessageCount(BbsSession session)
+        {
             int highMessage = (true == session.Chats?.Keys?.Any()) ? session.Chats.Keys.Max() : 0;
             var unreadMessageCount = highMessage > 0 ? session.Chats.Count(c => c.Key > session.MsgPointer) : 0;
             if (highMessage > 0 && session.LastReadMessageNumber != highMessage)
                 unreadMessageCount++;
-
-            session.Io.SetForeground(ConsoleColor.Cyan);            
-            session.Io.Output($"(/?=help) ({unreadMessageCount}){(session.Cols <= 40 ? Environment.NewLine : " ")}<{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}> [{session.Channel.Id}:{session.Channel.Name}] ");
-            session.Io.SetForeground(ConsoleColor.White);
+            return unreadMessageCount;
         }
 
         /// <summary>
@@ -832,6 +853,9 @@ namespace miniBBS
                 case "/s":
                     EditMessage.Execute(session, parts.Skip(1).ToArray());
                     return;
+                case "/rere":
+                    EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());
+                    return;
                 case "/pin":
                     Pin.Execute(session, parts.Skip(1).ToArray());
                     return;
@@ -864,10 +888,10 @@ namespace miniBBS
                 case "/channel":
                     ExecuteChannelCommand(session, parts.Skip(1).ToArray());
                     return;
+                case "/w":
                 case "/who":
                     WhoIsOn.Execute(session, DI.Get<ISessionsList>());
                     return;
-                case "/w":
                 case "/u":
                 case "/users":
                     WhoIsAll.Execute(session);
@@ -1023,6 +1047,39 @@ namespace miniBBS
                         }
                     }
                     return;
+                case ",":
+                case "<":
+                    SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
+                    session.Chats[session.MsgPointer].Write(session);
+                    return;
+                case ".":
+                case ">":
+                    ShowNextMessage(session);
+                    return;
+                case "[":
+                case "{":
+                    {
+                        var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
+                            .ToDictionary(k => k.Id));
+                        var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
+                        int? nextChannelNumber = currentChannelNumber.Value - 1;
+                        var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
+                        nextChannelNumber = chans.ItemNumber(nextChannelId);
+                        SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber+1}", false);
+                    }
+                    return;
+                case "]":
+                case "}":
+                    {
+                        var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
+                            .ToDictionary(k => k.Id));
+                        var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
+                        int? nextChannelNumber = currentChannelNumber.Value + 1;
+                        var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
+                        nextChannelNumber = chans.ItemNumber(nextChannelId);
+                        SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber+1}", false);
+                    }
+                    return;
             }
 
             if (command.Length > 1 && int.TryParse(command.Substring(1), out int msgNum))
@@ -1031,6 +1088,7 @@ namespace miniBBS
                 if (n.HasValue)
                 {
                     SetMessagePointer.Execute(session, n.Value);
+                    //session.Chats[session.MsgPointer].Write(session)
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                     {
                         session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
@@ -1090,12 +1148,14 @@ namespace miniBBS
             switch (submenu?.ToLower())
             {
                 case "channels":
+                case "chans":
                     Channels.Show(session);
                     break;
                 case "users":
                     Users.Show(session);
                     break;
                 case "msgs":
+                case "messages":
                     Messages.Show(session);
                     break;
                 case "context":

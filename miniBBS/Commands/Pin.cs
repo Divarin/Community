@@ -48,8 +48,9 @@ namespace miniBBS.Commands
             var pinRepo = DI.GetRepository<PinnedMessage>();
             var userPins = pinRepo.Get(p => p.PinnedByUserId, session.User.Id);
             var existing = userPins.Where(p => p.ChannelId == msg.ChannelId && p.MessageId == msg.Id).ToList();
+            var pvt = true == args?.Any(a => a.StartsWith("p", StringComparison.CurrentCultureIgnoreCase));
 
-            if (!session.User.Access.HasFlag(AccessFlag.Administrator) && userPins.Count() - existing.Count() > Constants.MaxPinsPerUser)
+            if (!pvt && !session.User.Access.HasFlag(AccessFlag.Administrator) && userPins.Count() - existing.Count() > Constants.MaxPinsPerUser)
             {
                 session.Io.Error("Sorry you have too many pins already, try deleting some with '/unpin'.");
                 return;
@@ -64,7 +65,7 @@ namespace miniBBS.Commands
                 DatePinnedUtc = DateTime.UtcNow,
                 MessageId = msg.Id,
                 PinnedByUserId = session.User.Id,
-                Private = true == args?.Any(a => a.StartsWith("p", StringComparison.CurrentCultureIgnoreCase))
+                Private = pvt
             };
             pinRepo.Insert(pin);
 

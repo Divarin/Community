@@ -22,13 +22,24 @@ namespace miniBBS.Commands
                     return;
                 }
 
-                Chat toBeEdited = null;
-                int n = -1;
-                string msgNum = null;
-                if (args.Length >= 3 && int.TryParse(args[0], out int _))
+                Chat toBeEdited = FindChatToBeEdited(session, args);
+
+                if (toBeEdited == null)
+                    session.Io.OutputLine("Messagee not found in this channel.");
+
+                bool canUpdate =
+                    session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                    session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
+                    session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
+                    (
+                        toBeEdited.FromUserId == session.User.Id &&
+                        (DateTime.UtcNow - toBeEdited.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable
+                    );
+
+                if (!canUpdate)
                 {
-                    msgNum = args[0];
-                    args = args.Skip(1).ToArray();
+                    session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minues) or you aren't a moderator.");
+                    return;
                 }
 
                 string search = args[0];
@@ -48,7 +59,8 @@ namespace miniBBS.Commands
                         replace = parts[1];
                         parsedWithSpaceDelim = false;
                     }
-                } else if (line.Count(c => c == '/') == 1)
+                }
+                else if (line.Count(c => c == '/') == 1)
                 {
                     var parts = line
                         .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
@@ -74,58 +86,127 @@ namespace miniBBS.Commands
                     replace = replace.Replace('-', ' ');
                 }
 
-                if (!string.IsNullOrWhiteSpace(msgNum) && int.TryParse(msgNum, out n))
+                string newMessage = toBeEdited.Message.Replace(search, replace);
+                session.Io.SetForeground(ConsoleColor.White);
+                session.Io.OutputLine(newMessage);
+                session.Io.SetForeground(ConsoleColor.Red);
+                session.Io.Output("Make this edit? ");
+                var k = session.Io.InputKey();
+                session.Io.OutputLine();
+                if (k == 'y' || k == 'Y')
                 {
-                    var nn = session.Chats.ItemKey(n);
-                    if (nn.HasValue)
-                        toBeEdited = session.Chats[nn.Value];
-                }
-                else if (n <= 0)
-                    toBeEdited = session.Chats.Values.LastOrDefault(c => c.FromUserId == session.User.Id);
-
-                if (toBeEdited == null)
-                    session.Io.OutputLine("Messagee not found in this channel.");
-
-                bool canDelete =
-                    session.User.Access.HasFlag(AccessFlag.Administrator) ||
-                    session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
-                    session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
-                    (
-                        toBeEdited.FromUserId == session.User.Id &&
-                        (DateTime.UtcNow - toBeEdited.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable
-                    );
-
-                if (!canDelete)
-                    session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minues) or you aren't a moderator.");
-                else
-                {
-                    string newMessage = toBeEdited.Message.Replace(search, replace);
-                    session.Io.SetForeground(ConsoleColor.White);
-                    session.Io.OutputLine(newMessage);
-                    session.Io.SetForeground(ConsoleColor.Red);
-                    session.Io.Output("Make this edit? ");
-                    var k = session.Io.InputKey();
-                    session.Io.OutputLine();
-                    if (k == 'y' || k == 'Y')
+                    string message = string.Join(Environment.NewLine, new[]
                     {
-                        string message = string.Join(Environment.NewLine, new[]
-                        {
-                            $"{session.User.Name} edited message # {session.Chats.ItemNumber(toBeEdited.Id)} in channel {session.Channel.Name}",
-                            "The message now reads:",
-                            newMessage
-                        }); ;
+                        $"{session.User.Name} edited message # {session.Chats.ItemNumber(toBeEdited.Id)} in channel {session.Channel.Name}",
+                        "The message now reads:",
+                        newMessage
+                    }); ;
 
-                        toBeEdited.Message = newMessage;
-                        session.Io.OutputLine("Done.");
-                        DI.GetRepository<Chat>().Update(toBeEdited);
-                        session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message)
-                        {
-                            OnReceive = (s) => s.Chats[toBeEdited.Id].Message = newMessage
-                        });
-                        DI.Get<ILogger>().Log(session, message);
-                    }
+                    toBeEdited.Message = newMessage;
+                    session.Io.OutputLine("Done.");
+                    DI.GetRepository<Chat>().Update(toBeEdited);
+                    session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message)
+                    {
+                        OnReceive = (s) => s.Chats[toBeEdited.Id].Message = newMessage
+                    });
+                    DI.Get<ILogger>().Log(session, message);
                 }
             }
+        }
+
+
+        public static void ReassignReNumber(BbsSession session, params string[] args)
+        {
+            var argNum = args.Length == 1 ? 0 : 1;
+            if (args == null || argNum >= args.Length || !int.TryParse(args[argNum], out int newRe))
+            {
+                session.Io.Error("Usage: /rere (msg #) (new re: number)");
+                return;
+            }
+
+            int? editId = null;
+            if (args.Length == 1)
+                editId = session.LastReadMessageNumber;
+            else if (int.TryParse(args[0], out int n))
+                editId = session.Chats.ItemKey(n);
+
+            if (!editId.HasValue)
+            {
+                session.Io.Error("Usage: /rere (msg#) (new re: number)");
+                return;
+            }
+
+            var msgNum = session.Chats.ItemNumber(editId);
+
+            if (!msgNum.HasValue)
+            {
+                session.Io.Error("Cannot find the message to edit!");
+                return;
+            }
+
+            Chat chat = session.Chats[editId.Value];
+
+            if (chat == null)
+            {
+                session.Io.Error("Cannot find the message to edit!");
+                return;
+            }
+
+            bool canUpdate =
+                session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
+                session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
+                (
+                    chat.FromUserId == session.User.Id &&
+                    (DateTime.UtcNow - chat.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable
+                );
+
+            if (!canUpdate)
+            {
+                session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minues) or you aren't a moderator.");
+                return;
+            }
+
+            var reId = session.Chats.ItemKey(newRe);
+            if (!reId.HasValue)
+            {
+                session.Io.Error("Cannot find the message you're re:ferring to!");
+                return;
+            }
+
+            chat.ResponseToId = reId;
+            chat = DI.GetRepository<Chat>().Update(chat);
+            session.Chats[chat.Id] = chat;
+
+            session.Io.OutputLine($"Updated re: number for message {session.Chats.ItemNumber(chat.Id)} to {newRe}.");
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                chat.Write(session, false, true);
+            }
+        }
+
+        private static Chat FindChatToBeEdited(BbsSession session, params string[] args)
+        {
+            Chat toBeEdited = null;
+
+            int n = -1;
+            string msgNum = null;
+            if (args.Length >= 3 && int.TryParse(args[0], out int _))
+            {
+                msgNum = args[0];
+                args = args.Skip(1).ToArray();
+            }
+
+            if (!string.IsNullOrWhiteSpace(msgNum) && int.TryParse(msgNum, out n))
+            {
+                var nn = session.Chats.ItemKey(n);
+                if (nn.HasValue)
+                    toBeEdited = session.Chats[nn.Value];
+            }
+            else if (n <= 0)
+                toBeEdited = session.Chats.Values.LastOrDefault(c => c.FromUserId == session.User.Id);
+
+            return toBeEdited;
         }
 
         private static void ShowUsage(BbsSession session)

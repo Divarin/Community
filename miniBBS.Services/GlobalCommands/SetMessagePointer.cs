@@ -10,7 +10,7 @@ namespace miniBBS.Services.GlobalCommands
         /// Returns true if the message pointer has changed or false if it did not (at end of messages). 
         /// Also saves the user's channel's msg pointer in the database for their next login
         /// </summary>
-        public static bool Execute(BbsSession session, int msgPointer)
+        public static bool Execute(BbsSession session, int msgPointer, bool reverse = false)
         {
             int oldMsgPointer = session.MsgPointer;
 
@@ -18,9 +18,14 @@ namespace miniBBS.Services.GlobalCommands
                 msgPointer = 0;
             else
             {
-                msgPointer = session.Chats.Keys.FirstOrDefault(k => k >= msgPointer);
+                msgPointer = reverse ?
+                    session.Chats.Keys.LastOrDefault(k => k <= msgPointer)  : 
+                    session.Chats.Keys.FirstOrDefault(k => k >= msgPointer);
+
                 if (msgPointer == default)
-                    msgPointer = session.Chats.Keys.Max();
+                    msgPointer = reverse ?
+                        session.Chats.Keys.First() : 
+                        session.Chats.Keys.Max();
             }
 
             bool changed = msgPointer != oldMsgPointer;

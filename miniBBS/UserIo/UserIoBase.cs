@@ -445,6 +445,9 @@ namespace miniBBS.UserIo
                         i = 1;
                     }
 
+                    if (lineBuilder.Length == 0 && Constants.LegitOneCharacterCommands.Contains((char)bytes[0]))
+                        return new string((char)bytes[0], 1);
+
                     if (bytes[0] == 3)
                     {
                         // ctrl-c hit, abort inputting line
