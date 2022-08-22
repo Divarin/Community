@@ -115,6 +115,7 @@
     <Compile Include="Menus\About.cs" />
     <Compile Include="Menus\Bells.cs" />
     <Compile Include="Menus\Channels.cs" />
+    <Compile Include="Menus\CommandList.cs" />
     <Compile Include="Menus\Context.cs" />
     <Compile Include="Menus\Emotes.cs" />
     <Compile Include="Menus\Messages.cs" />

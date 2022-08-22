@@ -118,9 +118,23 @@ namespace miniBBS.Commands
         public static void ReassignReNumber(BbsSession session, params string[] args)
         {
             var argNum = args.Length == 1 ? 0 : 1;
-            if (args == null || argNum >= args.Length || !int.TryParse(args[argNum], out int newRe))
+            int? newRe = null;
+
+            if (args != null && argNum >= args.Length)
             {
-                session.Io.Error("Usage: /rere (msg #) (new re: number)");
+                if (int.TryParse(args[argNum], out int r))
+                    newRe = r;
+            }
+            else
+            {
+                session.Io.Error(string.Join(Environment.NewLine, new[]
+                {
+                    "Usages:",
+                    "/rere (msg #) (new re: number) - '/rere 123 120' sets 123's re: number to 120",
+                    "/rere (msg #) none - '/rere 123 none' sets 123's re: number to nothing (a new thread)",
+                    "/rere (new re: number) - '/rere 120' sets last read message's re: number to 120",
+                    "/rere none - '/rere none' - sets last read message's re: number to nothing (a new thread)"
+                }));
                 return;
             }
 
@@ -167,18 +181,23 @@ namespace miniBBS.Commands
                 return;
             }
 
-            var reId = session.Chats.ItemKey(newRe);
-            if (!reId.HasValue)
+
+            int? reId = null;
+            if (newRe.HasValue)
             {
-                session.Io.Error("Cannot find the message you're re:ferring to!");
-                return;
+                reId = session.Chats.ItemKey(newRe.Value);
+                if (!reId.HasValue)
+                {
+                    session.Io.Error("Cannot find the message you're re:ferring to!");
+                    return;
+                }
             }
 
             chat.ResponseToId = reId;
             chat = DI.GetRepository<Chat>().Update(chat);
             session.Chats[chat.Id] = chat;
 
-            session.Io.OutputLine($"Updated re: number for message {session.Chats.ItemNumber(chat.Id)} to {newRe}.");
+            session.Io.OutputLine($"Updated re: number for message {session.Chats.ItemNumber(chat.Id)} to {(newRe.HasValue ? newRe.ToString() : "nothing")}.");
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
                 chat.Write(session, false, true);

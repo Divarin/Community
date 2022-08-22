@@ -183,56 +183,53 @@ namespace miniBBS.TextFiles
             "sub-directory just send me (" + Constants.SysopName + ") an email requesting it.  You will then be able to use commands like " +
             "md, edit, and publish to create your own text files here on Mutiny Community!";
 
-        private static readonly string _searching = string.Join("\r\n", new[]
-        {
-            "Searching: ",
-            "You can search the current directory using 'dir', 'ls', and 'grep' by passing search terms to these commands.  ",
-            "This will show you directories and/or files where their names, descriptions, or(in the case of files) content contain the keyword(s).",
-            "DIR (search term(s)) - searches only filenames and descriptions ",
-            "LS (search term(s)) - searches only filenames ",
-            "GREP (search term(s)) - searches only file contents ",
-            "",
-            "All searches only search the current directory, subdirectories are not searched.",
-            "You can use both OR and AND type searches and can combine them.  In general, keywords separated by spaces are treated as OR:  ",
-            "'dir apple banana'  - will list directories and files that have either 'apple' OR 'banana' in their names or descriptions. ",
-            "'ls apple banana'   - will list directories and files that have either 'apple' OR 'banana' in their names. ",
-            "'grep apple banana' - will list files that have either 'apple' OR 'banana' in the file's content. ",
-            "",
-            "An ampersand (&) character can be used to perform AND type searches.You do this by separating keywords with the ",
-            "'and' symbol (&) with no spaces between the words and the ampersand:",
-            "'dir apple&banana' - will list directories and files that have both 'apple' AND 'banana' in their names or descriptions.",
-            "",
-            "You can also mix ORs and ANDs:",
-            "'grep apple banana cherry&strawberry' - well list files where the contents contain:",
-            "either 'apple' or 'banana' or BOTH 'cherry' and 'strawberry'",
-            "",
-            "Searching Within Texts: ",
-            "While reading a document you can search for a keyword while at the pause (More?) prompt.",
-            "To do this hit slash (/) and then type the keyword you want to find.  If a match is found after your current page then the text will move to a few lines before the match.  ",
-            "To search for the next occurance of the keyword you can type a slash (/) and hit enter without typing the word.  If you do this the search is repeated with the same keyword you searched for previously."});
+        private const string _searching = 
+            "Searching: \r\n"+
+            "You can search the current directory using 'dir', 'ls', and 'grep' by passing search terms to these commands.  \r\n"+
+            "This will show you directories and/or files where their names, descriptions, or(in the case of files) content contain the keyword(s).\r\n"+
+            "DIR (search term(s)) - searches only filenames and descriptions \r\n"+
+            "LS (search term(s)) - searches only filenames \r\n"+
+            "GREP (search term(s)) - searches only file contents \r\n"+
+            "\r\n"+
+            "All searches only search the current directory, subdirectories are not searched.\r\n"+
+            "You can use both OR and AND type searches and can combine them.  In general, keywords separated by spaces are treated as OR:  \r\n"+
+            "'dir apple banana'  - will list directories and files that have either 'apple' OR 'banana' in their names or descriptions. \r\n"+
+            "'ls apple banana'   - will list directories and files that have either 'apple' OR 'banana' in their names. \r\n"+
+            "'grep apple banana' - will list files that have either 'apple' OR 'banana' in the file's content. \r\n"+
+            "\r\n"+
+            "An ampersand (&) character can be used to perform AND type searches.You do this by separating keywords with the \r\n"+
+            "'and' symbol (&) with no spaces between the words and the ampersand:\r\n"+
+            "'dir apple&banana' - will list directories and files that have both 'apple' AND 'banana' in their names or descriptions.\r\n"+
+            "\r\n"+
+            "You can also mix ORs and ANDs:\r\n"+
+            "'grep apple banana cherry&strawberry' - well list files where the contents contain:\r\n"+
+            "either 'apple' or 'banana' or BOTH 'cherry' and 'strawberry'\r\n"+
+            "\r\n"+
+            "Searching Within Texts: \r\n"+
+            "While reading a document you can search for a keyword while at the pause (More?) prompt.\r\n"+
+            "To do this hit slash (/) and then type the keyword you want to find.  If a match is found after your current page then the text will move to a few lines before the match.  \r\n"+
+            "To search for the next occurance of the keyword you can type a slash (/) and hit enter without typing the word.  If you do this the search is repeated with the same keyword you searched for previously.";
 
-        private static readonly string _contrib = string.Join("\r\n", new[]
-        {
-            "Contributors / Editors: ",
-            "You can allow other users to edit a text file in your area by using the 'contrib' or 'editor' commands.  You can also use the " +
-            "'uncontrib' or 'uneditor' commands to remove such access.  The file must be in a published state.  This is how it works: ",
-            $"{Constants.Spaceholder}contrib ourstory.txt jimbob",
-            "This allows the user 'jimbob' to edit the file 'ourstory.txt'.",
-            $"{Constants.Spaceholder}uncontrib ourstory.txt jimbob",
-            "This removes jimbob's access to edit the file.",
-            $"{Constants.Spaceholder}contrib ourstory.txt *",
-            "This allows all users to edit the file.",
-            "If an 'uncontrib' command is on a file which allows anyone to edit, then that user will be blacklisted, for example:",
-            $"{Constants.Spaceholder}contrib ourstory.txt *",
-            $"{Constants.Spaceholder}uncontrib ourstory.txt jimbob",
-            "These commands will make it so that the file 'ourstory.txt' can be edited by anyone *except* for jimbob.",
-            $"{Constants.Spaceholder}uncontrib ourstory.txt *",
-            "This command will remove all access to edit the file to any user except yourself.",
-            $"{Constants.Spaceholder}",
-            "When viewing the description of the file the list of editors is shown.  Any blacklisted users are shown with a minus (-) in front of their name.",
-            $"{Constants.Spaceholder}Example: 'Editors: *, -jimbob'  -- meaning, everyone except jimbob",
-            $"{Constants.Spaceholder}Example: 'Editors: Albert, Betty, Charlie  -- meaning, only the users Albert, Betty, and Charlie (and of course you since you're the owner)."
-        });
+        private const string _contrib =
+            "Contributors / Editors: \r\n" +
+            "You can allow other users to edit a text file in your area by using the 'contrib' or 'editor' commands.  You can also use the \r\n" +
+            "'uncontrib' or 'uneditor' commands to remove such access.  The file must be in a published state.  This is how it works: \r\n" +
+            "¿contrib ourstory.txt jimbob\r\n" +
+            "This allows the user 'jimbob' to edit the file 'ourstory.txt'.\r\n" +
+            "¿uncontrib ourstory.txt jimbob\r\n" +
+            "This removes jimbob's access to edit the file.\r\n" +
+            "¿contrib ourstory.txt *\r\n" +
+            "This allows all users to edit the file.\r\n" +
+            "If an 'uncontrib' command is on a file which allows anyone to edit, then that user will be blacklisted, for example:\r\n" +
+            "¿contrib ourstory.txt *\r\n" +
+            "¿uncontrib ourstory.txt jimbob\r\n" +
+            "These commands will make it so that the file 'ourstory.txt' can be edited by anyone *except* for jimbob.\r\n" +
+            "¿uncontrib ourstory.txt *\r\n" +
+            "This command will remove all access to edit the file to any user except yourself.\r\n" +
+            "\r\n" +
+            "When viewing the description of the file the list of editors is shown.  Any blacklisted users are shown with a minus (-) in front of their name.\r\n" +
+            "¿Example: 'Editors: *, -jimbob'  -- meaning, everyone except jimbob\r\n" +
+            "¿Example: 'Editors: Albert, Betty, Charlie  -- meaning, only the users Albert, Betty, and Charlie (and of course you since you're the owner).";
 
         private const string _backups =
             "Toggles whether or not backup files are shown on directory lists.  Backup files are automatically created " +

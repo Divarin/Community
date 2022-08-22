@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using System;
@@ -13,7 +14,7 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine("Password change utility.  Enter a blank password to abort and keep your current password.");
                 session.Io.Output("Enter new password: ");
-                var newPass = session.Io.InputLine('*');
+                var newPass = session.Io.InputLine(InputHandlingFlag.PasswordInput);
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(newPass))
                 {
@@ -31,7 +32,7 @@ namespace miniBBS.Commands
 
                 newPass = newPass.ToLower();
                 session.Io.Output("Enter it again: ");
-                var newPass2 = session.Io.InputLine('*');
+                var newPass2 = session.Io.InputLine(InputHandlingFlag.PasswordInput);
                 session.Io.OutputLine();
                 newPass2 = newPass2?.ToLower();
 

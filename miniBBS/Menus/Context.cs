@@ -23,19 +23,19 @@ namespace miniBBS.Menus
             "then you could manually switch to 987 ('/987' -> enter) read it, then move back to 1004 to read the next message ('/1004' -> enter). " +
             "However this is a bit tedious especially if you have to go back further and provide context for message 987.",
             $"{Constants.Spaceholder}",
-            "This is where the Context command (/ctx) comes in.  It allows you to trace back the thread of conversation by following the breadcrumbs (re: numbers) of each " +
+            "This is where the Context command (/re) comes in.  It allows you to trace back the thread of conversation by following the breadcrumbs (re: numbers) of each " +
             "message.  Using the example above, if you just read 1003 (so your message pointer is now at 1004 and will be the next message to be shown when you press enter) " +
-            "you can type '/ctx' and message # 987 will show up but your message pointer will not change.",
+            "you can type '/re' and message # 987 will show up but your message pointer will not change.",
             $"{Constants.Spaceholder}",
-            "In addition, until you actually press enter to read message 1004, you can use the /ctx command again to view the message that 987 is 'in response to'.  You can " +
-            "continue to use /ctx to follow the conversation thread all the way back until you hit a message that has no 're:' number.",
+            "In addition, until you actually press enter to read message 1004, you can use the /re command again to view the message that 987 is 'in response to'.  You can " +
+            "continue to use /re to follow the conversation thread all the way back until you hit a message that has no 're:' number.",
             $"{Constants.Spaceholder}",
-            "One issue though is that if a message in the thread was deleted then you will not be able to use /ctx to follow the thread back beyond that point.",
+            "One issue though is that if a message in the thread was deleted then you will not be able to use /re to follow the thread back beyond that point.",
             $"{Constants.Spaceholder}",
-            "Optional parameters to pass to /ctx command:",
-            "/ctx 0 : Recursively search for the first message in the thread.",
-            "/ctx e : Recursively search for the last message in the thread.",
-            "/ctx > : Advance forward to the next message in the thread."
+            "Optional parameters to pass to /re command:",
+            "/re 0 : Recursively search for the first message in the thread.",
+            "/re e : Recursively search for the last message in the thread.",
+            "/re > : Advance forward to the next message in the thread."
         };
 
         public static void Show(BbsSession session)

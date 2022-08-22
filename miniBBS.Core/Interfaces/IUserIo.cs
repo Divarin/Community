@@ -13,7 +13,8 @@ namespace miniBBS.Interfaces
 
         byte[] InputRaw();
         char? InputKey();
-        string InputLine(char? echoChar = null);
+        string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None);
+        string InputLine(Func<string, string> autoComplete, InputHandlingFlag handlingFlag = InputHandlingFlag.None);
 
         void ClearLine();
         void ClearScreen();

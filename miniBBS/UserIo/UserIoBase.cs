@@ -76,9 +76,14 @@ namespace miniBBS.UserIo
             return StreamInput(_session);
         }
 
-        public virtual string InputLine(char? echoChar = null)
+        public virtual string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None)
         {
-            return StreamInputLine(_session, echoChar);
+            return StreamInputLine(_session, null, handlingFlag);
+        }
+
+        public virtual string InputLine(Func<string, string> autoComplete, InputHandlingFlag handlingFlag = InputHandlingFlag.None)
+        {
+            return StreamInputLine(_session, autoComplete, handlingFlag);
         }
 
         public abstract void ClearLine();
@@ -407,7 +412,7 @@ namespace miniBBS.UserIo
             return result;
         }
 
-        protected string StreamInputLine(BbsSession session, char? echoChar = null)
+        protected string StreamInputLine(BbsSession session, Func<string, string> autoComplete = null, InputHandlingFlag handlingFlag = InputHandlingFlag.None)
         {
             session.LastReadMessageNumberWhenStartedTyping = null;
 
@@ -445,8 +450,24 @@ namespace miniBBS.UserIo
                         i = 1;
                     }
 
-                    if (lineBuilder.Length == 0 && Constants.LegitOneCharacterCommands.Contains((char)bytes[0]))
+                    if (handlingFlag.HasFlag(InputHandlingFlag.AutoCompleteOnTab) &&
+                        bytes?.Length > 0 &&
+                        bytes[0] == '\t')
+                    {
+                        string acText = autoComplete?.Invoke(lineBuilder.ToString());
+                        if (!string.IsNullOrWhiteSpace(acText))
+                        {
+                            bytes = Encoding.ASCII.GetBytes(acText);
+                            i = acText.Length;
+                        }
+                    }
+
+                    if (handlingFlag.HasFlag(InputHandlingFlag.InterceptSingleCharacterCommand) &&
+                        lineBuilder.Length == 0 &&
+                        Constants.LegitOneCharacterCommands.Contains((char)bytes[0]))
+                    {
                         return new string((char)bytes[0], 1);
+                    }
 
                     if (bytes[0] == 3)
                     {
@@ -466,23 +487,32 @@ namespace miniBBS.UserIo
 
                     var data = Encoding.ASCII.GetString(InterpretInput(bytes), 0, i);
 
-                    string echo = echoChar.HasValue ? echoChar.Value.Repeat(data.Length) : data;
-
-                    if (data == "\b" || data == "\u007f")
+                    // deal with one or more backspaces
+                    foreach (var d in data)
                     {
-                        // backspace
-                        if (lineBuilder.Length > 0)
+                        if (d == '\b' || d == '\u007f')
                         {
-                            lineBuilder.Remove(lineBuilder.Length - 1, 1);
-                            StreamOutput(session, '\b', ' ', '\b');
-                            if (lineBuilder.Length == 0 || !lineBuilder.ToString().IsPrintable())
+                            // backspace
+                            if (lineBuilder.Length > 0)
                             {
-                                lineBuilder.Clear();
-                                EndInput();
+                                lineBuilder.Remove(lineBuilder.Length - 1, 1);
+                                StreamOutput(session, '\b', ' ', '\b');
+                                if (lineBuilder.Length == 0 || !lineBuilder.ToString().IsPrintable())
+                                {
+                                    lineBuilder.Clear();
+                                    EndInput();
+                                }
                             }
-                        }                        
-                        continue;
+                            //continue;
+                        }
                     }
+
+                    // remove backspaces from data from this point on
+                    data = data.Replace("\b", "").Replace("\u007f", "");
+                    if (data.Length == 0)
+                        continue; // only contained backspace(s)
+
+                    string echo = handlingFlag.HasFlag(InputHandlingFlag.PasswordInput) ? "*".Repeat(data.Length) : data;
 
                     StreamOutput(session, echo);
                     if (echo == "\r")
@@ -495,7 +525,7 @@ namespace miniBBS.UserIo
 
                     if (data.Contains("\r"))
                     {
-                        if (echoChar.HasValue)
+                        if (handlingFlag.HasFlag(InputHandlingFlag.PasswordInput))
                             StreamOutput(session, Environment.NewLine);
                         return lineBuilder.ToString()?.Replace("\r", "")?.Replace("\n", "")?.Replace("\0", "");
                     }

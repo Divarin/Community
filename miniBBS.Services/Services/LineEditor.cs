@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
@@ -54,7 +55,7 @@ namespace miniBBS.Services.Services
                             _savedText = String.Join(Environment.NewLine, lines);
                         if (cmdResult.HasFlag(CommandResult.RevertToOriginal))
                         {
-                            if ('Y' == _session.Io.Ask("Are you sure you want to undo changes since your last save?: "))
+                            if ('Y' == _session.Io.Ask("Are you sure you want to undo changes since your last save?"))
                             {
                                 lines.Clear();
                                 if (!string.IsNullOrWhiteSpace(_savedText))
@@ -197,6 +198,11 @@ namespace miniBBS.Services.Services
                     // edit a line
                     Edit(lines, args.Skip(1)?.ToArray());
                     break;
+                case "move":
+                case "mv":
+                case "m":
+                    MoveLines(ref lines, args.Skip(1)?.ToArray());
+                    break;
                 case "find":
                 case "f":
                     // find
@@ -273,7 +279,7 @@ namespace miniBBS.Services.Services
         {
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
             {
-                _session.Io.OutputLine(String.Join(Environment.NewLine, new[]
+                _session.Io.OutputLine(string.Join(Environment.NewLine, new[]
                 {
                     "/save, /s : Save file (does not exit, use '/q' to quit)",
                     "/sq : Saves and then exits",
@@ -283,6 +289,9 @@ namespace miniBBS.Services.Services
                     "/insert, /ins, /i (after) [count] : Inserts one or more blank lines after the specified line number.  Can use '/insert 0' to insert at the beginning",
                     "/delete, /del, /d [range] : Deletes one or more lines, if the optional [range] is not given then the last line is deleted.  You will be asked to confirm the delete",
                     "/edit, /ed, /e [line num] [search & replace]: Edits a line.  If a line number is given then edits that line otherwise edits the last line.",
+                    "/move, /mv, /m [range] [line num] : Moves one or more lines (defined by the [range]) to a line immediately after [line num].",
+                    $"{Constants.Spaceholder}Example:",
+                    $"{Constants.Spaceholder}/move 25-30 10 - Moves the lines 25-30 to 11-16",
                     $"{Constants.Spaceholder}Examples:",
                     $"{Constants.Spaceholder}/edit 50 - lets you re-type line 50",
                     $"{Constants.Spaceholder}/edit - lets you re-type the last line",
@@ -526,6 +535,55 @@ namespace miniBBS.Services.Services
             Notify($"{numLines} blank lines inserted after line # {insertPoint}.");
         }
 
+        private void MoveLines(ref List<string> lines, string[] args)
+        {
+            if (args == null || args.Length < 2)
+            {
+                Notify("Usage: /move [range] [insert point] - Example: '/move 25-30 10' or '/move 25 10'");
+                return;
+            }
+
+            if (!int.TryParse(args[1], out int insertPoint) || insertPoint < 0)
+            {
+                Notify("Invalid insert point line number.");
+                return;
+            }
+
+            var range = ParseRange(args[0], lines.Count + 1);
+            
+            if (insertPoint >= range.Item1 && insertPoint <= range.Item2)
+            {
+                Notify("Insert point must be before or after the range.");
+                return;
+            }
+
+            int r = 1;
+            var numberedLines = lines.ToDictionary(k => r++);
+            var blockToMove = numberedLines
+                .Where(k => k.Key >= range.Item1 && k.Key <= range.Item2)
+                .Select(x => x.Value)
+                .ToList();
+            var workList = numberedLines
+                .Where(k => k.Key < range.Item1 || k.Key > range.Item2)
+                .Select(x => x.Value)
+                .ToList();
+
+            var numLines = range.Item2 - range.Item1 + 1;
+
+            if (insertPoint > range.Item2)
+                insertPoint -= numLines;
+
+            if (insertPoint >= workList.Count)
+                workList.AddRange(blockToMove);
+            else
+                workList.InsertRange(insertPoint, blockToMove);
+            lines.Clear();
+            lines.AddRange(workList);
+
+            
+            Notify($"Block of {numLines} lines moved after line # {insertPoint}.");
+        }
+
         private void List(IList<string> lines, bool withLineNumbers, string range=null)
         {
             string body;
@@ -537,7 +595,7 @@ namespace miniBBS.Services.Services
 
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
             {
-                _session.Io.OutputLine(body);
+                _session.Io.OutputLine(body, OutputHandlingFlag.DoNotTrimStart);
             }
         }
 

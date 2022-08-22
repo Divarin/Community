@@ -177,9 +177,9 @@ namespace miniBBS.UserIo
             return c;
         }
 
-        public override string InputLine(char? echoChar = null)
+        public override string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None)
         {
-            return InvertCase(base.InputLine(echoChar));
+            return InvertCase(base.InputLine(handlingFlag));
         }
 
         private string InvertCase(string s)

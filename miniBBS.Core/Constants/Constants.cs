@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "3.3 - 2022.08.20";
+        public const string Version = "3.3c - 2022.08.21";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 15;
@@ -15,7 +15,7 @@ namespace miniBBS.Core
 
         public static bool IsLocal { get; set; } = false;
         public static readonly char[] LegitOneCharacterCommands = new[]
-        { '[', ']', '{', '}', '<', '>', ',', '.' };
+        { '[', ']', '{', '}', '<', '>', ',', '.', '?' };
 
         public static string UploadDirectory
         {

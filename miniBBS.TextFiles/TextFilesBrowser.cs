@@ -82,7 +82,7 @@ namespace miniBBS.TextFiles
                     {
                         flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
                         flags &= ~FilesLaunchFlags.ReturnToPreviousDirectory;
-                        command = Prompt();
+                        command = Prompt(links);
                     }
 
                     cmd = ProcessCommand(command, links);
@@ -335,7 +335,7 @@ namespace miniBBS.TextFiles
                         if (parts.Length < 2)
                             _session.Io.OutputLine("Please supply a file name or number.");
                         else
-                        {                                
+                        {
                             FileWriter.Edit(_session, _currentLocation, parts[1], links);
                             result = CommandResult.ReadDirectory;
                         }
@@ -346,7 +346,7 @@ namespace miniBBS.TextFiles
                             _session.Io.OutputLine("Please supply a file name or number.");
                         else
                         {
-                            var basicProgram = links.GetLink(parts[1]);
+                            var basicProgram = links.GetLink(parts[1], requireExactMatch: false);
                             if (true == basicProgram?.ActualFilename?.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
                                 RunBasicProgram(basicProgram);
                             else
@@ -660,8 +660,8 @@ namespace miniBBS.TextFiles
             {
                 using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                 {
-                    var flags = OutputHandlingFlag.None;
-                    if (!link.IsUserGeneratedContent()) flags |= OutputHandlingFlag.DoNotTrimStart;
+                    var flags = OutputHandlingFlag.DoNotTrimStart;
+
                     if (nonstop)
                         flags |= OutputHandlingFlag.Nonstop;
                     else
@@ -933,10 +933,26 @@ namespace miniBBS.TextFiles
             }
         }
 
-        private string Prompt()
+        private string Prompt(IList<Link> links)
         {
             ShowPrompt();
-            string line = _session.Io.InputLine();
+
+            Func<string, string> autoComplete = _l =>
+            {
+                var potentialFilename = _l?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                if (!string.IsNullOrWhiteSpace(potentialFilename))
+                {
+                    string match = links?.FirstOrDefault(l => l.DisplayedFilename.StartsWith(potentialFilename, StringComparison.CurrentCultureIgnoreCase))?.DisplayedFilename;
+                    if (!string.IsNullOrWhiteSpace(match))
+                    {
+                        match = '\b'.Repeat(potentialFilename.Length) + match;
+                        return match;
+                    }
+                }
+                return string.Empty;
+            };
+
+            string line = _session.Io.InputLine(autoComplete, InputHandlingFlag.AutoCompleteOnTab);
             _session.Io.OutputLine();
             return line;
         }

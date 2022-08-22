@@ -181,7 +181,7 @@ namespace miniBBS
             {
                 if (!ex.AllExceptions().Any(x =>
                     x.Message.Contains("An established connection was aborted") ||
-                    x.Message.Contains("Unable to read data from transport connection")))
+                    x.Message.Contains("Unable to read data from the transport connection")))
                 {
                     _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 }
@@ -239,7 +239,13 @@ namespace miniBBS
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
                     return;
-                }    
+                }
+            } else if (session.User.TotalLogons < 10)
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+                {
+                    session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /fauxmain if you want to see it again.");
+                }
             }
 
             session.CurrentLocation = Module.Chat;
@@ -320,7 +326,7 @@ namespace miniBBS
             {
                 session.ShowPrompt();
 
-                string line = session.Io.InputLine();
+                string line = session.Io.InputLine(InputHandlingFlag.InterceptSingleCharacterCommand);
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line))
                 {
@@ -687,7 +693,7 @@ namespace miniBBS
             else
             {
                 session.Io.Output("Oh yeah? prove it! (password): ");
-                string pw = session.Io.InputLine('*')?.ToLower();
+                string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
                 if (!DI.Get<IHasher>().VerifyHash(pw, user.PasswordHash))
                 {
                     session.Io.OutputLine("I don't think so.");
@@ -723,7 +729,7 @@ namespace miniBBS
             session.CurrentLocation = Module.NewUserRegistration;
 
             session.Io.Output("Choose a password (and don't forget it): ");
-            string pw = session.Io.InputLine('*')?.ToLower();
+            string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
 
             if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength || pw.Length > Constants.MaximumPasswordLength)
             {
@@ -783,13 +789,13 @@ namespace miniBBS
                 case "/o":
                 case "/off":
                 case "/g":
-                case "/goodbyte":
                 case "/logoff":
                     // logoff
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
                     return;
                 case "/cls":
+                case "/clr":
                 case "/clear":
                 case "/c":
                     session.Io.ClearScreen();
@@ -823,7 +829,8 @@ namespace miniBBS
                     Bell.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/shutdown":
-                    ExecuteSessionControlCommand(parts.Skip(1).ToArray(), session);
+                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
+                        Shutdown.Execute(session);
                     return;
                 case "/announce":
                     if (parts.Length >= 2)
@@ -834,7 +841,11 @@ namespace miniBBS
                     break;
                 case "/help":
                 case "/?":
+                case "?":
                     ExecuteMenu(session, parts.Length >= 2 ? parts[1] : null);
+                    return;
+                case "/??":
+                    CommandList.Execute(session);
                     return;
                 case "/about":
                 case "/a":
@@ -872,10 +883,12 @@ namespace miniBBS
                 case "/e":
                 case "/end":
                     SetMessagePointer.Execute(session, session.Chats.Keys.Max());
-                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
-                    {
-                        session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
-                    }
+                    //ShowNextMessage(session);
+                    session.Chats[session.MsgPointer].Write(session);
+                    //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    //{sdf
+                    //    session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
+                    //}
                     return;                
                 case "/chl":
                 case "/chanlist":
@@ -1088,11 +1101,12 @@ namespace miniBBS
                 if (n.HasValue)
                 {
                     SetMessagePointer.Execute(session, n.Value);
-                    //session.Chats[session.MsgPointer].Write(session)
-                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
-                    {
-                        session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
-                    }
+                    ShowNextMessage(session);
+                    //session.Chats[session.MsgPointer].Write(session);
+                    //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    //{
+                    //    session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
+                    //}
                 }
                 else
                 {
@@ -1169,20 +1183,6 @@ namespace miniBBS
                     break;
                 default:
                     MainMenu.Show(session);
-                    break;
-            }
-        }
-
-        private static void ExecuteSessionControlCommand(string[] args, BbsSession session)
-        {
-            if (args?.Length < 1)
-                return;
-
-            switch (args[0].ToLower())
-            {
-                case "shutdown":
-                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
-                    Shutdown.Execute(session);
                     break;
             }
         }
