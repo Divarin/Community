@@ -208,7 +208,7 @@ namespace miniBBS.UserIo
                     return PauseResult.PageUp;
                 else if (k == '/')
                 {
-                    StreamOutput(session, "Search: ");
+                    StreamOutput(session, TransformText("Search: "));
                     string search = StreamInputLine(session);
                     if (!string.IsNullOrWhiteSpace(search))
                         keywordSearch.Keyword = search;
@@ -222,6 +222,11 @@ namespace miniBBS.UserIo
         protected virtual byte[] InterpretInput(byte[] arr)
         {
             return arr;
+        }
+
+        protected virtual string TransformText(string text)
+        {
+            return text;
         }
 
         protected virtual void RemoveInvalidInputCharacters(ref byte[] bytes)
@@ -256,7 +261,7 @@ namespace miniBBS.UserIo
                     // handle wordwrap and pause
                     var lines = text.SplitAndWrap(session, flags).ToList();
                     if (flags.HasFlag(OutputHandlingFlag.PauseAtEnd))
-                        lines.Add(" --- End of Document ---");
+                        lines.Add(TransformText(" --- End of Document ---"));
                     int totalLines = lines.Count;
                     int row = 0;
                     var keywordSearch = new KeywordSearch();
@@ -452,9 +457,10 @@ namespace miniBBS.UserIo
 
                     if (handlingFlag.HasFlag(InputHandlingFlag.AutoCompleteOnTab) &&
                         bytes?.Length > 0 &&
-                        bytes[0] == '\t')
+                        (bytes[0] == '\t' || bytes[0] == 29))
                     {
                         string acText = autoComplete?.Invoke(lineBuilder.ToString());
+                        acText = TransformText(acText);
                         if (!string.IsNullOrWhiteSpace(acText))
                         {
                             bytes = Encoding.ASCII.GetBytes(acText);

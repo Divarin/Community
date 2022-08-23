@@ -315,8 +315,7 @@ namespace miniBBS.TextFiles
                         ListChannels.Execute(_session);
                         break;
                     case "link":
-                        if (parts.Length >= 2)
-                            LinkFile(parts[1], links, parts.Length >= 3 ? parts[2] : null);
+                        LinkFile(parts[1], links, parts.Skip(1).ToArray());
                         break;
                     case "?":
                     case "help":
@@ -518,8 +517,10 @@ namespace miniBBS.TextFiles
             }
         }
 
-        private void LinkFile(string filenameOrNumber, IList<Link> links, string channelNameOrNumber = null)
+        private void LinkFile(string filenameOrNumber, IList<Link> links, params string[] args)
         {
+            string channelNameOrNumber = args.Length >= 1 ? args[0] : null;
+
             if (string.IsNullOrWhiteSpace(filenameOrNumber))
                 return;
 
@@ -571,7 +572,10 @@ namespace miniBBS.TextFiles
                 _session.Io.OutputLine();
                 if (k == 'y' || k == 'Y')
                 {
-                    string msg = $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file. {Environment.NewLine}{link.Description}";
+                    string msg = link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase) ?
+                        $"Basic Program Link: [{link.Parent.Path}{link.Path}].  Use '/run' to run this program. {Environment.NewLine}{link.Description}" :
+                        $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file. {Environment.NewLine}{link.Description}";
+
                     _session.Io.SetForeground(ConsoleColor.Yellow);
                     _session.Io.OutputLine("Link posted.");
                     OnChat?.Invoke(msg);

@@ -13,7 +13,7 @@ namespace miniBBS.Commands
         private const int _defaultRows = 24;
         private const int _defaultCols = 80;
 
-        public static void Execute(BbsSession session)
+        public static void Execute(BbsSession session, bool? cbmDetectedThroughDel = null)
         {
             var originalLocation = session.CurrentLocation;
             session.CurrentLocation = Module.ConfigureEmulation;
@@ -23,6 +23,12 @@ namespace miniBBS.Commands
                 session.Rows = session.User.Rows;
                 session.Cols = session.User.Cols;
                 var detEmu = session.Io.EmulationType;
+
+                // this should only take effect on initial login, 
+                // not when using /term command
+                if (cbmDetectedThroughDel.HasValue)
+                    detEmu = cbmDetectedThroughDel.Value ? TerminalEmulation.Cbm : TerminalEmulation.Ascii;
+
                 var lastEmu = session.User.Emulation;
 
                 if (session.Rows < _minRows)
@@ -35,6 +41,7 @@ namespace miniBBS.Commands
                 lastRows = session.Rows;
 
                 var emulation = detEmu == TerminalEmulation.Cbm ? detEmu : lastEmu;
+
                 var cols = lastCols;
                 var rows = lastRows;
 

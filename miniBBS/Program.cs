@@ -140,7 +140,7 @@ namespace miniBBS
                             session.Io.OutputLine("Sorry the system is currently in maintenence mode, only system administators may log in at this time.  Please try again later.");
                         else
                         {
-                            TermSetup.Execute(session);
+                            TermSetup.Execute(session, cbmDetectedThroughDel: session.Io.EmulationType == TerminalEmulation.Cbm);
                             ShowNotifications(session);
 
                             int unreadMail = Commands.Mail.CountUnread(session);
@@ -179,9 +179,11 @@ namespace miniBBS
             } 
             catch (Exception ex)
             {
+                // don't bother logging errors caused by "dropped carriers" (disconnects)
                 if (!ex.AllExceptions().Any(x =>
                     x.Message.Contains("An established connection was aborted") ||
-                    x.Message.Contains("Unable to read data from the transport connection")))
+                    x.Message.Contains("Unable to read data from the transport connection") ||
+                    x.Message.Contains("Unable to write data to the transport connection")))
                 {
                     _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 }
@@ -654,7 +656,7 @@ namespace miniBBS
             username = username.Trim().ToUpperFirst();
             if (username.Any(c => !char.IsLetter(c)))
             {
-                session.Io.OutputLine("Your username must include of only letters.");
+                session.Io.OutputLine("Your username must include only letters.");
                 return;
             }
 

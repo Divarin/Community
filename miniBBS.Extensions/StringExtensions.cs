@@ -58,6 +58,7 @@ namespace miniBBS.Extensions
             int col = 0;
             int breakIndex = 0;
             bool inAnsiCode = false;
+            bool trimStartOfNextLine = false;
 
             for (int i=0; i < str.Length; i++)
             {
@@ -92,22 +93,36 @@ namespace miniBBS.Extensions
                         end = i;
 
                     int len = end - start + 1;
-                    string substring = str.Substring(start, len);
+                    string substring = str.Substring(start, len);                    
+
                     if (!string.IsNullOrWhiteSpace(substring))
                     {
                         substring = substring
                             .TrimEnd(' ')
                             .Replace("\r\0", "\r");
 
+                        trimStartOfNextLine = false;
+
                         if (substring[substring.Length - 1] != 13 && substring[substring.Length - 1] != 10)
+                        {
+                            // adding a newline due to wrapping
                             substring += Environment.NewLine;
+                            trimStartOfNextLine = true;
+                        }
                         else if (substring[substring.Length - 1] == 13)
+                        {
+                            // replace just "enter" with proper newline (13 + 10, enter + linefeed)
                             substring += "\n";
+                        }
                         if (substring.Length > 2 && substring[0] == 13 && substring[1] == 10)
-                            substring = substring.Substring(2);
+                        {
+                            // this line starts with a newline, take that off
+                            substring = substring.Substring(2);                            
+                        }
+
                         if (!string.IsNullOrWhiteSpace(substring))
                         {
-                            if (!flags.HasFlag(OutputHandlingFlag.DoNotTrimStart))
+                            if (trimStartOfNextLine || !flags.HasFlag(OutputHandlingFlag.DoNotTrimStart))
                                 substring = substring.TrimStart(' ');
                             yield return substring.Replace(Constants.Spaceholder, ' ');
                         }

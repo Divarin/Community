@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{49523120-C2E7-4B79-A2D0-FC9F4D031A54}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>XModemProtocol</RootNamespace>
+    <AssemblyName>XModemProtocol</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Communication\Communicator.cs" />
+    <Compile Include="Communication\ICommunicator.cs" />
+    <Compile Include="Communication\NullCommunicator.cs" />
+    <Compile Include="Configuration\Elements\CANElement.cs" />
+    <Compile Include="Configuration\Elements\ReceiverConsecutiveNAKsRequiredForCancellationElement.cs" />
+    <Compile Include="Configuration\Elements\ReceiverMaxNumberOfInitializationBytesInTotal.cs" />
+    <Compile Include="Configuration\Elements\ReceiverTimeoutDuringPacketReceptionElement.cs" />
+    <Compile Include="Configuration\Elements\ReceiverInitializationTimeoutElement.cs" />
+    <Compile Include="Configuration\Elements\SUBElement.cs" />
+    <Compile Include="Configuration\Elements\EOTElement.cs" />
+    <Compile Include="Configuration\Elements\CElement.cs" />
+    <Compile Include="Configuration\Elements\NAKElement.cs" />
+    <Compile Include="Configuration\Elements\ACKElement.cs" />
+    <Compile Include="Configuration\Elements\STXElement.cs" />
+    <Compile Include="Configuration\Elements\SOHElement.cs" />
+    <Compile Include="Configuration\Elements\CancellationBytesRequiredElement.cs" />
+    <Compile Include="Configuration\Elements\CANSentDuringAbortElement.cs" />
+    <Compile Include="Configuration\Elements\SenderInitializationTimeoutElement.cs" />
+    <Compile Include="Configuration\Elements\SenderOneKPacketSizeElement.cs" />
+    <Compile Include="Configuration\Elements\ModeElement.cs" />
+    <Compile Include="Configuration\Elements\PolynomialElement.cs" />
+    <Compile Include="Configuration\Elements\ReceiverMaxNumberOfInitializationBytesForCRC.cs" />
+    <Compile Include="Configuration\XModemProtocolConfigurationSection.cs" />
+    <Compile Include="Detectors\CancellationDetector.cs" />
+    <Compile Include="Detectors\ICancellationDetector.cs" />
+    <Compile Include="EventData\AbortedEventArgs.cs" />
+    <Compile Include="Builders\CRCPacketBuilder.cs" />
+    <Compile Include="Builders\IPacketBuilder.cs" />
+    <Compile Include="Builders\NormalPacketBuilder.cs" />
+    <Compile Include="Builders\OneKPacketBuilder.cs" />
+    <Compile Include="Calculators\BaseFunctions.cs" />
+    <Compile Include="Calculators\CRCChecksumCalculator.cs" />
+    <Compile Include="Calculators\ISummationChecksumCalculator.cs" />
+    <Compile Include="Factories\IToolFactory.cs" />
+    <Compile Include="Factories\Tools\IXModemTools.cs" />
+    <Compile Include="Factories\Tools\XModemTool.cs" />
+    <Compile Include="Factories\XModemToolFactory.cs" />
+    <Compile Include="Options\OneKPacketSizeEnum.cs" />
+    <Compile Include="Operations\Finalize\Finalizer.cs" />
+    <Compile Include="Operations\Finalize\FinalizeReceive.cs" />
+    <Compile Include="Operations\Finalize\FinalizeSend.cs" />
+    <Compile Include="Operations\Finalize\IFinalizer.cs" />
+    <Compile Include="Operations\Initialize\IInitializer.cs" />
+    <Compile Include="Operations\Initialize\Initializer.cs" />
+    <Compile Include="Operations\Initialize\InitializeReceive.cs" />
+    <Compile Include="Operations\Invoke\IInvoker.cs" />
+    <Compile Include="Operations\Invoke\Invoker.cs" />
+    <Compile Include="Operations\Invoke\InvokeReceive.cs" />
+    <Compile Include="Operations\Invoke\InvokeSend.cs" />
+    <Compile Include="Operations\IOperation.cs" />
+    <Compile Include="Operations\Operation.cs" />
+    <Compile Include="Operations\ReceiveOperation.cs" />
+    <Compile Include="Operations\SendOperation.cs" />
+    <Compile Include="Environment\Context.cs" />
+    <Compile Include="Environment\IContext.cs" />
+    <Compile Include="Options\IXModemProtocolOptions.cs" />
+    <Compile Include="Operations\Initialize\InitializeSend.cs" />
+    <Compile Include="Options\XModemProtocolOptions.cs" />
+    <Compile Include="Builders\PacketBuilder.cs" />
+    <Compile Include="Validators\Checksum\CRCChecksumValidator.cs" />
+    <Compile Include="Validators\Checksum\ICRCChecksumValidator.cs" />
+    <Compile Include="Calculators\ICRCChecksumCalculator.cs" />
+    <Compile Include="Calculators\ICRCLookUpTable.cs" />
+    <Compile Include="Validators\Checksum\IValidateChecksum.cs" />
+    <Compile Include="Calculators\IChecksumCalculator.cs" />
+    <Compile Include="Calculators\LookupTable.cs" />
+    <Compile Include="Validators\Checksum\IChecksumValidator.cs" />
+    <Compile Include="Calculators\NormalChecksumCalculator.cs" />
+    <Compile Include="EventData\PacketReceivedEventArgs.cs" />
+    <Compile Include="Validators\Packet\ValidationResultEnum.cs" />
+    <Compile Include="Validators\Packet\IPacketValidator.cs" />
+    <Compile Include="Validators\Packet\PacketValidator.cs" />
+    <Compile Include="XModemAbortReasonEnum.cs" />
+    <Compile Include="EventData\CompletedEventArgs.cs" />
+    <Compile Include="EventData\ModeUpdatedEventArgs.cs" />
+    <Compile Include="EventData\PacketsBuiltEventArgs.cs" />
+    <Compile Include="Validators\Checksum\NormalChecksumValidator.cs" />
+    <Compile Include="XModemCommunicator.cs" />
+    <Compile Include="EventData\PacketToSendEventArgs.cs" />
+    <Compile Include="XModemStatesEnum.cs" />
+    <Compile Include="EventData\StateUpdatedEventArgs.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="XModemModeEnum.cs" />
+    <Compile Include="Exceptions\XModemProtocolException.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
