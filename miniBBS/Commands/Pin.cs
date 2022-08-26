@@ -50,7 +50,7 @@ namespace miniBBS.Commands
             var existing = userPins.Where(p => p.ChannelId == msg.ChannelId && p.MessageId == msg.Id).ToList();
             var pvt = true == args?.Any(a => a.StartsWith("p", StringComparison.CurrentCultureIgnoreCase));
 
-            if (!pvt && !session.User.Access.HasFlag(AccessFlag.Administrator) && userPins.Count() - existing.Count() > Constants.MaxPinsPerUser)
+            if (!pvt && !session.User.Access.HasFlag(AccessFlag.Administrator) && userPins.Count() - existing.Count() > Constants.MaxPublicPinsPerUser)
             {
                 session.Io.Error("Sorry you have too many pins already, try deleting some with '/unpin'.");
                 return;

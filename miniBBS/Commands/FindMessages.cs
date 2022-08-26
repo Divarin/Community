@@ -48,7 +48,7 @@ namespace miniBBS.Commands
 
         private static void FindBy(BbsSession session, string searchTerm, Func<Chat, bool> predicate, string matchDescription)
         {
-            if (searchTerm?.Length < 3)
+            if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length < 3)
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 {

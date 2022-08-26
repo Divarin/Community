@@ -315,7 +315,7 @@ namespace miniBBS.TextFiles
                         ListChannels.Execute(_session);
                         break;
                     case "link":
-                        LinkFile(parts[1], links, parts.Skip(1).ToArray());
+                        LinkFile(parts[1], links, parts.Skip(2).ToArray());
                         break;
                     case "?":
                     case "help":
@@ -454,13 +454,13 @@ namespace miniBBS.TextFiles
                         if (parts.Length >= 2)
                             SendFile(LinkExtensions.GetLink(links, parts[1]));
                         break;
-                    //case "rx":
-                    //case "upload":
-                    //case "receive":
-                    //    if (parts.Length >= 2)
-                    //        ReceiveFile(parts[1], links);
-                    //    result = CommandResult.ReadDirectory;
-                    //    break;
+                    case "rx":
+                    case "upload":
+                    case "receive":
+                        if (parts.Length >= 2)
+                            ReceiveFile(parts[1], links);
+                        result = CommandResult.ReadDirectory;
+                        break;
                     default:
                         var link = links.FirstOrDefault(x => x.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
                         if (link != null)
@@ -695,7 +695,7 @@ namespace miniBBS.TextFiles
             var str = FileReader.LoadFileContents(_currentLocation, link);
             var data = Encoding.ASCII.GetBytes(str);
             xfer.Data = data;
-            var options = FileTransferProtocolOptions.Xmodem1k | FileTransferProtocolOptions.XmodemCrc;
+            var options = FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
             bool sentAllData = xfer.Send(_session, options);
 
             _session.Io.OutputLine($"Sent {link.DisplayedFilename} {(sentAllData ? "successfully" : "unsuccessfully")}.");
@@ -713,7 +713,8 @@ namespace miniBBS.TextFiles
             {
                 byte[] data = null;
                 var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
-                if (xfer.Receive(_session))
+                var options = FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
+                if (xfer.Receive(_session, options))
                     data = xfer.Data;
                 return data;
             };
@@ -732,7 +733,11 @@ namespace miniBBS.TextFiles
             try
             {
                 ITextEditor basic = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Path) + "/", autoStart: true);
-                basic.EditText(_session, body);
+                basic.EditText(_session, new LineEditorParameters
+                {
+                    Filename = link.DisplayedFilename,
+                    PreloadedBody = body
+                });
             }
             finally
             {
@@ -784,13 +789,8 @@ namespace miniBBS.TextFiles
                 dirNameOrNumber = dirs[0];
             }
 
-            if (int.TryParse(dirNameOrNumber, out int n))
-            {
-                if (n >= 1 && n <= links.Count)
-                    ChangeDirectory(links[n - 1]);
-                else
-                    _session.Io.OutputLine("Invalid file/directory number.");
-            }
+            if (int.TryParse(dirNameOrNumber, out int n) && n >= 1 && n <= links.Count)
+                ChangeDirectory(links[n - 1]);
             else
             {
                 if (dirNameOrNumber == "..")

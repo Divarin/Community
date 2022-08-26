@@ -1,8 +1,10 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using miniBBS.UserIo;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace miniBBS.Commands
 {
@@ -22,6 +24,7 @@ namespace miniBBS.Commands
             {
                 session.Rows = session.User.Rows;
                 session.Cols = session.User.Cols;
+                
                 var detEmu = session.Io.EmulationType;
 
                 // this should only take effect on initial login, 
@@ -29,6 +32,11 @@ namespace miniBBS.Commands
                 if (cbmDetectedThroughDel.HasValue)
                     detEmu = cbmDetectedThroughDel.Value ? TerminalEmulation.Cbm : TerminalEmulation.Ascii;
 
+                if (session.User.TotalLogons == 1 && AskAnsi(session))
+                {
+                    detEmu = session.User.Emulation = TerminalEmulation.Ansi;
+                }
+                
                 var lastEmu = session.User.Emulation;
 
                 if (session.Rows < _minRows)
@@ -165,6 +173,39 @@ namespace miniBBS.Commands
             }
         }
 
+        private static bool AskAnsi(BbsSession session)
+        {
+            var colors = new[]
+            {
+                ConsoleColor.Red,
+                ConsoleColor.Green,
+                ConsoleColor.Yellow,
+                ConsoleColor.Blue,
+                ConsoleColor.Cyan,
+                ConsoleColor.Magenta
+            };
+
+            const string msg = "Welcome to Mutiny Community!";
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
+            {
+                session.Io.OutputRaw(Encoding.ASCII.GetBytes($"Testing for ANSI support...{Environment.NewLine}"));
+                ANSI ansi = new ANSI(session);
+                int clr = 0;
+                foreach (char c in msg)
+                {
+                    ansi.SetForeground(colors[clr++]);
+                    if (clr >= colors.Length) clr = 0;
+                    ansi.OutputRaw((byte)c);
+                }
+                ansi.SetForeground(ConsoleColor.White);
+                session.Io.OutputRaw(Encoding.ASCII.GetBytes($"{Environment.NewLine}Is the above line in multiple colors?: "));
+                var k = session.Io.InputKey();
+                return k == 'y' || k == 'Y';
+            }
+
+            
+        }
 
         private static TermSize TryAutoDetectRowsAndCols(BbsSession session)
         {

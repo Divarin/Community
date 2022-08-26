@@ -37,9 +37,9 @@ namespace miniBBS.Services.Services
             }
         }
 
-        public void EditText(BbsSession session, string existingText = null)
+        public void EditText(BbsSession session, LineEditorParameters parameters = null)
         {
-            Execute(session, existingText);
+            Execute(session, parameters?.Filename);
         }
 
         private void ShowPrompt()

@@ -54,6 +54,7 @@
     <Compile Include="GlobalCommands\GetChannel.cs" />
     <Compile Include="GlobalCommands\ListChannels.cs" />
     <Compile Include="GlobalCommands\SetMessagePointer.cs" />
+    <Compile Include="GlobalCommands\ShowNextMessage.cs" />
     <Compile Include="GlobalCommands\SwitchOrMakeChannel.cs" />
     <Compile Include="GlobalDependencyResolver.cs" />
     <Compile Include="Persistence\SqliteRepository.cs" />

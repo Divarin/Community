@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Extensions;
 using miniBBS.Services.GlobalCommands;
 using System;
 using System.Linq;
@@ -22,20 +23,20 @@ namespace miniBBS.Commands
 
                 if (!canDoThis)
                 {
-                    session.Io.OutputLine("Access denied");
+                    session.Io.Error("Access denied");
                     return;
                 }
 
                 var targetSession = DI.Get<ISessionsList>().Sessions?.FirstOrDefault(s => true == s.User?.Name?.Equals(username, StringComparison.CurrentCultureIgnoreCase));
                 if (targetSession == null)
                 {
-                    session.Io.OutputLine($"{username} doesn't appear to be online right now.");
+                    session.Io.Error($"{username} doesn't appear to be online right now.");
                     return;
                 }
 
                 if (targetSession.Channel.Name != session.Channel.Name)
                 {
-                    session.Io.OutputLine($"{username} isn't in {session.Channel.Name}!");
+                    session.Io.Error($"{username} isn't in {session.Channel.Name}!");
                     return;
                 }
 

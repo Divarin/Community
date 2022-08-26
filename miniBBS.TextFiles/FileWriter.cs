@@ -143,7 +143,11 @@ namespace miniBBS.TextFiles
                     if (editor is ISqlUi)
                         (editor as ISqlUi).Execute(session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, currentLocation.Path, link.Path));
                     else
-                        editor.EditText(session, body);
+                        editor.EditText(session, new LineEditorParameters
+                        {
+                            Filename = link.DisplayedFilename,
+                            PreloadedBody = body
+                        });
                 }
                 finally
                 {

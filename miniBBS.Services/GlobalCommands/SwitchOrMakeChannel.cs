@@ -4,7 +4,6 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,6 +112,13 @@ namespace miniBBS.Services.GlobalCommands
             }
 
             messager.Publish(new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
+            }
+
+            ShowNextMessage.Execute(session);
 
             return true;
         }

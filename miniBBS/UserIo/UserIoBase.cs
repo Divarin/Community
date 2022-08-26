@@ -102,7 +102,7 @@ namespace miniBBS.UserIo
             {
                 string ansi = GetForegroundString(color);
                 _currentForeground = color;
-                Output(ansi);
+                OutputRaw(Encoding.ASCII.GetBytes(ansi));
             }
         }
 
@@ -112,7 +112,7 @@ namespace miniBBS.UserIo
             {
                 string ansi = GetBackgroundString(color);
                 _currentBackground = color;
-                Output(ansi);
+                OutputRaw(Encoding.ASCII.GetBytes(ansi));
             }
         }
 

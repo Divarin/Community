@@ -120,7 +120,7 @@ namespace miniBBS.Commands
             var argNum = args.Length == 1 ? 0 : 1;
             int? newRe = null;
 
-            if (args != null && argNum >= args.Length)
+            if (args != null && argNum < args.Length)
             {
                 if (int.TryParse(args[argNum], out int r))
                     newRe = r;

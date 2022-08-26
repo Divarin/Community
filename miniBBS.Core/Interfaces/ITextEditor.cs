@@ -5,7 +5,7 @@ namespace miniBBS.Core.Interfaces
 {
     public interface ITextEditor
     {
-        void EditText(BbsSession session, string existingText = null);
+        void EditText(BbsSession session, LineEditorParameters parameters = null);
 
         /// <summary>
         /// Func that takes the text body, saves it (somehow), and returns a status message such as 

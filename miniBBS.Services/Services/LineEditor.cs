@@ -15,18 +15,20 @@ namespace miniBBS.Services.Services
     {
         private BbsSession _session;
         private string _savedText = null;
+        private LineEditorParameters _parameters;
 
-        public void EditText(BbsSession session, string existingText = null)
+        public void EditText(BbsSession session, LineEditorParameters parameters = null)
         {
             bool wasDnd = session.DoNotDisturb;
             session.DoNotDisturb = true;
             List<string> lines = null;
+            _parameters = parameters;
 
             try
             {
                 lines = new List<string>();
-                if (!string.IsNullOrWhiteSpace(existingText))
-                    lines.AddRange(existingText
+                if (!string.IsNullOrWhiteSpace(parameters?.PreloadedBody))
+                    lines.AddRange(parameters.PreloadedBody
                         .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
                         .Select(l => l.TrimEnd()));
 
@@ -36,6 +38,8 @@ namespace miniBBS.Services.Services
                 var cmdResult = CommandResult.None;
 
                 session.Io.OutputLine($"Mutiny Community Line Editor.  Type '/?' on a blank line for help.");
+                if (!string.IsNullOrWhiteSpace(parameters?.Filename))
+                    session.Io.OutputLine($"Now Editing: {parameters.Filename}");
                 session.Io.OutputLine($" {'-'.Repeat(session.Cols - 3)} ");
 
                 if (lines.Count > 0)

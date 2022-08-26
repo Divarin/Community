@@ -35,10 +35,10 @@ namespace miniBBS.Basic
             _autoStart = autoStart;
         }
 
-        public void EditText(BbsSession session, string existingText = null)
+        public void EditText(BbsSession session, LineEditorParameters parameters = null)
         {
             _session = session;
-            _loadedData = existingText;
+            _loadedData = parameters?.PreloadedBody;
             Start();
         }
 

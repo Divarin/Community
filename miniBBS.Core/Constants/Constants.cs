@@ -4,16 +4,16 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "3.3d - 2022.08.23";
+        public const string Version = "3.4 - 2022.08.26";
         public const string SysopName = "Divarin";
 
-        public const int MinutesUntilMessageIsUndeletable = 15;
+        public const int MinutesUntilMessageIsUndeletable = 60*3;
         public const int MinimumPasswordLength = 5;
         public const int MaximumPasswordLength = 30;
 
         public const string DatabaseFilename = "community.db";
 
-        public static bool IsLocal { get; set; } = false;
+        public static bool IsLocal { private get; set; } = false;
         public static readonly char[] LegitOneCharacterCommands = new[]
         { '[', ']', '{', '}', '<', '>', ',', '.', '?' };
 
@@ -32,7 +32,7 @@ namespace miniBBS.Core
             }
         }
 
-        public const int MaxPinsPerUser = 25;
+        public const int MaxPublicPinsPerUser = 25;
 
         public const string BasicSourceProtectedFlag = "(protect)";
 

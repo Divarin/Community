@@ -74,7 +74,7 @@ namespace miniBBS.TextFiles.Extensions
             else
                 link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
             
-            if (link == null || !requireExactMatch)
+            if (link == null && !requireExactMatch)
                 link = links.FirstOrDefault(l => l.DisplayedFilename.WithoutExtension().Equals(filenameOrNumber.WithoutExtension(), StringComparison.CurrentCultureIgnoreCase));
 
             return link;
