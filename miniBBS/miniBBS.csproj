@@ -94,6 +94,7 @@
     <Compile Include="Commands\ListInvitations.cs" />
     <Compile Include="Commands\ListModerators.cs" />
     <Compile Include="Commands\Mail.cs" />
+    <Compile Include="Commands\MoveMsg.cs" />
     <Compile Include="Commands\Pin.cs" />
     <Compile Include="Commands\ReadFile.cs" />
     <Compile Include="Commands\Roll.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="Menus\Context.cs" />
     <Compile Include="Menus\Emotes.cs" />
     <Compile Include="Menus\Messages.cs" />
+    <Compile Include="Menus\Moderator.cs" />
     <Compile Include="Menus\Users.cs" />
     <Compile Include="Persistence\DatabaseMaint.cs" />
     <Compile Include="Persistence\Logger.cs" />

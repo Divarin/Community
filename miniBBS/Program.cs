@@ -1058,7 +1058,7 @@ namespace miniBBS
                     case "-i": ToggleInviteOnly.Execute(session, false); break;
                     case "m": ListModerators.Execute(session); break;
                     case "i": ListInvitations.Execute(session); break;
-                    case "del": DeleteChannel.Execute(session); break;
+                    case "del": DeleteChannel.Execute(session); break;                    
                     default: SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); break;
                 }
             }
@@ -1076,7 +1076,13 @@ namespace miniBBS
                         KickUser.Execute(session, args[1]);
                         break;
                 }
-                
+            }
+            else if (args.Length >= 3)
+            {
+                switch (args[0].ToLower().Trim())
+                {
+                    case "movemsg": MoveMsg.Execute(session, args.Skip(1).ToArray()); break;
+                }
             }
         }
 
@@ -1086,6 +1092,7 @@ namespace miniBBS
             {
                 case "channels":
                 case "chans":
+                case "ch":
                     Channels.Show(session);
                     break;
                 case "users":
@@ -1103,6 +1110,10 @@ namespace miniBBS
                     break;
                 case "emotes":
                     Menus.Emotes.Show(session);
+                    break;
+                case "mod":
+                case "moderator":
+                    Menus.Moderator.Show(session);
                     break;
                 default:
                     MainMenu.Show(session);

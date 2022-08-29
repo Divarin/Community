@@ -7,7 +7,6 @@ using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using System;
 using System.Linq;
-using System.Text;
 
 namespace miniBBS.Commands
 {
