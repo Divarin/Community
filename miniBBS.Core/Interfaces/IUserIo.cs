@@ -13,7 +13,8 @@ namespace miniBBS.Interfaces
 
         byte[] InputRaw();
         char? InputKey();
-        string InputLine(char? echoChar = null);
+        string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None);
+        string InputLine(Func<string, string> autoComplete, InputHandlingFlag handlingFlag = InputHandlingFlag.None);
 
         void ClearLine();
         void ClearScreen();
@@ -49,6 +50,13 @@ namespace miniBBS.Interfaces
         void DelayNotification(Action action);
 
         void Flush();
-        
+
+        #region KeyPolling
+        char? GetPolledKey();
+        void PollKey();
+        void ClearPolledKey();
+        void AbortPollKey();
+        long GetPolledTicks();
+        #endregion
     }
 }

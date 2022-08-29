@@ -11,5 +11,10 @@ namespace miniBBS.Core.Models.Data
         public string Name { get; set; }
         public bool RequiresInvite { get; set; }
         public DateTime? DateCreatedUtc { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Services.GlobalCommands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,7 +68,7 @@ namespace miniBBS.Commands
 
                 session.Io.OutputLine($"Channel deleted, switching to {Constants.DefaultChannelName}.");
 
-                SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName);
+                SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false);
             }
         }
     }

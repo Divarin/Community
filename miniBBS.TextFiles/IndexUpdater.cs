@@ -18,7 +18,7 @@ namespace miniBBS.TextFiles
 
             var linkComparer = new LinkComparer();
 
-            var links = LinkParser.GetLinks(data);
+            var links = LinkParser.GetLinks(data).ToList();
             var dirs = links.Where(l => l.IsDirectory).ToList();
             dirs.Sort(linkComparer);
             var files = links.Where(l => !l.IsDirectory).ToList();
@@ -41,10 +41,15 @@ namespace miniBBS.TextFiles
             }
             else
             {
-                listToInsertInto.RemoveAt(itemIndex);
+                if (itemIndex < 0 || itemIndex >= links.Count)
+                    return;
+                else
+                {
+                    listToInsertInto.RemoveAt(itemIndex);
+                }
             }
 
-            links = dirs.Union(files);
+            links = dirs.Union(files).ToList();
 
             WriteIndex(indexLocation, links);
         }

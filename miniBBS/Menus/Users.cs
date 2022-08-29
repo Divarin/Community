@@ -11,7 +11,7 @@ namespace miniBBS.Menus
             "*** Users Help ***",
             " ",
             "/who : List of users currently logged on.",
-            "/w   : List of all users whether currently logged on or not.",
+            "/users : List of all users whether currently logged on or not.",
             $"/kick (username) : As a moderator of the channel you can use this to kick the user out of the channel.  If the channel is {Constants.DefaultChannelName} and you are a global moderator or administrator then they will be booted from the system.",
             "/ui  : User Info, shows info about you.",
             "/ui (username) : User Info, shows info about the given user.",

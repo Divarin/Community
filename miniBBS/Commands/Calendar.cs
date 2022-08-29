@@ -12,19 +12,28 @@ namespace miniBBS.Commands
 {
     public static class Calendar
     {
+        public static int GetCount()
+        {
+            var calRepo = DI.GetRepository<CalendarItem>();
+            PruneOldEntries(calRepo);
+            return calRepo.Get().Count();
+        }
+
         public static void Execute(BbsSession session)
         {
             var originalForegroundColor = session.Io.GetForeground();
             var previousLocation = session.CurrentLocation;
+            var originalDnd = session.DoNotDisturb;
+
             try
             {
+                session.DoNotDisturb = true;
                 session.CurrentLocation = Module.Calendar;
                 MenuItem menuSelection = MenuItem.Quit;
                 var channelNames = DI.GetRepository<Channel>()
                     .Get()
                     .ToDictionary(k => k.Id, v => v.Name);
                 var calRepo = DI.GetRepository<CalendarItem>();
-                PruneOldEntries(calRepo);
                 do
                 {
                     var menuResult = ShowMenu(session, calRepo, channelNames);
@@ -50,6 +59,7 @@ namespace miniBBS.Commands
             {
                 session.Io.SetForeground(originalForegroundColor);
                 session.CurrentLocation = previousLocation;
+                session.DoNotDisturb = originalDnd;
             }
         }
 
@@ -79,16 +89,15 @@ namespace miniBBS.Commands
             session.Io.OutputLine(builder.ToString());
             session.Io.SetForeground(ConsoleColor.White);
             builder.Clear();
-            builder.AppendLine("** Calendar Menu **");            
             builder.AppendLine("V : View calendar again (re-list)");
             builder.AppendLine("A : Add a new calendar item");
             builder.AppendLine("D : Delete an item");
             builder.AppendLine("R : Renew an item");
-            builder.AppendLine("Q : Quit");
+            builder.Append("Q : Quit");
             session.Io.OutputLine(builder.ToString());
 
             session.Io.SetForeground(ConsoleColor.Yellow);
-            session.Io.Output("[Calendar] : ");
+            session.Io.Output("[Calendar] > ");
             var k = session.Io.InputKey();
             session.Io.OutputLine();
 

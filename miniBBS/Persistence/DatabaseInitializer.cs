@@ -25,6 +25,8 @@ namespace miniBBS.Persistence
                 CreateCalendarTable(db);
                 CreateIpBansTable(db);
                 CreateMailTable(db);
+                CreateBlurbsTable(db);
+                CreatePinnedMessagesTable(db);
 
                 db.Close();
             }
@@ -135,5 +137,22 @@ namespace miniBBS.Persistence
             }
         }
 
+        private void CreateBlurbsTable(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE Blurbs (Id integer primary key autoincrement, UserId integer not null, DateAddedUtc TEXT not null, BlurbText TEXT not null)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void CreatePinnedMessagesTable(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE PinnedMessages (Id integer primary key autoincrement, MessageId integer not null, ChannelId integer not null, PinnedByUserId integer not null, Private TEXT not null, DatePinnedUtc TEXT not null)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
     }
 }

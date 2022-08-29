@@ -32,6 +32,8 @@ namespace miniBBS.Core.Models.Control
             thread.Start();
         }
 
+        public string PreviousFilesDirectory { get; set; }
+
         ~BbsSession()
         {
             Dispose();
@@ -135,6 +137,8 @@ namespace miniBBS.Core.Models.Control
             _pingPongThread = new Thread(start);
             _pingPongThread.Start(this);
         }
+
+        public string LastLine { get; set; }
 
         private static void PingPong(object o)
         {

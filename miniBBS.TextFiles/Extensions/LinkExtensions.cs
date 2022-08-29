@@ -1,5 +1,7 @@
-﻿using miniBBS.TextFiles.Models;
+﻿using miniBBS.Extensions;
+using miniBBS.TextFiles.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace miniBBS.TextFiles.Extensions
@@ -57,6 +59,25 @@ namespace miniBBS.TextFiles.Extensions
             bool rejectThisUserSpecifically = true == link.Editors?.Any(c => $"-{user.Name}".Equals(c, StringComparison.CurrentCultureIgnoreCase));
             bool result = allowThisUserSpecifically || (allowAll && !rejectThisUserSpecifically);
             return result;
+        }
+
+        /// <summary>
+        /// Finds a link in the <paramref name="links"/> with the given <paramref name="filenameOrNumber"/>.  
+        /// If <paramref name="requireExactMatch"/> is false then will return the first file that matches the name 
+        /// regardless of extension.
+        /// </summary>
+        public static Link GetLink(this IList<Link> links, string filenameOrNumber, bool requireExactMatch = true)
+        {
+            Link link = null;
+            if (int.TryParse(filenameOrNumber, out int n) && n >= 1 && n <= links.Count)
+                link = links[n - 1];
+            else
+                link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+            
+            if (link == null && !requireExactMatch)
+                link = links.FirstOrDefault(l => l.DisplayedFilename.WithoutExtension().Equals(filenameOrNumber.WithoutExtension(), StringComparison.CurrentCultureIgnoreCase));
+
+            return link;
         }
     }
 }

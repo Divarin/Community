@@ -9,6 +9,7 @@ using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
+using miniBBS.Services.GlobalCommands;
 using miniBBS.Subscribers;
 using miniBBS.UserIo;
 using System;
@@ -44,7 +45,7 @@ namespace miniBBS
             SystemControlFlag sysControl = SystemControlFlag.Normal;
             var sessionsList = DI.Get<ISessionsList>();
             Console.WriteLine(Constants.Version);
-            _ipBans = DI.GetRepository<IpBan>().Get()
+            _ipBans = DI.GetRepository<Core.Models.Data.IpBan>().Get()
                 .Select(x => x.IpMask)
                 .ToList();
 
@@ -54,13 +55,6 @@ namespace miniBBS
             {
                 try
                 {
-
-                    //Console.WriteLine($" -- {DateTime.Now} --");
-                    //Console.WriteLine("Sessions:");
-                    //foreach (var s in sessionsList.Sessions)
-                    //Console.WriteLine($"{s.IpAddress} {s.User?.Name} [{s.Channel?.Name}] {s.SessionStartUtc:yy-MM-dd HH:mm:ss}");
-                    //Console.WriteLine($"Waiting for a connection on port {port} @ {DateTime.Now}");                    
-                    
                     TcpClientFactory clientFactory = new TcpClientFactory(listener);
                     clientFactory.AwaitConnection();
                     while (clientFactory.Client == null)
@@ -79,7 +73,7 @@ namespace miniBBS
                 } 
                 catch (Exception ex)
                 {
-                    _logger.Log($"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                    _logger.Log(null, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 }
             }
 
@@ -99,13 +93,11 @@ namespace miniBBS
                 var sysControl = nodeParams.SysControl;
 
                 var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
-                if (true == _ipBans?.Any(x => FitsMask(ip, x)))
+                if (true == _ipBans?.Any(x => Commands.IpBan.FitsMask(ip, x)))
                 {
                     Console.WriteLine($"Banned ip {ip} rejected.");
                     return;
                 }
-
-                //_logger.Log($"{ip} connected.", consoleOnly: true);
 
                 if (sessionsList.Sessions.Count(s => !string.IsNullOrWhiteSpace(s.IpAddress) && s.IpAddress.Equals(ip)) > Constants.MaxSessionsPerIpAddress)
                 {
@@ -141,12 +133,11 @@ namespace miniBBS
 
                     if (session.User != null)
                     {
-                        //_logger.Log(session, "User logged in", consoleOnly: true);
                         if (sysControl.HasFlag(SystemControlFlag.AdministratorLoginOnly) && !session.User.Access.HasFlag(AccessFlag.Administrator))
                             session.Io.OutputLine("Sorry the system is currently in maintenence mode, only system administators may log in at this time.  Please try again later.");
                         else
                         {
-                            TermSetup.Execute(session);
+                            TermSetup.Execute(session, cbmDetectedThroughDel: session.Io.EmulationType == TerminalEmulation.Cbm);
                             ShowNotifications(session);
 
                             int unreadMail = Commands.Mail.CountUnread(session);
@@ -160,14 +151,15 @@ namespace miniBBS
 
                             try
                             {
+                                SysopScreen.BeginLogin(session);
                                 RunSession(session);
                             }
                             finally
                             {
+                                SysopScreen.EndLogin(session);
                                 session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, false));
                             }
                         }
-                        //_logger.Log(session, "User logged out", consoleOnly: true);
                         _logger.Flush();
                     }
 
@@ -183,7 +175,14 @@ namespace miniBBS
             } 
             catch (Exception ex)
             {
-                _logger.Log($"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                // don't bother logging errors caused by "dropped carriers" (disconnects)
+                if (!ex.AllExceptions().Any(x =>
+                    x.Message.Contains("An established connection was aborted") ||
+                    x.Message.Contains("Unable to read data from the transport connection") ||
+                    x.Message.Contains("Unable to write data to the transport connection")))
+                {
+                    _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
             }
             finally
             {
@@ -193,23 +192,7 @@ namespace miniBBS
             }
         }
 
-        private static bool FitsMask(string ip, string mask)
-        {
-            if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(mask))
-                return false;
-            var ipParts = ip.Split('.');
-            var maskParts = mask.Split('.');
 
-            bool fits = true;
-            for (int i=0; fits && i < ipParts.Length && i < maskParts.Length; i++)
-            {
-                var ipPart = ipParts[i];
-                var maskPart = maskParts[i];
-                fits &= ipPart == maskPart || maskPart == "*";
-            }
-
-            return fits;
-        }
 
         private static void ShowNotifications(BbsSession session)
         {
@@ -238,7 +221,14 @@ namespace miniBBS
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
                     return;
-                }    
+                }
+            }
+            else if (session.User.TotalLogons < 10)
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+                {
+                    session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /fauxmain if you want to see it again.");
+                }
             }
 
             session.CurrentLocation = Module.Chat;
@@ -263,11 +253,6 @@ namespace miniBBS
             var chatRepo = DI.GetRepository<Chat>();
 
             DatabaseMaint.RemoveSuperfluousUserChannelFlags(session.UcFlagRepo, session.User.Id);
-
-            if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName))
-            {
-                throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
-            }
             
             session.ChannelPostSubscriber.OnMessageReceived = m => NotifyNewPost(m.Chat, session);
             session.UserLoginOrOutSubscriber.OnMessageReceived = m => NotifyUserLoginOrOut(m.User, session, m.IsLogin);
@@ -283,6 +268,7 @@ namespace miniBBS
                 session.Io.SetForeground(ConsoleColor.Cyan);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.OutputLine("Feel free to hang out as long as you want, there is no time limit!");
+                Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
             }
@@ -294,7 +280,20 @@ namespace miniBBS
                 else
                     session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz to change this.");
 
+                var calCount = Calendar.GetCount();
+                if (calCount > 0)
+                {
+                    session.Io.SetForeground(ConsoleColor.Red);
+                    session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
+                }
+
                 session.Io.SetForeground(ConsoleColor.Magenta);
+
+                if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false))
+                {
+                    throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
+                }
+
                 session.Io.OutputLine("Press Enter/Return to read next message.");
             }
 
@@ -302,33 +301,14 @@ namespace miniBBS
             {
                 session.ShowPrompt();
 
-                string line = session.Io.InputLine();
+                string line = session.Io.InputLine(InputHandlingFlag.InterceptSingleCharacterCommand | InputHandlingFlag.UseLastLine);
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     // enter (advance to next n lines)
-                    if (!session.Chats.ContainsKey(session.MsgPointer))
-                    {
-                        using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
-                        {
-                            session.Io.OutputLine("No more messages in this channel.");
-                        }
-                    }
-                    else
-                    {
-                        Chat nextMessage = session.Chats[session.MsgPointer];
-                        nextMessage.Write(session);
-
-                        if (!SetMessagePointer.Execute(session, session.MsgPointer + 1))
-                        {
-                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                            {
-                                session.Io.OutputLine("No more messages in this channel.");
-                            }
-                        }
-                    }
+                    ShowNextMessage.Execute(session);
                 }
-                else if (line[0] == '/')
+                else if (line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
                     ExecuteCommand(session, line);
                 else if (session.UcFlag.Flags.HasFlag(UCFlag.ReadyOnly) && (session.User.Access & (AccessFlag.Administrator | AccessFlag.GlobalModerator)) == 0)
                     session.Io.OutputLine("You are not allowed to talk in this channel at this time.");
@@ -391,16 +371,19 @@ namespace miniBBS
                 ResponseToId = isNewTopic ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber
             };
 
-            bool isAtEndOfMessages = true != session.Chats?.Any() || session.MsgPointer == session.Chats.Keys.Max();
-            chat = chatRepo.Insert(chat);
-            //_logger.Log(session, $"posted {chat.Id} in {session.Channel.Name}", consoleOnly: true);            
+            int lastRead =
+                session.LastReadMessageNumberWhenStartedTyping ??
+                session.LastReadMessageNumber ??
+                session.MsgPointer;
+
+            bool isAtEndOfMessages = true != session.Chats?.Any() || lastRead == session.Chats.Keys.Max();
+            chat = chatRepo.Insert(chat);         
             session.Chats[chat.Id] = chat;
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 session.Io.OutputLine($"Message {session.Chats.ItemNumber(chat.Id)} Posted to {session.Channel.Name}.");
                 session.LastReadMessageNumber = chat.Id;
             }
-            //chat.Write(session);
             if (isAtEndOfMessages)
                 SetMessagePointer.Execute(session, chat.Id);
             session.Messager.Publish(new ChannelPostMessage(chat, session.Id));
@@ -409,14 +392,20 @@ namespace miniBBS
 
         private static void Prompt(BbsSession session)
         {
+            int unreadMessageCount = GetUnreadMessageCount(session);
+
+            session.Io.SetForeground(ConsoleColor.Cyan);
+            session.Io.Output($"(/?=help) ({unreadMessageCount}){(session.Cols <= 40 ? Environment.NewLine : " ")}<{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}> [{session.Channel.Id}:{session.Channel.Name}] ");
+            session.Io.SetForeground(ConsoleColor.White);
+        }
+
+        private static int GetUnreadMessageCount(BbsSession session)
+        {
             int highMessage = (true == session.Chats?.Keys?.Any()) ? session.Chats.Keys.Max() : 0;
             var unreadMessageCount = highMessage > 0 ? session.Chats.Count(c => c.Key > session.MsgPointer) : 0;
             if (highMessage > 0 && session.LastReadMessageNumber != highMessage)
                 unreadMessageCount++;
-
-            session.Io.SetForeground(ConsoleColor.Cyan);            
-            session.Io.Output($"(/?=help) ({unreadMessageCount}){(session.Cols <= 40 ? Environment.NewLine : " ")}<{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}> [{session.Channel.Id}:{session.Channel.Name}] ");
-            session.Io.SetForeground(ConsoleColor.White);
+            return unreadMessageCount;
         }
 
         /// <summary>
@@ -427,8 +416,13 @@ namespace miniBBS
         {
             if (chat == null || chat.ChannelId != session.Channel.Id)
                 return;
-            
-            bool isAtEndOfMessages = session.MsgPointer == session.Chats.Keys.Max();
+
+            int lastRead =
+                session.LastReadMessageNumberWhenStartedTyping ??
+                session.LastReadMessageNumber ??
+                session.MsgPointer;
+
+            bool isAtEndOfMessages = lastRead == session.Chats.Keys.Max();
             session.Chats[chat.Id] = chat;
 
             Action action = () =>
@@ -529,7 +523,7 @@ namespace miniBBS
                         ?.Where(s => user.Id == s.User?.Id)
                         ?.Count();
 
-                    string message = $"{Environment.NewLine}{user.Name} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm:ss}";
+                    string message = $"{Environment.NewLine}{user.Name} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
                     if (sessionsForThisUser > 1)
                         message += $" ({sessionsForThisUser})";
 
@@ -550,14 +544,13 @@ namespace miniBBS
 
         private static void NotifyEmote(BbsSession session, EmoteMessage message)
         {
-            if (session.User == null)
+            if (session.User == null ||
+                message.ChannelId != session.Channel?.Id ||
+                message.FromUserId == session.User.Id ||
+                (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id))
+            {
                 return;
-            if (message.ChannelId != session.Channel?.Id)
-                return;
-            if (message.FromUserId == session.User.Id)
-                return;
-            if (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id)
-                return;
+            }
 
             Action action = () =>
             {
@@ -586,7 +579,7 @@ namespace miniBBS
             if (DI.Get<ISessionsList>().Sessions.Count() >= Constants.MaxSessions)
             {
                 session.Io.OutputLine("Sorry, too many people are online right now!  Try again later.");
-                Console.WriteLine($"{session.IpAddress} tried to log on but there are too many people online right now.");
+                _logger.Log(session, $"{session.IpAddress} tried to log on but there are too many people online right now.");
                 return;
             }
 
@@ -597,6 +590,7 @@ namespace miniBBS
             {
                 session.Io = new Cbm(session);
                 session.Cols = 40;
+                session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Green);
                 session.Io.OutputLine("Commodore PETSCII (CBM) mode activated.");
             }            
 
@@ -611,7 +605,7 @@ namespace miniBBS
             username = username.Trim().ToUpperFirst();
             if (username.Any(c => !char.IsLetter(c)))
             {
-                session.Io.OutputLine("Your username must include of only letters.");
+                session.Io.OutputLine("Your username must include only letters.");
                 return;
             }
 
@@ -620,6 +614,7 @@ namespace miniBBS
             {
                 if (username.Length < Constants.MinUsernameLength ||
                     username.Length > Constants.MaxUsernameLength ||
+                    username.Any(c => !char.IsLetter(c)) ||
                     Constants.IllegalUsernames.Contains(username, StringComparer.CurrentCultureIgnoreCase))
                 {
                     session.Io.OutputLine($"Not allowed to use username {username}.  Minimum Length: {Constants.MinUsernameLength}, Maximum Length: {Constants.MaxUsernameLength}, only letters, and some names just aren't allowed at all.");
@@ -627,29 +622,25 @@ namespace miniBBS
                     return;
                 }
 
-                session.Io.Output("I've never seen you before, you new here?: ");
-                var k = session.Io.InputKey();
-                session.Io.OutputLine();
-                if (k != 'y' && k != 'Y')
+                var k = session.Io.Ask("I've never seen you before, you new here?");
+                if (k != 'Y')
                     return;
                 user = RegisterNewUser(session, username, userRepo);
                 session.CurrentLocation = Module.Login;
                 if (user == null)
                     return;
-                session.Io.Output("Do you want to read the new user documentation now?: ");
-                k = session.Io.InputKey();
-                session.Io.OutputLine();
-                if (k == 'y' || k == 'Y')
+                k = session.Io.Ask("Do you want to read the new user documentation now?");
+                if (k == 'Y')
                     ReadFile.Execute(session, Constants.Files.NewUser);
                 else
-                    session.Io.OutputLine("Once you get to the main prompt, type '/newuser' to read the new user documentation.  It can be very helpful for new users as this system works differently than most.");
+                    session.Io.OutputLine("Once you get logged in, type '/newuser' to read the new user documentation.  It can be very helpful for new users as this system works differently than most.");
 
                 session.User = user;
             }
             else
             {
                 session.Io.Output("Oh yeah? prove it! (password): ");
-                string pw = session.Io.InputLine('*')?.ToLower();
+                string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
                 if (!DI.Get<IHasher>().VerifyHash(pw, user.PasswordHash))
                 {
                     session.Io.OutputLine("I don't think so.");
@@ -685,11 +676,11 @@ namespace miniBBS
             session.CurrentLocation = Module.NewUserRegistration;
 
             session.Io.Output("Choose a password (and don't forget it): ");
-            string pw = session.Io.InputLine('*')?.ToLower();
+            string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
 
-            if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength)
+            if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength || pw.Length > Constants.MaximumPasswordLength)
             {
-                session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters.");
+                session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters and not more than {Constants.MaximumPasswordLength} characters.");
                 return null;
             }
 
@@ -705,7 +696,7 @@ namespace miniBBS
                 Access = AccessFlag.MayLogon
             };
 
-            session.Io.OutputLine(Constants.NewUserMessage);
+            //ReadFile.Execute(session, Constants.Files.NewUser);
 
             user = userRepo.Insert(user);
             return user;
@@ -743,9 +734,17 @@ namespace miniBBS
                     }
                     return;
                 case "/o":
-                    // logoff
+                case "/off":
+                case "/g":
+                case "/logoff":
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
+                    return;
+                case "/cls":
+                case "/clr":
+                case "/clear":
+                case "/c":
+                    session.Io.ClearScreen();
                     return;
                 case "/pass":
                 case "/pw":
@@ -753,7 +752,12 @@ namespace miniBBS
                 case "/pwd":
                     UpdatePassword.Execute(session);
                     return;
+                case "/main":
+                case "/menu":
                 case "/fauxmain":
+                case "/fauxmenu":
+                case "/fakemain":
+                case "/fakemenu":
                     if (!FauxMain.Execute(session))
                     {
                         // logoff
@@ -762,13 +766,17 @@ namespace miniBBS
                     }
                     return;
                 case "/term":
+                case "/setup":
+                case "/emu":
                     TermSetup.Execute(session);
                     return;
                 case "/bell":
+                case "/sound":
                     Bell.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/shutdown":
-                    ExecuteSessionControlCommand(parts.Skip(1).ToArray(), session);
+                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
+                        Shutdown.Execute(session);
                     return;
                 case "/announce":
                     if (parts.Length >= 2)
@@ -777,12 +785,20 @@ namespace miniBBS
                         return;
                     }
                     break;
+                case "/help":
                 case "/?":
+                case "?":
                     ExecuteMenu(session, parts.Length >= 2 ? parts[1] : null);
                     return;
+                case "/??":
+                    CommandList.Execute(session);
+                    return;
+                case "/about":
                 case "/a":
                     About.Show(session);
                     return;
+                case "/del":
+                case "/delete":
                 case "/d":
                     {
                         string arg = parts.Length >= 2 ? parts[1] : null;
@@ -794,30 +810,49 @@ namespace miniBBS
                 case "/s":
                     EditMessage.Execute(session, parts.Skip(1).ToArray());
                     return;
+                case "/rere":
+                    EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());
+                    return;
+                case "/pin":
+                    Pin.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/pins":
+                    Pin.ShowPins(session, parts.Skip(1).ToArray());
+                    return;
+                case "/unpin":
+                    Pin.Unpin(session, parts.Skip(1).ToArray());
+                    return;
                 case "/dnd":
                     session.DoNotDisturb = !session.DoNotDisturb;
                     session.Io.OutputLine($"Do not disturb mode is : {(session.DoNotDisturb ? "On" : "Off")}");
                     return;
                 case "/e":
+                case "/end":
                     SetMessagePointer.Execute(session, session.Chats.Keys.Max());
-                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
-                    {
-                        session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
-                    }
+                    session.Chats[session.MsgPointer].Write(session);
                     return;                
                 case "/chl":
+                case "/chanlist":
+                case "/channellist":
+                case "/channelist":
                     ListChannels.Execute(session);
                     return;
                 case "/ch":
+                case "/chan":
+                case "/channel":
                     ExecuteChannelCommand(session, parts.Skip(1).ToArray());
                     return;
+                case "/w":
                 case "/who":
                     WhoIsOn.Execute(session, DI.Get<ISessionsList>());
                     return;
-                case "/w":
+                case "/u":
+                case "/users":
                     WhoIsAll.Execute(session);
                     return;
                 case "/f":
+                case "/find":
+                case "/search":
                     FindMessages.FindByKeyword(session, parts.Length > 1 ? parts[1] : null);
                     return;
                 case "/fu":
@@ -830,45 +865,53 @@ namespace miniBBS
                     Afk.Execute(session, string.Join(" ", parts.Skip(1)));
                     return;
                 case "/read":
+                case "/nonstop":
                     ContinuousRead.Execute(session);
                     return;
                 case "/ctx":
+                case "/cx":
+                case "/re":
+                case "/ref":
+                case "/wat":
                     Commands.Context.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/new":
                     AddToChatLog(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
                     return;
                 case "/tz":
+                case "/timezone":
+                case "/time":
                     Commands.TimeZone.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/si":
+                case "/session":
+                case "/sessioninfo":
                     SessionInfo.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/ui":
+                case "/user":
+                case "/userinfo":
                     UserInfo.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/ci":
+                case "/chat":
+                case "/chatinfo":
                     ChatInfo.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/cal":
+                case "/calendar":
                     Calendar.Execute(session);
                     return;
                 case "/index":
+                case "/i":
                     IndexBy.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/ipban":
-                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
-                    {
-                        var mask = string.Join(" ", parts.Skip(1));
-                        DI.GetRepository<IpBan>().Insert(new IpBan
-                        {
-                            IpMask = mask
-                        });
-                        _ipBans.Add(mask);
-                        session.Io.OutputLine($"Added '{mask}' to IP ban list.");
-                    }
+                    Commands.IpBan.Execute(session, ref _ipBans, parts.Skip(1).ToArray());
                     return;
                 case "/pp":
+                case "/keepalive":
+                case "/ping":
                     {
                         if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
                             session.StartPingPong(i, silently: false);
@@ -896,30 +939,42 @@ namespace miniBBS
                 case "/rnd":
                 case "/dice":
                 case "/die":
-                    if (parts.Length >= 2)
-                        Roll.Execute(session, parts[1]);
+                    Roll.Execute(session, parts.Skip(1)?.ToArray());
                     return;
                 case "/mail":
+                case "/email":
+                case "/e-mail":
                     Commands.Mail.Execute(session, parts.Length >= 2 ? parts.Skip(1).ToArray() : null);
                     return;
                 case "/feedback":
                     Commands.Mail.Execute(session, "send", Constants.SysopName);
                     return;
+                case "/texts":
+                case "/textz":
                 case "/text":
                 case "/txt":
                 case "/file":
                 case "/files":
+                case "/filez":
+                case "/myfiles":
                     {
                         var browser = DI.Get<ITextFilesBrowser>();
                         browser.OnChat = line =>
                         {
                             AddToChatLog(session, DI.GetRepository<Chat>(), line);
                         };
-                        browser.Browse(session);
+                        FilesLaunchFlags flags = 
+                            "/myfiles".Equals(command, StringComparison.CurrentCultureIgnoreCase) ? 
+                            FilesLaunchFlags.MoveToUserHomeDirectory : 
+                            FilesLaunchFlags.ReturnToPreviousDirectory;
+
+                        browser.Browse(session, flags);
                     }
                     return;
                 case "/textread":
                 case "/tr":
+                case "/run":
+                case "/exec":
                     {
                         bool linkFound = false;
                         var browser = DI.Get<ITextFilesBrowser>();
@@ -937,6 +992,45 @@ namespace miniBBS
                         }
                     }
                     return;
+                case "/blurb":
+                    Blurbs.Execute(session, string.Join(" ", parts.Skip(1)));
+                    return;
+                case "/blurbadmin":
+                    Blurbs.BlurbAdmin(session, parts.Skip(1).ToArray());
+                    return;
+                case ",":
+                case "<":
+                    SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
+                    session.Chats[session.MsgPointer].Write(session);
+                    return;
+                case ".":
+                case ">":
+                    ShowNextMessage.Execute(session);
+                    return;
+                case "[":
+                case "{":
+                    {
+                        var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
+                            .ToDictionary(k => k.Id));
+                        var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
+                        int? nextChannelNumber = currentChannelNumber.Value - 1;
+                        var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
+                        nextChannelNumber = chans.ItemNumber(nextChannelId);
+                        SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber+1}", false);
+                    }
+                    return;
+                case "]":
+                case "}":
+                    {
+                        var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
+                            .ToDictionary(k => k.Id));
+                        var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
+                        int? nextChannelNumber = currentChannelNumber.Value + 1;
+                        var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
+                        nextChannelNumber = chans.ItemNumber(nextChannelId);
+                        SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber+1}", false);
+                    }
+                    return;
             }
 
             if (command.Length > 1 && int.TryParse(command.Substring(1), out int msgNum))
@@ -945,26 +1039,13 @@ namespace miniBBS
                 if (n.HasValue)
                 {
                     SetMessagePointer.Execute(session, n.Value);
-                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
-                    {
-                        session.Io.OutputLine($"Message pointer moved to {session.Chats.ItemNumber(session.MsgPointer)}, press enter to read message.");
-                    }
+                    ShowNextMessage.Execute(session);
                 }
                 else
-                {
-                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                    {
-                        session.Io.OutputLine($"Message number {msgNum} is out of range for this channel.");
-                    }
-                }
+                    session.Io.Error($"Message number {msgNum} is out of range for this channel.");
             }
             else
-            {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                {
-                    session.Io.OutputLine("Unrecognized command.  Use /? for help.");
-                }
-            }
+                session.Io.Error("Unrecognized command.  Use /? for help.");
         }
 
         private static void ExecuteChannelCommand(BbsSession session, string[] args)
@@ -978,7 +1059,7 @@ namespace miniBBS
                     case "m": ListModerators.Execute(session); break;
                     case "i": ListInvitations.Execute(session); break;
                     case "del": DeleteChannel.Execute(session); break;
-                    default: SwitchOrMakeChannel.Execute(session, args[0]); break;
+                    default: SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); break;
                 }
             }
             else if (args.Length == 2)
@@ -1004,12 +1085,14 @@ namespace miniBBS
             switch (submenu?.ToLower())
             {
                 case "channels":
+                case "chans":
                     Channels.Show(session);
                     break;
                 case "users":
                     Users.Show(session);
                     break;
                 case "msgs":
+                case "messages":
                     Messages.Show(session);
                     break;
                 case "context":
@@ -1026,21 +1109,6 @@ namespace miniBBS
                     break;
             }
         }
-
-        private static void ExecuteSessionControlCommand(string[] args, BbsSession session)
-        {
-            if (args?.Length < 1)
-                return;
-
-            switch (args[0].ToLower())
-            {
-                case "shutdown":
-                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
-                    Shutdown.Execute(session);
-                    break;
-            }
-        }
-
 
     }
 }

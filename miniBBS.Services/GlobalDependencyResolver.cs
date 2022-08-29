@@ -8,11 +8,16 @@ namespace miniBBS.Services
 {
     public static class GlobalDependencyResolver
     {
-        private static Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
+        private static readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
 
-        private static Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
+        private static readonly Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
-            {typeof(ITextEditor), () => new LineEditor()}
+            {typeof(ITextEditor), () => new LineEditor()},
+            {typeof(ISqlUi), () => new SqlUi()},
+            {typeof(IFileTransferProtocol), () => new Xmodem()},
+            {typeof(ICompressor), () => GetOrSetSingleton(() => new Compressor())},
+            {typeof(ISessionsList), () => GetOrSetSingleton(() => new SessionsList())},
+            {typeof(IMessager), () => GetOrSetSingleton(() => new Messager())}
         };
 
         public static IRepository<T> GetRepository<T>()
@@ -25,7 +30,9 @@ namespace miniBBS.Services
         {
             Type type = typeof(T);
 
-            if (_dictionary.ContainsKey(type))
+            if (_singletons.ContainsKey(type))
+                return (T)_singletons[type];
+            else if (_dictionary.ContainsKey(type))
                 return (T)_dictionary[type]();
 
             return default(T);

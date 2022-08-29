@@ -77,6 +77,10 @@
     <Compile Include="TopLevel.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\miniBBS.Basic\miniBBS.Basic.csproj">
+      <Project>{596b7354-9ea5-4e40-a2dc-854e8ec32846}</Project>
+      <Name>miniBBS.Basic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\miniBBS.Core\miniBBS.Core.csproj">
       <Project>{36b12940-0f2c-4b2a-8f69-3bc4fe872390}</Project>
       <Name>miniBBS.Core</Name>

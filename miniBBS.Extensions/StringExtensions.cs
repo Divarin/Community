@@ -22,6 +22,22 @@ namespace miniBBS.Extensions
             return result;
         }
 
+        public static string Repeat(this string str, int count)
+        {
+            char[] array = new char[str.Length * count];
+            int offset = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                for (int c = 0; c < str.Length; c++)
+                {
+                    array[offset++] = str[c];
+                }
+            }
+
+            return new string(array, 0, array.Length);
+        }
+
         public static string Repeat(this char c, int numRepeats)
         {
             char[] arr = new char[numRepeats];
@@ -42,6 +58,7 @@ namespace miniBBS.Extensions
             int col = 0;
             int breakIndex = 0;
             bool inAnsiCode = false;
+            bool trimStartOfNextLine = false;
 
             for (int i=0; i < str.Length; i++)
             {
@@ -76,22 +93,36 @@ namespace miniBBS.Extensions
                         end = i;
 
                     int len = end - start + 1;
-                    string substring = str.Substring(start, len);
+                    string substring = str.Substring(start, len);                    
+
                     if (!string.IsNullOrWhiteSpace(substring))
                     {
                         substring = substring
                             .TrimEnd(' ')
                             .Replace("\r\0", "\r");
 
+                        trimStartOfNextLine = false;
+
                         if (substring[substring.Length - 1] != 13 && substring[substring.Length - 1] != 10)
+                        {
+                            // adding a newline due to wrapping
                             substring += Environment.NewLine;
+                            trimStartOfNextLine = true;
+                        }
                         else if (substring[substring.Length - 1] == 13)
+                        {
+                            // replace just "enter" with proper newline (13 + 10, enter + linefeed)
                             substring += "\n";
+                        }
                         if (substring.Length > 2 && substring[0] == 13 && substring[1] == 10)
-                            substring = substring.Substring(2);
+                        {
+                            // this line starts with a newline, take that off
+                            substring = substring.Substring(2);                            
+                        }
+
                         if (!string.IsNullOrWhiteSpace(substring))
                         {
-                            if (!flags.HasFlag(OutputHandlingFlag.DoNotTrimStart))
+                            if (trimStartOfNextLine || !flags.HasFlag(OutputHandlingFlag.DoNotTrimStart))
                                 substring = substring.TrimStart(' ');
                             yield return substring.Replace(Constants.Spaceholder, ' ');
                         }
@@ -140,6 +171,58 @@ namespace miniBBS.Extensions
                 str = str.Substring(totalLength);
 
             return str;
+        }
+
+        public static string JoinPathParts(params string[] parts)
+        {
+            if (true != parts?.Any())
+                return string.Empty;
+
+            var result = string.Join("/", parts.Select(p =>
+            {
+                p = p.Replace("\\", "/");
+                if (p.StartsWith("/"))
+                    p = p.Substring(1);
+                if (p.EndsWith("/"))
+                    p = p.Substring(0, p.Length - 1);
+                return p;
+            }));
+
+            return result;
+        }
+
+        /// <summary>
+        /// returns only the extension of the <paramref name="filename"/>
+        /// </summary>
+        public static string FileExtension(this string filename)
+        {
+            string result = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(filename))
+            {
+                int pos = filename.LastIndexOf('.');
+                if (pos > 0)
+                    result = filename.Substring(pos + 1);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Returns the <paramref name="filename"/> without the extension
+        /// </summary>
+        public static string WithoutExtension(this string filename)
+        {
+            string result = filename;
+
+            if (!string.IsNullOrWhiteSpace(filename))
+            {
+                int pos = filename.LastIndexOf('.');
+                if (pos > 0)
+                    result = filename.Substring(0, pos);
+            }
+
+            return result;
         }
     }
 }

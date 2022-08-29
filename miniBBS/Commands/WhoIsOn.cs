@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,10 +55,14 @@ namespace miniBBS.Commands
                     }
                     list.Add(listItem);
                 }
-                
+
+                list.Add($"{Environment.NewLine}{UserIoExtensions.WrapInColor("Use '/users' to see full user list.", ConsoleColor.Magenta)}");
                 string result = string.Join(Environment.NewLine, list);
                 session.Io.OutputLine(result);
             }
+
+            //var option = session.Io.Ask("Do you want to see a list of all users? (Y)es, (N)o, (D)on't ask again");
+
         }
     }
 }

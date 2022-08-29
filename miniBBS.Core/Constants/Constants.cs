@@ -4,14 +4,18 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "2.9 - 2022.08.13";
+        public const string Version = "3.4b - 2022.08.29";
         public const string SysopName = "Divarin";
 
-        public const int MinutesUntilMessageIsUndeletable = 15;
+        public const int MinutesUntilMessageIsUndeletable = 60*3;
         public const int MinimumPasswordLength = 5;
+        public const int MaximumPasswordLength = 30;
+
         public const string DatabaseFilename = "community.db";
 
-        public static bool IsLocal { get; set; } = false;
+        public static bool IsLocal { private get; set; } = false;
+        public static readonly char[] LegitOneCharacterCommands = new[]
+        { '[', ']', '{', '}', '<', '>', ',', '.', '?' };
 
         public static string UploadDirectory
         {
@@ -27,6 +31,13 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const int MaxBlurbLength = 256;
+        public const int MaxBlurbs = 256;
+
+        public const int MaxPublicPinsPerUser = 25;
+
+        public const string BasicSourceProtectedFlag = "(protect)";
 
         public const int MaxFileBackups = 9;
 
@@ -86,24 +97,14 @@ namespace miniBBS.Core
 
         public const int MaxAfkReasonLength = 30;
 
-        public static readonly string NewUserMessage =
-            $"Welcome, new user, to Mutiny Community BBS! {Environment.NewLine}" +
-            "This is a chat system similar to IRC but also allows for 'one-user-at-a-time', messagebase-like, conversations retaining a full history " +
-            "of all previous chat messages.  So if no one is online to talk with feel free to respond to chats you read or start up your own topic and check " +
-            $"back later to see if anyone has responded.{Environment.NewLine}{Environment.NewLine}" +
-            $"Are you looking for a more traditional BBS?  Check out Mutiny BBS at this address port 2332 (mutinybbs.com:2332){Environment.NewLine}" +
-            "Are you looking to get here via SSH?  You can SSH into Mutiny BBS on port 2232 and then go to (X) Games & More -> Internet -> Community. " +
-            $"That will bring you here but through SSH.{Environment.NewLine}{Environment.NewLine}" +
-            "Once at the main prompt please type '/?' for help.";
-
         public const double MaxCalendarItemDays = 30;
 
         // used for search results when searching chat history
         public const int MaxSnippetLength = 25;
 
         public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
-        
-        public const int DefaultPingPongDelayMin = 15;
+        public const int BasicMaxRuntimeMin = 60;
+        public const int DefaultPingPongDelayMin = 5;
 
         /// <summary>
         /// Maximum length of file or directory names for user generated text files
@@ -111,8 +112,6 @@ namespace miniBBS.Core
         public const int MaxUserFilenameLength = 50;
 
         public const int MaxLinesToInsertInLineEditor = 50;
-
-        
 
         public static class Files
         {

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Helpers
+namespace miniBBS.Services.Services
 {
     public class SessionsList : ISessionsList
     {

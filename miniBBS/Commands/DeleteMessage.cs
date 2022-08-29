@@ -59,7 +59,7 @@ namespace miniBBS.Commands
                         {
                             OnReceive = (s) => s.Chats.Remove(toBeDeleted.Id)
                         });
-                        DI.Get<ILogger>().Log(message);
+                        DI.Get<ILogger>().Log(session, message);
                     }
                 }
             }

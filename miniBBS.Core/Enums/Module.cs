@@ -13,6 +13,9 @@
         TextFileReader,
         FauxMain,
         ConfigureEmulation,
-        Calendar
+        Calendar,
+        BasicEditor,
+        BasicInterpreter,
+        SqlUi
     }
 }

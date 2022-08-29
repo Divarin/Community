@@ -1,4 +1,5 @@
-﻿using miniBBS.Core;
+﻿using miniBBS.Basic;
+using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
@@ -23,83 +24,113 @@ namespace miniBBS.TextFiles
         /// </summary>
         private static ConcurrentDictionary<string, string> _editLocks = new ConcurrentDictionary<string, string>();
 
+        public static void WriteUploadedData(BbsSession session, Link currentLocation, string filename, Func<byte[]> getData)
+        {
+            bool isOwner = currentLocation.IsOwnedByUser(session.User);
+            if (!isOwner)
+            {
+                session.Io.OutputLine("Access denied.");
+                return;
+            }
+
+            var link = MakeNewFile(currentLocation, filename);
+            var data = getData();
+            if (true != data?.Any())
+            {
+                session.Io.OutputLine("Upload failed.");
+                return;
+            }
+
+            // save file
+            SaveFile(currentLocation, link, data);
+
+            // check if stream is still in a valid state because we might call this on a connection failure
+            if (true == session.Stream?.CanWrite && true == session.Stream?.CanRead)
+            {
+                session.Io.Output("Enter description, Enter=Keep Unpublished: ");
+                string descr = session.Io.InputLine();
+                if (!string.IsNullOrWhiteSpace(descr))
+                {
+                    link.Description = descr;
+                    IndexUpdater.UpdateIndex(currentLocation, link);
+                }
+            }
+
+            session.Io.OutputLine($"Uploaded '{link.DisplayedFilename}' successfully!");
+        }
+
         public static void Edit(BbsSession session, Link currentLocation, string filenameOrNumber, IList<Link> links)
+        {
+            if (string.IsNullOrWhiteSpace(filenameOrNumber))
+            {
+                session.Io.OutputLine("Please supply a file name or number to edit.");
+                return;
+            }
+
+            Link link = LinkExtensions.GetLink(links, filenameOrNumber);
+
+            bool isNewFile = false;
+            bool isOwner = currentLocation.IsOwnedByUser(session.User);
+            if (link == null && isOwner)
+            {
+                // create a new file
+                isNewFile = true;
+                link = MakeNewFile(currentLocation, filenameOrNumber);
+            }
+
+            Edit(session, currentLocation, link, isNewFile);
+        }
+
+        public static void Edit(BbsSession session, Link currentLocation, Link link, bool isNewFile = false)
         {
             var originalLocation = session.CurrentLocation;
             session.CurrentLocation = Module.TextFileEditor;
 
             try
             {
-                if (string.IsNullOrWhiteSpace(filenameOrNumber))
-                {
-                    session.Io.OutputLine("Please supply a file name or number to edit.");
-                    return;
-                }
-
-                Link file;
-                bool isNewFile = false;
                 bool isOwner = currentLocation.IsOwnedByUser(session.User);
-
-                if (int.TryParse(filenameOrNumber, out int n) && n >= 1 && n <= links.Count)
-                    file = links[n - 1];
-                else
-                {
-                    if (!ValidateFileOrDirectoryName(filenameOrNumber))
-                    {
-                        session.Io.OutputLine("Invalid filename name");
-                        return;
-                    }
-                    file = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
-
-                    if (file == null && isOwner)
-                    {
-                        // create a new file
-                        isNewFile = true;
-                        file = MakeNewFile(currentLocation, filenameOrNumber);
-                    }
-                }
-
-                if (file == null || file.IsDirectory)
+                if (link == null || link.IsDirectory)
                 {
                     session.Io.OutputLine("Invalid filename or number.");
                     return;
                 }
 
-                bool isEditor = file.IsEditor(session.User);
+                bool isEditor = link.IsEditor(session.User);
 
                 if (!isOwner && !isEditor)
                 {
-                    session.Io.OutputLine("You may not create or edit files in this directory.");
+                    session.Io.OutputLine("Access denied.");
                     return;
                 }
 
                 string body = null;
-                if (!isNewFile)
-                    body = FileReader.LoadFileContents(currentLocation, file);
+                ITextEditor editor = GetEditor(link);
 
-                var editor = GlobalDependencyResolver.Get<ITextEditor>();
+                if (!isNewFile && !(editor is ISqlUi))
+                    body = FileReader.LoadFileContents(currentLocation, link);
+
                 editor.OnSave = (UpdatedBody) =>
                 {
-                // save file
-                SaveFile(currentLocation, file, UpdatedBody);
+                    // save file
+                    SaveFile(currentLocation, link, UpdatedBody);
 
-                // check if stream is still in a valid state because we might call this on a connection failure
-                if (true == session.Stream?.CanWrite && true == session.Stream?.CanRead)
-                    {
-                        session.Io.OutputLine($"Current Description: {file.Description}");
-                        session.Io.Output($"Enter description{(string.IsNullOrEmpty(file.Description) ? "" : " Enter=Keep Current")}: ");
-                        string descr = session.Io.InputLine();
-                        if (!string.IsNullOrWhiteSpace(descr))
+                    // check if stream is still in a valid state because we might call this on a connection failure
+                    if (true == session.Stream?.CanWrite && true == session.Stream?.CanRead)
                         {
-                            file.Description = descr;
-                            IndexUpdater.UpdateIndex(currentLocation, file);
+                            session.Io.OutputLine($"Current Description: {link.Description}");
+                            session.Io.Output($"Enter description{(string.IsNullOrEmpty(link.Description) ? "" : " Enter=Keep Current")}: ");
+                            string descr = session.Io.InputLine();
+                            if (!string.IsNullOrWhiteSpace(descr))
+                            {
+                                link.Description = descr;
+                                IndexUpdater.UpdateIndex(currentLocation, link);
+                            }
                         }
-                    }
 
-                    return $"Saved as '{file.DisplayedFilename}'";
+                    return $"Saved as '{link.DisplayedFilename}'";
                 };
 
-                string lockKey = $"{currentLocation.Path}{file.Path}";
+                string lockKey = $"{currentLocation.Path}{link.Path}";
                 if (_editLocks.ContainsKey(lockKey))
                 {
                     session.Io.OutputLine($"Sorry this file is currently being edited by {_editLocks[lockKey]}.");
@@ -109,7 +140,14 @@ namespace miniBBS.TextFiles
                 try
                 {
                     _editLocks.TryAdd(lockKey, session.User.Name);
-                    editor.EditText(session, body);
+                    if (editor is ISqlUi)
+                        (editor as ISqlUi).Execute(session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, currentLocation.Path, link.Path));
+                    else
+                        editor.EditText(session, new LineEditorParameters
+                        {
+                            Filename = link.DisplayedFilename,
+                            PreloadedBody = body
+                        });
                 }
                 finally
                 {
@@ -120,6 +158,27 @@ namespace miniBBS.TextFiles
             {
                 session.CurrentLocation = originalLocation;
             }
+        }
+
+        private static ITextEditor GetEditor(Link file)
+        {
+            ITextEditor result;
+
+            // GlobalDependencyResolver.Get<ISqlUi>().Execute(_session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, _currentLocation.Path, parts[1]));
+            switch (file.ActualFilename.FileExtension().ToLower())
+            {
+                case "bas":
+                    result = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Path) + "/", autoStart: false);
+                    break;
+                case "db":
+                    result = GlobalDependencyResolver.Get<ISqlUi>() as ITextEditor;
+                    break;
+                default:
+                    result = GlobalDependencyResolver.Get<ITextEditor>();
+                    break;
+            }
+
+            return result;
         }
 
         public static void Delete(BbsSession session, Link currentLocation, string filenameOrNumber, IList<Link> links, bool directory)
@@ -293,6 +352,9 @@ namespace miniBBS.TextFiles
             return true;
         }
 
+        /// <summary>
+        /// Write text data (also makes backups)
+        /// </summary>
         private static void SaveFile(Link currentLocation, Link file, string body)
         {
             string filename = $"{Constants.TextFileRootDirectory}{currentLocation.Path}{file.Path}";
@@ -312,6 +374,19 @@ namespace miniBBS.TextFiles
             using (StreamWriter writer = new StreamWriter(fs))
             {
                 writer.Write(body);
+            }
+        }
+
+        /// <summary>
+        /// write binary data (no backups made)
+        /// </summary>
+        private static void SaveFile(Link currentLocation, Link file, byte[] data)
+        {
+            string filename = $"{Constants.TextFileRootDirectory}{currentLocation.Path}{file.Path}";
+            using (FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write))            
+            {
+                foreach (byte b in data)
+                    fs.WriteByte(b);
             }
         }
 

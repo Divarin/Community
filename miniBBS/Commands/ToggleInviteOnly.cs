@@ -18,7 +18,7 @@ namespace miniBBS.Commands
             channelRepo.Update(session.Channel);
             string message = $"{session.User.Name} has made channel {session.Channel.Name} {(inviteOnly ? "" : "not ")}invite only.";
 
-            DI.Get<ILogger>().Log(message);
+            DI.Get<ILogger>().Log(session, message);
             session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message));            
             session.Io.OutputLine(message);
         }

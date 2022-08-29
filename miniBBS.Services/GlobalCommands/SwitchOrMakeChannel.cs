@@ -4,12 +4,11 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Commands
+namespace miniBBS.Services.GlobalCommands
 {
     public static class SwitchOrMakeChannel
     {
@@ -18,9 +17,9 @@ namespace miniBBS.Commands
             "del"
         };
 
-        public static bool Execute(BbsSession session, string channelName)
+        public static bool Execute(BbsSession session, string channelNameOrNumber, bool allowMakeNewChannel)
         {
-            if (channelName == null || channelName.Any(c => char.IsWhiteSpace(c)) || channelName.Length > Constants.MaxChannelNameLength || _invalidChannelNames.Contains(channelName, StringComparer.CurrentCultureIgnoreCase))
+            if (channelNameOrNumber == null || channelNameOrNumber.Any(c => char.IsWhiteSpace(c)) || channelNameOrNumber.Length > Constants.MaxChannelNameLength || _invalidChannelNames.Contains(channelNameOrNumber, StringComparer.CurrentCultureIgnoreCase))
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 {
@@ -29,34 +28,37 @@ namespace miniBBS.Commands
                 return false;
             }
 
-            var logger = DI.Get<ILogger>();
-            var channelRepo = DI.GetRepository<Channel>();
-            var chatRepo = DI.GetRepository<Chat>();
+            var logger = GlobalDependencyResolver.Get<ILogger>();
+            var channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
+            var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
 
-            int chanNum = -1;
-            int channelId = -1;
-            if (int.TryParse(channelName, out chanNum))
-            {
-                var chans = channelRepo
-                    .Get()
-                    .Where(c => c.CanJoin(session))
-                    .OrderBy(c => c.Id)
-                    .ToArray();
-                if (chanNum >= 1 && chanNum <= chans.Length)
-                    channelId = chans[chanNum - 1].Id;
-            }
+            //int chanNum = -1;
+            //int channelId = -1;
+            //if (int.TryParse(channelName, out chanNum))
+            //{
+            //    var chans = channelRepo
+            //        .Get()
+            //        .Where(c => c.CanJoin(session))
+            //        .OrderBy(c => c.Id)
+            //        .ToArray();
+            //    if (chanNum >= 1 && chanNum <= chans.Length)
+            //        channelId = chans[chanNum - 1].Id;
+            //}
 
-            Channel channel;
-            if (channelId > 0)
-                channel = channelRepo.Get(channelId);
-            else
-                channel = channelRepo.Get(c => c.Name, channelName).FirstOrDefault();
+            //Channel channel;
+            //if (channelId > 0)
+            //    channel = channelRepo.Get(channelId);
+            //else
+            //    channel = channelRepo.Get(c => c.Name, channelName).FirstOrDefault();
 
-            if (channelId < 1 && channel == null)
-                channel = MakeChannel(session, channelName, channelRepo);
+            Channel channel = GetChannel.Execute(session, channelNameOrNumber);
+
+            if (channel == null && allowMakeNewChannel)
+                channel = MakeChannel(session, channelNameOrNumber, channelRepo);
+
             if (channel == null)
                 return false;
-            
+
             var ucFlag = session.UcFlagRepo.Get(new Dictionary<string, object>
             {
                 {nameof(UserChannelFlag.ChannelId), channel.Id},
@@ -73,7 +75,7 @@ namespace miniBBS.Commands
                 session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
                 ucFlag.Flags.HasFlag(UCFlag.Invited) ||
                 ucFlag.Flags.HasFlag(UCFlag.Moderator);
-            
+
             if (!canJoin)
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
@@ -83,7 +85,7 @@ namespace miniBBS.Commands
                 return false;
             }
 
-            var messager = DI.Get<IMessager>();
+            var messager = GlobalDependencyResolver.Get<IMessager>();
             if (session.Channel != null) // will be null during logon while here to join default channel
                 messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
 
@@ -95,13 +97,11 @@ namespace miniBBS.Commands
             session.ContextPointer = null;
             session.LastReadMessageNumber = null;
 
-            //logger.Log(session, $"Changed to channel {session.Channel.Name}");
-
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 session.Io.OutputLine($"Changed to channel {channel.Name}");
 
-                var channelUsers = DI.Get<ISessionsList>()
+                var channelUsers = GlobalDependencyResolver.Get<ISessionsList>()
                     .Sessions
                     .Where(s => s.Channel?.Id == channel.Id)
                     ?.OrderBy(s => s.SessionStartUtc)
@@ -112,6 +112,13 @@ namespace miniBBS.Commands
             }
 
             messager.Publish(new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
+            }
+
+            ShowNextMessage.Execute(session);
 
             return true;
         }
@@ -127,7 +134,7 @@ namespace miniBBS.Commands
                 return null;
             }
 
-            var logger = DI.Get<ILogger>();
+            var logger = GlobalDependencyResolver.Get<ILogger>();
             var channel = channelRepo.Insert(new Channel
             {
                 Name = channelName,
@@ -141,7 +148,7 @@ namespace miniBBS.Commands
                 LastReadMessageNumber = 0,
                 Flags = UCFlag.Moderator
             });
-            logger.Log($"Created new channel ({channel.Id}) [{channel.Name}]");
+            logger.Log(session, $"Created new channel ({channel.Id}) [{channel.Name}]");
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
                 session.Io.OutputLine($"Created channel {channel.Name}.  If this was a mistake use '/ch del' to delete the channel.");

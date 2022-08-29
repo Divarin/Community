@@ -15,18 +15,20 @@ namespace miniBBS.Services.Services
     {
         private BbsSession _session;
         private string _savedText = null;
+        private LineEditorParameters _parameters;
 
-        public string EditText(BbsSession session, string existingText = null)
+        public void EditText(BbsSession session, LineEditorParameters parameters = null)
         {
             bool wasDnd = session.DoNotDisturb;
             session.DoNotDisturb = true;
             List<string> lines = null;
+            _parameters = parameters;
 
             try
             {
                 lines = new List<string>();
-                if (!string.IsNullOrWhiteSpace(existingText))
-                    lines.AddRange(existingText
+                if (!string.IsNullOrWhiteSpace(parameters?.PreloadedBody))
+                    lines.AddRange(parameters.PreloadedBody
                         .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
                         .Select(l => l.TrimEnd()));
 
@@ -36,6 +38,8 @@ namespace miniBBS.Services.Services
                 var cmdResult = CommandResult.None;
 
                 session.Io.OutputLine($"Mutiny Community Line Editor.  Type '/?' on a blank line for help.");
+                if (!string.IsNullOrWhiteSpace(parameters?.Filename))
+                    session.Io.OutputLine($"Now Editing: {parameters.Filename}");
                 session.Io.OutputLine($" {'-'.Repeat(session.Cols - 3)} ");
 
                 if (lines.Count > 0)
@@ -55,7 +59,7 @@ namespace miniBBS.Services.Services
                             _savedText = String.Join(Environment.NewLine, lines);
                         if (cmdResult.HasFlag(CommandResult.RevertToOriginal))
                         {
-                            if ('Y' == _session.Io.Ask("Are you sure you want to undo changes since your last save?: "))
+                            if ('Y' == _session.Io.Ask("Are you sure you want to undo changes since your last save?"))
                             {
                                 lines.Clear();
                                 if (!string.IsNullOrWhiteSpace(_savedText))
@@ -70,9 +74,6 @@ namespace miniBBS.Services.Services
                         lines.Add(line);
                     }
                 };
-
-                var result = string.Join(Environment.NewLine, lines);
-                return result;
             } 
             catch (Exception)
             {
@@ -201,6 +202,11 @@ namespace miniBBS.Services.Services
                     // edit a line
                     Edit(lines, args.Skip(1)?.ToArray());
                     break;
+                case "move":
+                case "mv":
+                case "m":
+                    MoveLines(ref lines, args.Skip(1)?.ToArray());
+                    break;
                 case "find":
                 case "f":
                     // find
@@ -277,7 +283,7 @@ namespace miniBBS.Services.Services
         {
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
             {
-                _session.Io.OutputLine(String.Join(Environment.NewLine, new[]
+                _session.Io.OutputLine(string.Join(Environment.NewLine, new[]
                 {
                     "/save, /s : Save file (does not exit, use '/q' to quit)",
                     "/sq : Saves and then exits",
@@ -287,6 +293,9 @@ namespace miniBBS.Services.Services
                     "/insert, /ins, /i (after) [count] : Inserts one or more blank lines after the specified line number.  Can use '/insert 0' to insert at the beginning",
                     "/delete, /del, /d [range] : Deletes one or more lines, if the optional [range] is not given then the last line is deleted.  You will be asked to confirm the delete",
                     "/edit, /ed, /e [line num] [search & replace]: Edits a line.  If a line number is given then edits that line otherwise edits the last line.",
+                    "/move, /mv, /m [range] [line num] : Moves one or more lines (defined by the [range]) to a line immediately after [line num].",
+                    $"{Constants.Spaceholder}Example:",
+                    $"{Constants.Spaceholder}/move 25-30 10 - Moves the lines 25-30 to 11-16",
                     $"{Constants.Spaceholder}Examples:",
                     $"{Constants.Spaceholder}/edit 50 - lets you re-type line 50",
                     $"{Constants.Spaceholder}/edit - lets you re-type the last line",
@@ -416,14 +425,8 @@ namespace miniBBS.Services.Services
                 }
                 else
                 {
-                    _session.Io.OutputLine("Retype line (enter = keep existing)");
-                    string l = _session.Io.InputLine();
-                    if (string.IsNullOrWhiteSpace(l))
-                    {
-                        _session.Io.OutputLine("Aborting edit");
-                        return;
-                    }
-                    line = l;
+                    var option = _session.Io.Ask($"P)repend to beginning{Environment.NewLine}A)ppend to end{Environment.NewLine}S)earch & replace{Environment.NewLine}R)etype new line{Environment.NewLine}Q)uit{Environment.NewLine}How to edit?: ");
+                    line = Edit(line, option);
                 }
                 _session.Io.OutputLine("After:");
                 _session.Io.SetForeground(ConsoleColor.White);
@@ -437,6 +440,59 @@ namespace miniBBS.Services.Services
                     } }
                 });
             }
+        }
+
+        private string Edit(string line, char option)
+        {
+            switch (option)
+            {
+                case 'P':
+                    // prepend
+                    {
+                        _session.Io.Output("Text to prepend: ");
+                        var append = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        if (!string.IsNullOrWhiteSpace(append))
+                            line = append + line;
+                    }
+                    break;
+                case 'A':
+                    // append
+                    {
+                        _session.Io.Output("Text to append: ");
+                        var append = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        if (!string.IsNullOrWhiteSpace(append))
+                            line += append;
+                    }
+                    break;
+                case 'S':
+                    // search & replace
+                    {
+                        _session.Io.Output("Text to be replaced : ");
+                        var search = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        _session.Io.Output("Text to replace with: ");
+                        var replace = _session.Io.InputLine();
+                        _session.Io.OutputLine();
+                        line = line.Replace(search, replace);
+                    }
+                    break;
+                case 'R':
+                    // re-type
+                    _session.Io.OutputLine("Retype line (enter = keep existing)");
+                    string l = _session.Io.InputLine();
+                    if (string.IsNullOrWhiteSpace(l))
+                        _session.Io.OutputLine("Aborting edit");
+                    else
+                        line = l;
+                    break;
+                default:
+                    _session.Io.OutputLine("Aborting edit");
+                    break;
+            }
+
+            return line;
         }
 
         private void Delete(List<string> lines, string args)
@@ -483,6 +539,55 @@ namespace miniBBS.Services.Services
             Notify($"{numLines} blank lines inserted after line # {insertPoint}.");
         }
 
+        private void MoveLines(ref List<string> lines, string[] args)
+        {
+            if (args == null || args.Length < 2)
+            {
+                Notify("Usage: /move [range] [insert point] - Example: '/move 25-30 10' or '/move 25 10'");
+                return;
+            }
+
+            if (!int.TryParse(args[1], out int insertPoint) || insertPoint < 0)
+            {
+                Notify("Invalid insert point line number.");
+                return;
+            }
+
+            var range = ParseRange(args[0], lines.Count + 1);
+            
+            if (insertPoint >= range.Item1 && insertPoint <= range.Item2)
+            {
+                Notify("Insert point must be before or after the range.");
+                return;
+            }
+
+            int r = 1;
+            var numberedLines = lines.ToDictionary(k => r++);
+            var blockToMove = numberedLines
+                .Where(k => k.Key >= range.Item1 && k.Key <= range.Item2)
+                .Select(x => x.Value)
+                .ToList();
+            var workList = numberedLines
+                .Where(k => k.Key < range.Item1 || k.Key > range.Item2)
+                .Select(x => x.Value)
+                .ToList();
+
+            var numLines = range.Item2 - range.Item1 + 1;
+
+            if (insertPoint > range.Item2)
+                insertPoint -= numLines;
+
+            if (insertPoint >= workList.Count)
+                workList.AddRange(blockToMove);
+            else
+                workList.InsertRange(insertPoint, blockToMove);
+            lines.Clear();
+            lines.AddRange(workList);
+
+            
+            Notify($"Block of {numLines} lines moved after line # {insertPoint}.");
+        }
+
         private void List(IList<string> lines, bool withLineNumbers, string range=null)
         {
             string body;
@@ -494,9 +599,8 @@ namespace miniBBS.Services.Services
 
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
             {
-                _session.Io.OutputLine(body);
+                _session.Io.OutputLine(body, OutputHandlingFlag.DoNotTrimStart);
             }
-
         }
 
         private Tuple<int, int> ParseRange(string range, int upperLimit)

@@ -65,6 +65,8 @@
   <ItemGroup>
     <Compile Include="Constants\Constants.cs" />
     <Compile Include="Enums\AccessFlag.cs" />
+    <Compile Include="Enums\FilesLaunchFlags.cs" />
+    <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
@@ -74,19 +76,26 @@
     <Compile Include="Enums\TerminalEmulation.cs" />
     <Compile Include="Enums\TextFilesSessionFlags.cs" />
     <Compile Include="Enums\UCFlag.cs" />
+    <Compile Include="Enums\FileTransferProtocolOptions.cs" />
+    <Compile Include="Interfaces\ICompressor.cs" />
     <Compile Include="Interfaces\IDataModel.cs" />
+    <Compile Include="Interfaces\IFileTransferProtocol.cs" />
     <Compile Include="Interfaces\IHasher.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IMessager.cs" />
     <Compile Include="Interfaces\INotificationHandler.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
     <Compile Include="Interfaces\ISessionsList.cs" />
+    <Compile Include="Interfaces\ISqlUi.cs" />
     <Compile Include="Interfaces\IStructuredQuery.cs" />
     <Compile Include="Interfaces\ITextEditor.cs" />
     <Compile Include="Interfaces\ITextFilesBrowser.cs" />
     <Compile Include="Interfaces\IUserIo.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
+    <Compile Include="Models\Control\LineEditorParameters.cs" />
+    <Compile Include="Models\Control\LoginRecord.cs" />
+    <Compile Include="Models\Data\Blurb.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
     <Compile Include="Models\Data\LogEntry.cs" />
@@ -95,6 +104,7 @@
     <Compile Include="Models\Data\Chat.cs" />
     <Compile Include="Models\Data\Mail.cs" />
     <Compile Include="Models\Data\Notification.cs" />
+    <Compile Include="Models\Data\PinnedMessage.cs" />
     <Compile Include="Models\Data\User.cs" />
     <Compile Include="Models\Data\UserChannelFlag.cs" />
     <Compile Include="Models\Messages\ChannelMessage.cs" />

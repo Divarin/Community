@@ -1,4 +1,4 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -7,37 +7,31 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace miniBBS.Commands
+namespace miniBBS.Services.GlobalCommands
 {
     public static class ListChannels
     {
         public static void Execute(BbsSession session, IRepository<Channel> channelRepo = null)
         {
             if (channelRepo == null)
-                channelRepo = DI.GetRepository<Channel>();
+                channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
 
             var userFlags = session.UcFlagRepo.Get(f => f.UserId, session.User.Id)
                 .ToDictionary(k => k.ChannelId);
 
-            //Func<Channel, bool> CanJoin = chan =>
-            //{
-            //    return !chan.RequiresInvite ||
-            //        session.User.Access.HasFlag(AccessFlag.Administrator) ||
-            //        session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
-            //        (userFlags.ContainsKey(chan.Id) && (userFlags[chan.Id].Flags & (UCFlag.Invited | UCFlag.Moderator)) > 0);
-            //};
-
             var chans = channelRepo
                 .Get()
-                .Where(c => c.CanJoin(session))// CanJoin(c))
+                .Where(c => c.CanJoin(session))
                 .OrderBy(c => c.Id)
                 .ToArray();
 
-            var chatRepo = DI.GetRepository<Chat>();
+            var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
+
+            int longestChannelName = chans.Max(c => c.Name.Length)+1;
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                session.Io.OutputLine("# : Channel Name   (unread)");
+                session.Io.OutputLine($"#   : Channel Name {' '.Repeat(longestChannelName - "Channel Name".Length)}Unread");
             }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
@@ -55,9 +49,17 @@ namespace miniBBS.Commands
                     else
                         lastRead = -1;
                     var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
-                    builder.AppendLine($"{i+1} : {chan.Name} ({unread}) {(chan.RequiresInvite ? " (Invite Only)" : "")}");
+                    builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
+                    builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
+                    builder.Append($"{chan.Name} {' '.Repeat(longestChannelName-chan.Name.Length)}");
+                    if (unread > 0)
+                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Magenta}{Constants.InlineColorizer}");
+                    else
+                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Gray}{Constants.InlineColorizer}");
+                    builder.AppendLine($"{unread}{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
                 }
-                session.Io.OutputLine(builder.ToString());
+
+                session.Io.Output(builder.ToString());
             }
         }
     }

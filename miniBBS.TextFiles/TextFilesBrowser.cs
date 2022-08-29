@@ -1,9 +1,12 @@
-﻿using miniBBS.Core;
+﻿using miniBBS.Basic;
+using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using miniBBS.Services;
+using miniBBS.Services.GlobalCommands;
 using miniBBS.TextFiles.Enums;
 using miniBBS.TextFiles.Extensions;
 using miniBBS.TextFiles.Models;
@@ -28,7 +31,7 @@ namespace miniBBS.TextFiles
         public Action<string> OnChat { get; set; }
         private TextFilesSessionFlags _sessionFlags = TextFilesSessionFlags.None;
 
-        public void Browse(BbsSession session)
+        public void Browse(BbsSession session, FilesLaunchFlags flags = FilesLaunchFlags.None)
         {
             _session = session;
             _currentLocation = _topLevel;
@@ -60,17 +63,28 @@ namespace miniBBS.TextFiles
                 while (cmd != CommandResult.ExitSystem)
                 {
                     if (cmd == CommandResult.ReadDirectory)
-                    {
                         links = ReadDirectory();
-                            
-                            //string.IsNullOrWhiteSpace(_currentLocation.DisplayedFilename) ?
-                            //TopLevel.GetLinks().ToList() :
-                            //LinkParser.GetLinksFromIndex(session, _currentLocation, includeBackups: _sessionFlags.HasFlag(TextFilesSessionFlags.ShowBackupFiles));
-                    }
 
                     _session.Io.SetForeground(ConsoleColor.Gray);
 
-                    string command = Prompt();
+                    string command;
+                    if (flags.HasFlag(FilesLaunchFlags.MoveToUserHomeDirectory))
+                    {
+                        flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
+                        command = $"cd /CommunityUsers/{_session.User.Name}";
+                    }
+                    else if (flags.HasFlag(FilesLaunchFlags.ReturnToPreviousDirectory) && !string.IsNullOrWhiteSpace(_session.PreviousFilesDirectory))
+                    {
+                        flags &= ~FilesLaunchFlags.ReturnToPreviousDirectory;
+                        command = $"cd {_session.PreviousFilesDirectory}";
+                    }
+                    else
+                    {
+                        flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
+                        flags &= ~FilesLaunchFlags.ReturnToPreviousDirectory;
+                        command = Prompt(links);
+                    }
+
                     cmd = ProcessCommand(command, links);
                 }
             }
@@ -114,12 +128,7 @@ namespace miniBBS.TextFiles
                 {
                     linkFound = true;
                     DescribeFile(link);
-                    var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                    if (inp == 'Y' || inp == 'C')
-                    {
-                        session.DoNotDisturb = true;
-                        ReadFile(link, nonstop: inp == 'C');
-                    }
+                    AskLaunchFile(link);
                 }
                 else
                     session.Io.OutputLine("Sorry I was unable to find that file.");
@@ -213,9 +222,7 @@ namespace miniBBS.TextFiles
                     else
                     {
                         DescribeFile(link);
-                        var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                        if (inp == 'Y' || inp == 'C')
-                            ReadFile(link, nonstop: inp=='C');
+                        AskLaunchFile(link);
                     }
                 }
                 else
@@ -226,6 +233,11 @@ namespace miniBBS.TextFiles
                 var parts = command.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 switch (parts[0].ToLower())
                 {
+                    case "cls":
+                    case "clear":
+                    case "c":
+                        _session.Io.ClearScreen();
+                        break;
                     case "grep":
                         DescriptiveDirectory(links, FilterFlags.Contents, parts.Skip(1));
                         break;
@@ -254,9 +266,9 @@ namespace miniBBS.TextFiles
                     case "chdir":
                     case "cd":
                         // change directory using chdir or cd
-                        if (parts.Length >= 2)
                         {
-                            ChangeDirectory(parts[1], links);
+                            var dirNameOrNumber = parts.Length >= 2 ? parts[1] : null;
+                            ChangeDirectory(dirNameOrNumber, links);
                             result = CommandResult.ReadDirectory;
                         }
                         break;
@@ -296,12 +308,18 @@ namespace miniBBS.TextFiles
                         if (parts.Length >= 2)
                             ReadFile (parts[1], links, nonstop: true);
                         break;
+                    case "chl":
+                    case "chanlist":
+                    case "channellist":
+                    case "channelist":
+                        ListChannels.Execute(_session);
+                        break;
                     case "link":
-                        if (parts.Length >= 2)
-                            LinkFile(parts[1], links);
+                        LinkFile(parts[1], links, parts.Skip(2).ToArray());
                         break;
                     case "?":
                     case "help":
+                    case "man":
                         Help.Show(_session, parts.Length >= 2 ? parts[1] : null);
                         break;
                     case "chat":
@@ -315,10 +333,23 @@ namespace miniBBS.TextFiles
                     case "nano":
                         if (parts.Length < 2)
                             _session.Io.OutputLine("Please supply a file name or number.");
-                        else 
+                        else
                         {
                             FileWriter.Edit(_session, _currentLocation, parts[1], links);
                             result = CommandResult.ReadDirectory;
+                        }
+                        break;
+                    case "run":
+                    case "exec":
+                        if (parts.Length < 2)
+                            _session.Io.OutputLine("Please supply a file name or number.");
+                        else
+                        {
+                            var basicProgram = links.GetLink(parts[1], requireExactMatch: false);
+                            if (true == basicProgram?.ActualFilename?.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
+                                RunBasicProgram(basicProgram);
+                            else
+                                _session.Io.OutputLine("Invalid Basic program.");
                         }
                         break;
                     case "mkdir":
@@ -414,6 +445,22 @@ namespace miniBBS.TextFiles
                         else
                             _session.Io.OutputLine("You may not alter contributors to files in this directory.");
                         break;
+                    case "xfer":
+                    case "sx":
+                    case "download":
+                    case "transfer":
+                    case "xmodem":
+                    case "send":
+                        if (parts.Length >= 2)
+                            SendFile(LinkExtensions.GetLink(links, parts[1]));
+                        break;
+                    case "rx":
+                    case "upload":
+                    case "receive":
+                        if (parts.Length >= 2)
+                            ReceiveFile(parts[1], links);
+                        result = CommandResult.ReadDirectory;
+                        break;
                     default:
                         var link = links.FirstOrDefault(x => x.DisplayedFilename.Equals(parts[0], StringComparison.CurrentCultureIgnoreCase));
                         if (link != null)
@@ -426,9 +473,7 @@ namespace miniBBS.TextFiles
                             else
                             {
                                 DescribeFile(link);
-                                var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                                if (inp == 'Y' || inp == 'C')
-                                    ReadFile(link, nonstop: inp == 'C');
+                                AskLaunchFile(link);
                             }
                         }
                         else
@@ -440,14 +485,65 @@ namespace miniBBS.TextFiles
             return result;
         }
 
-        private void LinkFile(string filenameOrNumber, IList<Link> links)
+        private void AskLaunchFile(Link link)
         {
+            var originalDnd = _session.DoNotDisturb;
+            _session.DoNotDisturb = true;
+
+            try
+            {
+                if (link.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    var inp = _session.Io.Ask("Run Basic Program?");
+                    if (inp == 'Y')
+                        RunBasicProgram(link);
+                }
+                else if (link.ActualFilename.EndsWith(".db", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    var inp = _session.Io.Ask("Run SQL engine on this database?");
+                    if (inp == 'Y')
+                        FileWriter.Edit(_session, _currentLocation, link);
+                }
+                else
+                {
+                    var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
+                    if (inp == 'Y' || inp == 'C')
+                        ReadFile(link, nonstop: inp == 'C');
+                }
+            }
+            finally
+            {
+                _session.DoNotDisturb = originalDnd;
+            }
+        }
+
+        private void LinkFile(string filenameOrNumber, IList<Link> links, params string[] args)
+        {
+            string channelNameOrNumber = args.Length >= 1 ? args[0] : null;
+
             if (string.IsNullOrWhiteSpace(filenameOrNumber))
                 return;
-            else if (int.TryParse(filenameOrNumber, out int n))
+
+            Channel channel = 
+                string.IsNullOrWhiteSpace(channelNameOrNumber) ?
+                _session.Channel :
+                GetChannel.Execute(_session, channelNameOrNumber);
+
+            if (channel == null)
+            {
+                _session.Io.OutputLine($"Invalid channel name or number: {channelNameOrNumber}.");
+                return;
+            }
+            else if (channel.Id != _session.Channel.Id && !SwitchOrMakeChannel.Execute(_session, channel.Name, allowMakeNewChannel: false))
+            {
+                _session.Io.OutputLine($"Unable to change to channel {channel.Name}.");
+                return;
+            }
+
+            if (int.TryParse(filenameOrNumber, out int n))
             {
                 if (n >= 1 && n <= links.Count)
-                    LinkFile(links[n - 1]);
+                    LinkFile(links[n - 1], channel);
                 else
                     _session.Io.OutputLine("Invalid file number");
             }
@@ -455,13 +551,13 @@ namespace miniBBS.TextFiles
             {
                 var link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(filenameOrNumber, StringComparison.CurrentCultureIgnoreCase));
                 if (link != null)
-                    LinkFile(link);
+                    LinkFile(link, channel);
                 else
                     _session.Io.OutputLine("Invalid filename");
             }
         }
 
-        private void LinkFile(Link link)
+        private void LinkFile(Link link, Channel channel)
         {
             if (link.IsDirectory)
             {
@@ -471,12 +567,15 @@ namespace miniBBS.TextFiles
 
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                _session.Io.Output($"Post a link to {link.DisplayedFilename} on channel {_session.Channel.Name}?: ");
+                _session.Io.Output($"Post a link to {link.DisplayedFilename} on channel {channel.Name}?: ");
                 var k = _session.Io.InputKey();
                 _session.Io.OutputLine();
                 if (k == 'y' || k == 'Y')
                 {
-                    string msg = $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file. {Environment.NewLine}{link.Description}";
+                    string msg = link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase) ?
+                        $"Basic Program Link: [{link.Parent.Path}{link.Path}].  Use '/run' to run this program. {Environment.NewLine}{link.Description}" :
+                        $"TextFile Link: [{link.Parent.Path}{link.Path}].  Use '/textread' or '/tr' to read this file. {Environment.NewLine}{link.Description}";
+
                     _session.Io.SetForeground(ConsoleColor.Yellow);
                     _session.Io.OutputLine("Link posted.");
                     OnChat?.Invoke(msg);
@@ -550,17 +649,23 @@ namespace miniBBS.TextFiles
             }
 
             string body = FileReader.LoadFileContents(_currentLocation, link);
+            if (link.ActualFilename.FileExtension().Equals("bas", StringComparison.CurrentCultureIgnoreCase))
+            {
+                if (true == link.Description?.EndsWith(Constants.BasicSourceProtectedFlag))
+                    body = "Source code protected from viewing.";
+                else
+                    body = MutantBasic.Decompress(body);
+            }
             body = ReplaceLinefeedsWithEnters(body);
             var previousLocation = _session.CurrentLocation;
             _session.CurrentLocation = Module.TextFileReader;
 
             try
             {
-                //_session.NoPingPong = true;
                 using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                 {
-                    var flags = OutputHandlingFlag.None;
-                    if (!link.IsUserGeneratedContent()) flags |= OutputHandlingFlag.DoNotTrimStart;
+                    var flags = OutputHandlingFlag.DoNotTrimStart;
+
                     if (nonstop)
                         flags |= OutputHandlingFlag.Nonstop;
                     else
@@ -572,7 +677,70 @@ namespace miniBBS.TextFiles
             } 
             finally
             {
-                //_session.NoPingPong = false;
+                _session.CurrentLocation = previousLocation;
+            }
+        }
+
+        private void SendFile(Link link)
+        {
+            if (link == null)
+            {
+                _session.Io.OutputLine("File not found");
+                return;
+            }
+
+            _session.Io.OutputLine($"Sending {link.DisplayedFilename} via X-Modem protocol, begin receiving now.");
+
+            var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
+            var str = FileReader.LoadFileContents(_currentLocation, link);
+            var data = Encoding.ASCII.GetBytes(str);
+            xfer.Data = data;
+            var options = FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
+            bool sentAllData = xfer.Send(_session, options);
+
+            _session.Io.OutputLine($"Sent {link.DisplayedFilename} {(sentAllData ? "successfully" : "unsuccessfully")}.");
+        }
+
+        private void ReceiveFile(string filename, IList<Link> links)
+        {
+            if (links.Any(l => l.DisplayedFilename.Equals(filename, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                _session.Io.OutputLine("Can't overwrite existing file.");
+                return;
+            }
+
+            Func<byte[]> getData = () =>
+            {
+                byte[] data = null;
+                var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
+                var options = FileTransferProtocolOptions.None;// FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
+                if (xfer.Receive(_session, options))
+                    data = xfer.Data;
+                return data;
+            };
+
+            _session.Io.OutputLine($"Receiving {filename} via X-Modem protocol, begin sending now.");
+
+            FileWriter.WriteUploadedData(_session, _currentLocation, filename, getData);
+        }
+
+        private void RunBasicProgram(Link link)
+        {
+            string body = FileReader.LoadFileContents(_currentLocation, link);
+            var previousLocation = _session.CurrentLocation;
+            _session.CurrentLocation = Module.BasicInterpreter;
+
+            try
+            {
+                ITextEditor basic = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Path) + "/", autoStart: true);
+                basic.EditText(_session, new LineEditorParameters
+                {
+                    Filename = link.DisplayedFilename,
+                    PreloadedBody = body
+                });
+            }
+            finally
+            {
                 _session.CurrentLocation = previousLocation;
             }
         }
@@ -605,9 +773,12 @@ namespace miniBBS.TextFiles
 
         private void ChangeDirectory(string dirNameOrNumber, IList<Link> links)
         {
-            if (string.IsNullOrWhiteSpace(dirNameOrNumber))
-                return;
-
+            if (dirNameOrNumber == "~" || string.IsNullOrWhiteSpace(dirNameOrNumber))
+            {
+                _session.Io.Error($"Interpreting '{dirNameOrNumber}' as '/CommunityUsers/{_session.User.Name}'");
+                dirNameOrNumber = $"/CommunityUsers/{_session.User.Name}";
+            }
+            
             if (dirNameOrNumber.Length > 1 && (dirNameOrNumber.StartsWith("/") || dirNameOrNumber.StartsWith("\\")))
             {
                 ChangeDirectory("/", links);
@@ -621,13 +792,8 @@ namespace miniBBS.TextFiles
                 dirNameOrNumber = dirs[0];
             }
 
-            if (int.TryParse(dirNameOrNumber, out int n))
-            {
-                if (n >= 1 && n <= links.Count)
-                    ChangeDirectory(links[n - 1]);
-                else
-                    _session.Io.OutputLine("Invalid file/directory number.");
-            }
+            if (int.TryParse(dirNameOrNumber, out int n) && n >= 1 && n <= links.Count)
+                ChangeDirectory(links[n - 1]);
             else
             {
                 if (dirNameOrNumber == "..")
@@ -638,7 +804,17 @@ namespace miniBBS.TextFiles
                 {
                     var linkNum = links.IndexOf(l => l.DisplayedFilename.Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
                     if (linkNum < 0)
-                        _session.Io.OutputLine("Invalid file/directory name.");
+                        linkNum = links.IndexOf(l => l.ActualFilename.Replace("/index.html", "").Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+                    if (linkNum < 0)
+                        linkNum = links.IndexOf(l => l.Path.Replace("/", "").Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
+
+                    if (linkNum < 0)
+                    {
+                        if ("desktop".Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase))
+                            ChangeDirectory($"/CommunityUsers/{_session.User.Name}", links);
+                        else
+                            _session.Io.OutputLine("Invalid file/directory name.");
+                    }
                     else
                         ChangeDirectory(links[linkNum]);
                 }
@@ -671,6 +847,7 @@ namespace miniBBS.TextFiles
                 if (!goingUp)
                     link.Parent = _currentLocation;
                 _currentLocation = link;
+                _session.PreviousFilesDirectory = _currentLocation.Path;
             }
         }
 
@@ -764,14 +941,30 @@ namespace miniBBS.TextFiles
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
             {
                 _session.Io.OutputLine();
-                _session.Io.Output($"[TEXTS] {Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{_currentLocation.Path}{Constants.InlineColorizer}-1{Constants.InlineColorizer}> ");
+                _session.Io.Output($"[FILES] {Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{_currentLocation.Path}{Constants.InlineColorizer}-1{Constants.InlineColorizer}> ");
             }
         }
 
-        private string Prompt()
+        private string Prompt(IList<Link> links)
         {
             ShowPrompt();
-            string line = _session.Io.InputLine();
+
+            Func<string, string> autoComplete = _l =>
+            {
+                var potentialFilename = _l?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                if (!string.IsNullOrWhiteSpace(potentialFilename))
+                {
+                    string match = links?.FirstOrDefault(l => l.DisplayedFilename.StartsWith(potentialFilename, StringComparison.CurrentCultureIgnoreCase))?.DisplayedFilename;
+                    if (!string.IsNullOrWhiteSpace(match))
+                    {
+                        match = '\b'.Repeat(potentialFilename.Length) + match;
+                        return match;
+                    }
+                }
+                return string.Empty;
+            };
+
+            string line = _session.Io.InputLine(autoComplete, InputHandlingFlag.AutoCompleteOnTab | InputHandlingFlag.UseLastLine);
             _session.Io.OutputLine();
             return line;
         }

@@ -150,7 +150,7 @@ namespace miniBBS.UserIo
 
         public override void Output(string s, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
-            base.Output(InvertCase(s), flags);
+            base.Output(TransformText(s), flags);
         }
 
         public override void Output(char c)
@@ -161,7 +161,7 @@ namespace miniBBS.UserIo
 
         public override void OutputLine(string s = null, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
-            base.OutputLine(InvertCase(s), flags);
+            base.OutputLine(TransformText(s), flags);
         }
 
         public override void OutputBackspace()
@@ -177,29 +177,32 @@ namespace miniBBS.UserIo
             return c;
         }
 
-        public override string InputLine(char? echoChar = null)
+        public override string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None)
         {
-            return InvertCase(base.InputLine(echoChar));
+            return TransformText(base.InputLine(handlingFlag));
         }
 
-        private string InvertCase(string s)
+        /// <summary>
+        /// Does any kind of special transforms needed for this emulation type
+        /// </summary>
+        protected override string TransformText(string text)
         {
-            if (string.IsNullOrWhiteSpace(s))
-                return s;
+            if (string.IsNullOrWhiteSpace(text))
+                return text;
 
-            char[] arr = new char[s.Length];
+            char[] arr = new char[text.Length];
 
-            for (int i=0; i < s.Length; i++)
+            for (int i=0; i < text.Length; i++)
             {
-                char c = s[i];
+                char c = text[i];
                 if (char.IsUpper(c))
                     arr[i] = char.ToLower(c);
                 else
                     arr[i] = char.ToUpper(c);
             }
 
-            s = new string(arr, 0, arr.Length);
-            return s;
+            text = new string(arr, 0, arr.Length);
+            return text;
         }
 
         protected override byte[] InterpretInput(byte[] arr)
