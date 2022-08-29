@@ -138,6 +138,8 @@ namespace miniBBS.Core.Models.Control
             _pingPongThread.Start(this);
         }
 
+        public string LastLine { get; set; }
+
         private static void PingPong(object o)
         {
             BbsSession session = (BbsSession)o;

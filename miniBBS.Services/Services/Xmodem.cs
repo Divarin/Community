@@ -178,7 +178,7 @@ namespace miniBBS.Services.Services
             packetSize += options.HasFlag(FileTransferProtocolOptions.XmodemCrc) ? 2 : 1;
 
             Stopwatch sw = new Stopwatch();
-            byte nextResponse = C;
+            byte nextResponse = Options.HasFlag(FileTransferProtocolOptions.XmodemCrc) ? C : NAK;
 
             do
             {
@@ -208,7 +208,7 @@ namespace miniBBS.Services.Services
                     continue;
 
                 // while packet doesn't start with EOT or CAN ...
-
+                
                 var header = inputBuffer[0];
                 switch (header)
                 {

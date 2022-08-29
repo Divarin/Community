@@ -487,11 +487,20 @@ namespace miniBBS.UserIo
                         }
                     }
 
+                    bytes = InterpretInput(bytes);
+
+                    if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine) && 
+                        bytes[0] == 27 && bytes[1] == 91 && bytes[2] == 65 && 
+                        !string.IsNullOrWhiteSpace(session.LastLine))
+                    {
+                        bytes = Encoding.ASCII.GetBytes(session.LastLine);
+                        i = session.LastLine.Length;
+                    }
+
                     RemoveInvalidInputCharacters(ref bytes);
                     if (bytes.Length < 1)
                         continue;
-
-                    var data = Encoding.ASCII.GetString(InterpretInput(bytes), 0, i);
+                    var data = Encoding.ASCII.GetString(bytes, 0, i);
 
                     // deal with one or more backspaces
                     foreach (var d in data)
@@ -533,7 +542,10 @@ namespace miniBBS.UserIo
                     {
                         if (handlingFlag.HasFlag(InputHandlingFlag.PasswordInput))
                             StreamOutput(session, Environment.NewLine);
-                        return lineBuilder.ToString()?.Replace("\r", "")?.Replace("\n", "")?.Replace("\0", "");
+                        var result = lineBuilder.ToString()?.Replace("\r", "")?.Replace("\n", "")?.Replace("\0", "");
+                        if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine))
+                            session.LastLine = result;
+                        return result;
                     }
 
                 }

@@ -268,6 +268,7 @@ namespace miniBBS
                 session.Io.SetForeground(ConsoleColor.Cyan);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.OutputLine("Feel free to hang out as long as you want, there is no time limit!");
+                Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
             }
@@ -294,23 +295,13 @@ namespace miniBBS
                 }
 
                 session.Io.OutputLine("Press Enter/Return to read next message.");
-                //if (session.User.TotalLogons < 10)
-                //{
-                //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
-                //    {
-                //        session.Io.OutputLine($"There are {UserIoExtensions.WrapInColor(GetUnreadMessageCount(session).ToString(), ConsoleColor.Red)} unread messages in this channel.");
-                //        session.Io.OutputLine($"To read, just {UserIoExtensions.WrapInColor("Press Enter", ConsoleColor.Magenta)}.");
-                //        session.Io.OutputLine($"To respond, just {UserIoExtensions.WrapInColor("Type your Response", ConsoleColor.Magenta)}.");
-                //        session.Io.OutputLine($"More complex usage is explained in the {UserIoExtensions.WrapInColor("/help (/?)", ConsoleColor.Magenta)} menus but these are the basics.");
-                //    }
-                //}
             }
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
             {
                 session.ShowPrompt();
 
-                string line = session.Io.InputLine(InputHandlingFlag.InterceptSingleCharacterCommand);
+                string line = session.Io.InputLine(InputHandlingFlag.InterceptSingleCharacterCommand | InputHandlingFlag.UseLastLine);
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line))
                 {
@@ -1000,6 +991,12 @@ namespace miniBBS
                             browser.ReadLink(session, msg.Message);
                         }
                     }
+                    return;
+                case "/blurb":
+                    Blurbs.Execute(session, string.Join(" ", parts.Skip(1)));
+                    return;
+                case "/blurbadmin":
+                    Blurbs.BlurbAdmin(session, parts.Skip(1).ToArray());
                     return;
                 case ",":
                 case "<":

@@ -8,6 +8,7 @@ namespace miniBBS.Core.Enums
         None = 0,
         PasswordInput = 1,
         InterceptSingleCharacterCommand = 2,
-        AutoCompleteOnTab = 4
+        AutoCompleteOnTab = 4,
+        UseLastLine = 8
     }
 }

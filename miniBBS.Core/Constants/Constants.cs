@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "3.4 - 2022.08.26";
+        public const string Version = "3.4b - 2022.08.29";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -31,6 +31,9 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const int MaxBlurbLength = 256;
+        public const int MaxBlurbs = 256;
 
         public const int MaxPublicPinsPerUser = 25;
 

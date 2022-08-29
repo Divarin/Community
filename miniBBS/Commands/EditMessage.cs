@@ -7,6 +7,7 @@ using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace miniBBS.Commands
 {
@@ -42,8 +43,10 @@ namespace miniBBS.Commands
                     return;
                 }
 
-                string search = args[0];
-                string replace = args[1];
+                int searchArgIndex = args.Length >= 3 ? 1 : 0;
+                int replaceArgIndex = searchArgIndex + 1;
+                string search = args[searchArgIndex];
+                string replace = args[replaceArgIndex];
 
                 string line = string.Join(" ", args);
                 bool parsedWithSpaceDelim = true;
@@ -53,10 +56,10 @@ namespace miniBBS.Commands
                         .Split(new[] { '"' }, StringSplitOptions.RemoveEmptyEntries)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .ToArray();
-                    if (parts?.Length == 2)
+                    if (parts?.Length >= 2)
                     {
-                        search = parts[0];
-                        replace = parts[1];
+                        search = parts[searchArgIndex];
+                        replace = parts[replaceArgIndex];
                         parsedWithSpaceDelim = false;
                     }
                 }
@@ -86,9 +89,11 @@ namespace miniBBS.Commands
                     replace = replace.Replace('-', ' ');
                 }
 
+                string oldMessage = toBeEdited.Message;
                 string newMessage = toBeEdited.Message.Replace(search, replace);
                 session.Io.SetForeground(ConsoleColor.White);
-                session.Io.OutputLine(newMessage);
+                string highlightedNewMessage = oldMessage.Replace(search, UserIoExtensions.WrapInColor(replace, ConsoleColor.Green));
+                session.Io.OutputLine(highlightedNewMessage);
                 session.Io.SetForeground(ConsoleColor.Red);
                 session.Io.Output("Make this edit? ");
                 var k = session.Io.InputKey();
@@ -113,7 +118,6 @@ namespace miniBBS.Commands
                 }
             }
         }
-
 
         public static void ReassignReNumber(BbsSession session, params string[] args)
         {

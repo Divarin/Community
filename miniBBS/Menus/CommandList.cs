@@ -13,9 +13,9 @@ namespace miniBBS.Menus
         {
             new Cmd("/v",0), new Cmd("/ver",0), new Cmd("/version",0), new Cmd("/o",1), new Cmd("/off",1), 
             new Cmd("/g",1), new Cmd("/logoff",1), new Cmd("/cls",2), new Cmd("/clr",2), 
-            new Cmd("/clear",2), new Cmd("/c",2), new Cmd("/pass",3), new Cmd("/password",3), new Cmd("/pw",3), 
-            new Cmd("/pwd",3),
-            new Cmd("/fauxmain", 4), new Cmd("/main", 4), new Cmd("/menu", 4), new Cmd("fauxmenu", 4),
+            new Cmd("/clear",2), new Cmd("/c",2), 
+            new Cmd("/pass",3), new Cmd("/password",3), new Cmd("/pw",3), new Cmd("/pwd",3),
+            new Cmd("/fauxmain", 4), new Cmd("/main", 4), new Cmd("/menu", 4), new Cmd("fauxmenu", 4), 
             new Cmd("/fakemain", 4), new Cmd("/fakemenu", 4),
             new Cmd("/term",5), new Cmd("/setup",5), new Cmd("/emu",5), new Cmd("/bell",6), 
             new Cmd("/sound",6), new Cmd("/shutdown",7), new Cmd("/announce",8), new Cmd("/help",9), new Cmd("/?",9), 
@@ -36,7 +36,7 @@ namespace miniBBS.Menus
             new Cmd("/e-mail",37), new Cmd("/feedback",37), new Cmd("/texts",38), new Cmd("/textz",38), new Cmd("/text",38), new Cmd("/txt",38), 
             new Cmd("/file",38), new Cmd("/files",38), new Cmd("/filez",38), new Cmd("/myfiles",38), new Cmd("/textread",39), new Cmd("/tr",39), 
             new Cmd("/run",39), new Cmd("/exec",39), new Cmd(",",40), new Cmd("<",40), new Cmd(".",40), new Cmd(">",40), new Cmd("[",40), 
-            new Cmd("]",40), new Cmd("{",40), new Cmd("}",40)
+            new Cmd("]",40), new Cmd("{",40), new Cmd("}",40), new Cmd("/blurb", 41), new Cmd("/blurbadmin", 42)
         };
 
         public static void Execute(BbsSession session)

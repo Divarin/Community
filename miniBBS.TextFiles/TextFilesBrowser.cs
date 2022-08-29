@@ -266,9 +266,9 @@ namespace miniBBS.TextFiles
                     case "chdir":
                     case "cd":
                         // change directory using chdir or cd
-                        if (parts.Length >= 2)
                         {
-                            ChangeDirectory(parts[1], links);
+                            var dirNameOrNumber = parts.Length >= 2 ? parts[1] : null;
+                            ChangeDirectory(dirNameOrNumber, links);
                             result = CommandResult.ReadDirectory;
                         }
                         break;
@@ -713,7 +713,7 @@ namespace miniBBS.TextFiles
             {
                 byte[] data = null;
                 var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
-                var options = FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
+                var options = FileTransferProtocolOptions.None;// FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
                 if (xfer.Receive(_session, options))
                     data = xfer.Data;
                 return data;
@@ -773,9 +773,12 @@ namespace miniBBS.TextFiles
 
         private void ChangeDirectory(string dirNameOrNumber, IList<Link> links)
         {
-            if (string.IsNullOrWhiteSpace(dirNameOrNumber))
-                return;
-
+            if (dirNameOrNumber == "~" || string.IsNullOrWhiteSpace(dirNameOrNumber))
+            {
+                _session.Io.Error($"Interpreting '{dirNameOrNumber}' as '/CommunityUsers/{_session.User.Name}'");
+                dirNameOrNumber = $"/CommunityUsers/{_session.User.Name}";
+            }
+            
             if (dirNameOrNumber.Length > 1 && (dirNameOrNumber.StartsWith("/") || dirNameOrNumber.StartsWith("\\")))
             {
                 ChangeDirectory("/", links);
@@ -806,7 +809,12 @@ namespace miniBBS.TextFiles
                         linkNum = links.IndexOf(l => l.Path.Replace("/", "").Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase));
 
                     if (linkNum < 0)
-                        _session.Io.OutputLine("Invalid file/directory name.");
+                    {
+                        if ("desktop".Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase))
+                            ChangeDirectory($"/CommunityUsers/{_session.User.Name}", links);
+                        else
+                            _session.Io.OutputLine("Invalid file/directory name.");
+                    }
                     else
                         ChangeDirectory(links[linkNum]);
                 }
@@ -956,7 +964,7 @@ namespace miniBBS.TextFiles
                 return string.Empty;
             };
 
-            string line = _session.Io.InputLine(autoComplete, InputHandlingFlag.AutoCompleteOnTab);
+            string line = _session.Io.InputLine(autoComplete, InputHandlingFlag.AutoCompleteOnTab | InputHandlingFlag.UseLastLine);
             _session.Io.OutputLine();
             return line;
         }
