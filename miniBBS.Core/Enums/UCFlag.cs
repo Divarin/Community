@@ -16,9 +16,9 @@ namespace miniBBS.Core.Enums
         Invited = 1,
 
         /// <summary>
-        /// If user can join the channel, they can read but cannot write messages
+        /// If a channel requires voice, the user must have this flag to post in it
         /// </summary>
-        ReadyOnly = 2,
+        HasVoice = 2,
 
         /// <summary>
         /// User is moderator and may delete messages, invite members, kick & ban users

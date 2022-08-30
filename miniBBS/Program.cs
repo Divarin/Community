@@ -310,8 +310,6 @@ namespace miniBBS
                 }
                 else if (line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
                     ExecuteCommand(session, line);
-                else if (session.UcFlag.Flags.HasFlag(UCFlag.ReadyOnly) && (session.User.Access & (AccessFlag.Administrator | AccessFlag.GlobalModerator)) == 0)
-                    session.Io.OutputLine("You are not allowed to talk in this channel at this time.");
                 else if (line?.Length == 1)
                 {
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
@@ -327,32 +325,34 @@ namespace miniBBS
                     // IsNullOrWhitespace would do this but it doesn't
 
                     Chat chat = AddToChatLog(session, chatRepo, line);
-
-                    if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
+                    if (chat != null)
                     {
-                        notifiedAboutNoOneInChannel = true;
-                        using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                        if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
                         {
-                            string msg =
-                                $"Tutor:{Environment.NewLine}" +
-                                $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
-                                "Type /who to see who all is online and in what channels.";
-                            session.Io.OutputLine(msg);
+                            notifiedAboutNoOneInChannel = true;
+                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                            {
+                                string msg =
+                                    $"Tutor:{Environment.NewLine}" +
+                                    $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
+                                    "Type /who to see who all is online and in what channels.";
+                                session.Io.OutputLine(msg);
+                            }
                         }
-                    }
 
-                    if (!notifiedAboutHowToDeleteOwnMessages && chat.Message.Length < 4)
-                    {
-                        notifiedAboutHowToDeleteOwnMessages = true;
-                        using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                        if (!notifiedAboutHowToDeleteOwnMessages && chat.Message.Length < 4)
                         {
-                            string msg =
-                                $"Tutor:{Environment.NewLine}" +
-                                $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
-                                $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
-                                $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
-                                "This notification will not be shown again during this session.";
-                            session.Io.OutputLine(msg);
+                            notifiedAboutHowToDeleteOwnMessages = true;
+                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                            {
+                                string msg =
+                                    $"Tutor:{Environment.NewLine}" +
+                                    $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
+                                    $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
+                                    $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
+                                    "This notification will not be shown again during this session.";
+                                session.Io.OutputLine(msg);
+                            }
                         }
                     }
                 }
@@ -360,8 +360,24 @@ namespace miniBBS
 
         }
 
+        /// <summary>
+        /// Creates a new chat message and adds to the channel.  Returns null if the chat could not be added.
+        /// </summary>
         private static Chat AddToChatLog(BbsSession session, IRepository<Chat> chatRepo, string line, bool isNewTopic = false)
         {
+            var canPost =
+                true == session.User?.Access.HasFlag(AccessFlag.Administrator) ||
+                true == session.User?.Access.HasFlag(AccessFlag.GlobalModerator) ||
+                true == session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
+                true != session.Channel?.RequiresVoice ||
+                session.UcFlag.Flags.HasFlag(UCFlag.HasVoice);
+
+            if (!canPost)
+            {
+                session.Io.Error("Sorry you're not allowed to talk in this channel at this time.  You may require 'voice', to request voice type '/voice'.");
+                return null;
+            }
+
             Chat chat = new Chat
             {
                 DateUtc = DateTime.UtcNow,
@@ -998,6 +1014,19 @@ namespace miniBBS
                 case "/blurbadmin":
                     Blurbs.BlurbAdmin(session, parts.Skip(1).ToArray());
                     return;
+                case "/hand":
+                case "/raise":
+                case "/raisehand":
+                case "/voice":
+                    VoiceRequestQueueManager.RequestVoice(session);
+                    return;
+                case "/uptime":
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    {
+                        var uptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
+                        session.Io.OutputLine($"Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
+                    }
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
@@ -1054,12 +1083,32 @@ namespace miniBBS
             {
                 switch (args[0].ToLower().Trim())
                 {
-                    case "+i": ToggleInviteOnly.Execute(session, true); break;
-                    case "-i": ToggleInviteOnly.Execute(session, false); break;
-                    case "m": ListModerators.Execute(session); break;
-                    case "i": ListInvitations.Execute(session); break;
-                    case "del": DeleteChannel.Execute(session); break;                    
-                    default: SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); break;
+                    case "+i":
+                        ToggleInviteOnly.Execute(session, true); 
+                        break;
+                    case "-i": 
+                        ToggleInviteOnly.Execute(session, false); 
+                        break;
+                    case "+v":
+                    case "-v":
+                    case "vq":
+                    case "vlist":
+                    case "vall":
+                    case "vnone":
+                        ChannelVoice.Execute(session, args);
+                        break;
+                    case "m": 
+                        ListModerators.Execute(session); 
+                        break;
+                    case "i": 
+                        ListInvitations.Execute(session); 
+                        break;
+                    case "del": 
+                        DeleteChannel.Execute(session); 
+                        break;
+                    default: 
+                        SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); 
+                        break;
                 }
             }
             else if (args.Length == 2)
@@ -1114,6 +1163,9 @@ namespace miniBBS
                 case "mod":
                 case "moderator":
                     Menus.Moderator.Show(session);
+                    break;
+                case "voice":
+                    Menus.Voice.Show(session);
                     break;
                 default:
                     MainMenu.Show(session);

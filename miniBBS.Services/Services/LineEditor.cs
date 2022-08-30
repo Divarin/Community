@@ -513,7 +513,7 @@ namespace miniBBS.Services.Services
                 {
                     {'y', () =>
                     {
-                        for (int i=range.Item2-1; i>= range.Item1-1; i--)
+                        for (int i=range.Item2-1; i>= range.Item1-1 && i < lines.Count; i--)
                         {
                             lines.RemoveAt(i);
                         }

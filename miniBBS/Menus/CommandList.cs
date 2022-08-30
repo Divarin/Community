@@ -36,7 +36,8 @@ namespace miniBBS.Menus
             new Cmd("/e-mail",37), new Cmd("/feedback",37), new Cmd("/texts",38), new Cmd("/textz",38), new Cmd("/text",38), new Cmd("/txt",38), 
             new Cmd("/file",38), new Cmd("/files",38), new Cmd("/filez",38), new Cmd("/myfiles",38), new Cmd("/textread",39), new Cmd("/tr",39), 
             new Cmd("/run",39), new Cmd("/exec",39), new Cmd(",",40), new Cmd("<",40), new Cmd(".",40), new Cmd(">",40), new Cmd("[",40), 
-            new Cmd("]",40), new Cmd("{",40), new Cmd("}",40), new Cmd("/blurb", 41), new Cmd("/blurbadmin", 42)
+            new Cmd("]",40), new Cmd("{",40), new Cmd("}",40), new Cmd("/blurb", 41), new Cmd("/blurbadmin", 42),
+            new Cmd("/hand", 43), new Cmd("/raise", 43), new Cmd("/raisehand", 43), new Cmd("/voice", 43)
         };
 
         public static void Execute(BbsSession session)

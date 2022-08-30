@@ -24,7 +24,8 @@ namespace miniBBS.Menus
             $"{_clr("/ch kick (username)", ConsoleColor.Green)} : Kicks (username) out of the channel.",
             $"{_clr("/ch del", ConsoleColor.Green)} : Deletes the current channel.",
             $"{_clr("/ch movemsg (ch#) (range)", ConsoleColor.Green)} : Moves one or more messages from current channel to (ch#) (channel name or number).  Use '/ch movemsg' for detailed examples on using this.",
-            $"(See '{_clr("/? msgs", ConsoleColor.Green)}' help for info on channel messages, deleting etc...)"
+            $"See '{_clr("/? msgs", ConsoleColor.Green)}' help for info on channel messages, deleting etc...",
+            $"See '{_clr("/? voice", ConsoleColor.Green)}' help for info on voice: who can talk in the channel.",
         };
 
         public static void Show(BbsSession session)

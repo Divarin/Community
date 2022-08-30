@@ -52,7 +52,7 @@ namespace miniBBS.Persistence
 
         private void CreateChannelsTable(SQLiteConnection db)
         {
-            string sql = "CREATE TABLE Channels (Id integer primary key autoincrement, Name TEXT not null, RequiresInvite TEXT not null default 'False', DateCreatedUtc TEXT null)";
+            string sql = "CREATE TABLE Channels (Id integer primary key autoincrement, Name TEXT not null, RequiresInvite TEXT not null default 'False', RequiresVoice TEXT not null default 'False', DateCreatedUtc TEXT null)";
             using (var cmd = new SQLiteCommand(sql, db))
             {
                 cmd.ExecuteNonQuery();

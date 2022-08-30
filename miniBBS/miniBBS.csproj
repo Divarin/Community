@@ -102,6 +102,7 @@
     <Compile Include="Commands\SysopScreen.cs" />
     <Compile Include="Commands\TermSetup.cs" />
     <Compile Include="Commands\TimeZone.cs" />
+    <Compile Include="Commands\ChannelVoice.cs" />
     <Compile Include="Commands\ToggleChannelInvite.cs" />
     <Compile Include="Commands\Shutdown.cs" />
     <Compile Include="Commands\ToggleChannelModerator.cs" />
@@ -115,6 +116,7 @@
     <Compile Include="Helpers\NotificationHandler.cs" />
     <Compile Include="Helpers\Messager.cs" />
     <Compile Include="Helpers\TcpClientFactory.cs" />
+    <Compile Include="Helpers\VoiceRequestQueueManager.cs" />
     <Compile Include="Menus\About.cs" />
     <Compile Include="Menus\Bells.cs" />
     <Compile Include="Menus\Channels.cs" />
@@ -124,6 +126,7 @@
     <Compile Include="Menus\Messages.cs" />
     <Compile Include="Menus\Moderator.cs" />
     <Compile Include="Menus\Users.cs" />
+    <Compile Include="Menus\Voice.cs" />
     <Compile Include="Persistence\DatabaseMaint.cs" />
     <Compile Include="Persistence\Logger.cs" />
     <Compile Include="Subscribers\ChannelMessageSubscriber.cs" />
