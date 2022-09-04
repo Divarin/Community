@@ -14,6 +14,7 @@ namespace miniBBS.Commands
             $"{_clr("M", ConsoleColor.Green)}) Message Boards",
             $"{_clr("C", ConsoleColor.Green)}) Chat Rooms",
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
+            $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
             $"{_clr("G", ConsoleColor.Green)}) Games",
             $"{_clr("D", ConsoleColor.Green)}) Downloads",
             $"{_clr("O", ConsoleColor.Green)}) Logoff",
@@ -59,6 +60,10 @@ namespace miniBBS.Commands
         //"in a certain way and get flustered when they don't.  If you really want to dive into what this system is all about and explore it then " +
         //"select \"(L)et's go to the BBS!\" and you'll be plopped into the main chat room, from there you can go to the text files " +
         //"area by typing '/text'.";
+
+        private const string _polls =
+            "Want to create voting topics and vote on other peoples' topics? \r\n" +
+            "Press L for \"Let's go to the BBS\", then type /polls.";
 
         private const string _games =
             "Want to play (or make) some games? \r\n " +
@@ -122,6 +127,10 @@ namespace miniBBS.Commands
                                 break;
                             case 'T':
                                 session.Io.OutputLine(_textfiles);
+                                Pause();
+                                break;
+                            case 'V':
+                                session.Io.OutputLine(_polls);
                                 Pause();
                                 break;
                             case 'G':

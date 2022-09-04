@@ -18,16 +18,12 @@ namespace miniBBS.Services.GlobalCommands
 
             var userFlags = session.UcFlagRepo.Get(f => f.UserId, session.User.Id)
                 .ToDictionary(k => k.ChannelId);
-
-            var chans = channelRepo
-                .Get()
-                .Where(c => c.CanJoin(session))
-                .OrderBy(c => c.Id)
-                .ToArray();
+            
+            Channel[] chans = GetChannelList(session, channelRepo);
 
             var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
 
-            int longestChannelName = chans.Max(c => c.Name.Length)+1;
+            int longestChannelName = chans.Max(c => c.Name.Length) + 1;
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
@@ -37,8 +33,8 @@ namespace miniBBS.Services.GlobalCommands
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 StringBuilder builder = new StringBuilder();
-                
-                for (int i=0; i < chans.Length; i++)
+
+                for (int i = 0; i < chans.Length; i++)
                 {
                     var chan = chans[i];
                     int lastRead;
@@ -51,7 +47,7 @@ namespace miniBBS.Services.GlobalCommands
                     var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
                     builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
                     builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
-                    builder.Append($"{chan.Name} {' '.Repeat(longestChannelName-chan.Name.Length)}");
+                    builder.Append($"{chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}");
                     if (unread > 0)
                         builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Magenta}{Constants.InlineColorizer}");
                     else
@@ -61,6 +57,21 @@ namespace miniBBS.Services.GlobalCommands
 
                 session.Io.Output(builder.ToString());
             }
+        }
+
+        public static Channel[] GetChannelList(BbsSession session)
+        {
+            var repo = GlobalDependencyResolver.GetRepository<Channel>();
+            return GetChannelList(session, repo);
+        }
+
+        private static Channel[] GetChannelList(BbsSession session, IRepository<Channel> channelRepo)
+        {
+            return channelRepo
+                .Get()
+                .Where(c => c.CanJoin(session))
+                .OrderBy(c => c.Id)
+                .ToArray();
         }
     }
 }

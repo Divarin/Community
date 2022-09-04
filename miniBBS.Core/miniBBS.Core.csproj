@@ -95,6 +95,7 @@
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />
     <Compile Include="Models\Control\LoginRecord.cs" />
+    <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Data\Blurb.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
@@ -105,11 +106,14 @@
     <Compile Include="Models\Data\Mail.cs" />
     <Compile Include="Models\Data\Notification.cs" />
     <Compile Include="Models\Data\PinnedMessage.cs" />
+    <Compile Include="Models\Data\PollQuestion.cs" />
+    <Compile Include="Models\Data\PollVote.cs" />
     <Compile Include="Models\Data\User.cs" />
     <Compile Include="Models\Data\UserChannelFlag.cs" />
     <Compile Include="Models\Messages\ChannelMessage.cs" />
     <Compile Include="Models\Messages\ChannelPostMessage.cs" />
     <Compile Include="Models\Messages\EmoteMessage.cs" />
+    <Compile Include="Models\Messages\GlobalMessage.cs" />
     <Compile Include="Models\Messages\UserLoginOrOutMessage.cs" />
     <Compile Include="Models\Messages\UserMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

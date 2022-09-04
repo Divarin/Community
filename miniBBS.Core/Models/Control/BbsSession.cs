@@ -42,7 +42,6 @@ namespace miniBBS.Core.Models.Control
         public Action ShowPrompt { get; set; }
         public Guid Id { get; set; }
         public Stream Stream { get; set; }
-        public SystemControlFlag SysControl { get; set; }
         public IRepository<User> UserRepo { get; set; }
         public IRepository<UserChannelFlag> UcFlagRepo { get; set; }
         public User User { get; set; }
@@ -54,6 +53,7 @@ namespace miniBBS.Core.Models.Control
         public ISubscriber<ChannelPostMessage> ChannelPostSubscriber { get; set; }
         public ISubscriber<UserLoginOrOutMessage> UserLoginOrOutSubscriber { get; set; }
         public ISubscriber<ChannelMessage> ChannelMessageSubscriber { get; set; }
+        public ISubscriber<GlobalMessage> GlobalMessageSubscriber { get; set; }
         public ISubscriber<UserMessage> UserMessageSubscriber { get; set; }
         public ISubscriber<EmoteMessage> EmoteSubscriber { get; set; }
         public Module CurrentLocation { get; set; }
@@ -139,6 +139,7 @@ namespace miniBBS.Core.Models.Control
         }
 
         public string LastLine { get; set; }
+        
 
         private static void PingPong(object o)
         {

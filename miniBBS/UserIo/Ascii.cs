@@ -52,8 +52,10 @@ namespace miniBBS.UserIo
             return string.Empty;
         }
 
-        protected override string ReplaceInlineColors(string line)
+        protected override string ReplaceInlineColors(string line, out int actualTextLength)
         {
+            actualTextLength = 0;
+
             if (string.IsNullOrWhiteSpace(line))
                 return line;
 
@@ -64,7 +66,10 @@ namespace miniBBS.UserIo
                 if (c == Constants.InlineColorizer)
                     inColorCode = !inColorCode;
                 else if (!inColorCode)
+                {
                     chrs.Add(c);
+                    actualTextLength++;
+                }
             }
 
             return new string(chrs.ToArray());

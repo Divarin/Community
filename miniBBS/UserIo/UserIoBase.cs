@@ -251,12 +251,11 @@ namespace miniBBS.UserIo
         protected virtual void StreamOutput(BbsSession session, string text, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
             bool continuousOutput = flags.HasFlag(OutputHandlingFlag.Nonstop);
-            text = ReplaceInlineColors(text);
-
+            text = ReplaceInlineColors(text, out int actualTextLength);
 
             if (session.Stream.CanWrite)
             {
-                if (text.Length > session.Cols)
+                if (actualTextLength > session.Cols)
                 {
                     // handle wordwrap and pause
                     var lines = text.SplitAndWrap(session, flags).ToList();
@@ -348,7 +347,8 @@ namespace miniBBS.UserIo
             }
         }
 
-        protected abstract string ReplaceInlineColors(string line);
+        protected abstract string ReplaceInlineColors(string line, out int actualTextLength);
+
         protected virtual byte[] GetBytes(string text)
         {
             return Encoding.ASCII.GetBytes(text);

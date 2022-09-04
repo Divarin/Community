@@ -17,7 +17,8 @@ namespace miniBBS.Services
             {typeof(IFileTransferProtocol), () => new Xmodem()},
             {typeof(ICompressor), () => GetOrSetSingleton(() => new Compressor())},
             {typeof(ISessionsList), () => GetOrSetSingleton(() => new SessionsList())},
-            {typeof(IMessager), () => GetOrSetSingleton(() => new Messager())}
+            {typeof(IMessager), () => GetOrSetSingleton(() => new Messager())},
+            {typeof(ILogger), () => GetOrSetSingleton(() => new Logger())},
         };
 
         public static IRepository<T> GetRepository<T>()

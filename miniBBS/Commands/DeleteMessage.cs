@@ -40,7 +40,7 @@ namespace miniBBS.Commands
                     );
 
                 if (!canDelete)
-                    session.Io.OutputLine($"Cannot delete message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minues) or you aren't a moderator.");
+                    session.Io.OutputLine($"Cannot delete message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minutes) and you are not a moderator.");
                 else
                 {
                     session.Io.SetForeground(ConsoleColor.White);

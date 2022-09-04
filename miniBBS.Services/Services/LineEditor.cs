@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
+using miniBBS.Services.GlobalCommands;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -142,25 +143,23 @@ namespace miniBBS.Services.Services
                         var result = CommandResult.ExitEditor;
                         if (HasUnsavedChanges(lines) && OnSave != null)
                         {
-                            Ask("Save changes first? (Y)es, (N)o, (A)bort (don't quit)", new Dictionary<char, Action>
+                            var k = _session.Io.Ask("Save changes first? (Y)es, (N)o, (A)bort (don't quit)");
+                            switch (k)
                             {
-                                {'n', () =>
-                                { 
+                                case 'N':
                                     result |= CommandResult.RevertToOriginal;
                                     Notify("Undoing changes");
-                                } },
-                                {'a', () => 
-                                {
-                                    result = CommandResult.None;
-                                    Notify("Continue editing");
-                                } },
-                                {'y', () =>
-                                {
+                                    break;
+                                case 'Y':
                                     var body = Compile(lines);
                                     var status = OnSave(body);
                                     Notify(status);
-                                } }
-                            });
+                                    break;
+                                default:
+                                    result = CommandResult.None;
+                                    Notify("Continue editing");
+                                    break;
+                            }
                         }
                         return result;
                     }
@@ -169,11 +168,8 @@ namespace miniBBS.Services.Services
                     // list (with or without line numbers)
                     {
                         var range = args.Length >= 2 ? args[1] : null;
-                        Ask("With line numbers? (Y)es, (N)o, (A)bort", new Dictionary<char, Action>
-                        {
-                            {'n', () => List(lines, false, range) },
-                            {'y', () => List(lines, true, range) }
-                        });
+                        var k = _session.Io.Ask("With line numbers? (Y)es, (N)o, (A)bort");
+                        List(lines, 'Y' == k, range);
                     }
                     break;
                 case "insert":
@@ -354,17 +350,12 @@ namespace miniBBS.Services.Services
             if (builder.Length > 0)
             {
                 _session.Io.OutputLine(builder.ToString());
-                Ask("Update these lines?", new Dictionary<char, Action>
+                if ('Y' == _session.Io.Ask("Update these lines?"))
                 {
-                    {'y', () =>
-                    {
-                        foreach (var l in newLines)
-                        {
-                            lines[l.Key] = l.Value;
-                        }
-                        Notify("Done");
-                    } }
-                });
+                    foreach (var l in newLines)
+                        lines[l.Key] = l.Value;
+                    Notify("Done");
+                } 
             }
         }
 
@@ -431,14 +422,11 @@ namespace miniBBS.Services.Services
                 _session.Io.OutputLine("After:");
                 _session.Io.SetForeground(ConsoleColor.White);
                 _session.Io.OutputLine(line);
-                Ask("Make this edit?", new Dictionary<char, Action>
+                if ('Y'==_session.Io.Ask("Make this edit?"))
                 {
-                    {'y', () =>
-                    {
-                        lines[lineNum] = line;
-                        _session.Io.OutputLine("Line edited");
-                    } }
-                });
+                    lines[lineNum] = line;
+                    _session.Io.OutputLine("Line edited");
+                } 
             }
         }
 
@@ -499,7 +487,7 @@ namespace miniBBS.Services.Services
         {
             var range = string.IsNullOrWhiteSpace(args) ?
                 new Tuple<int, int>(lines.Count, lines.Count) :
-                ParseRange(args, lines.Count+1);
+                ParseRange.Execute(args, lines.Count+1);
 
             int lineCount = range.Item2 - range.Item1 + 1;
 
@@ -508,17 +496,12 @@ namespace miniBBS.Services.Services
                 for (int i = range.Item1 - 1; i <= range.Item2 - 1 && i < lines.Count; i++)
                     _session.Io.OutputLine(lines[i]);
                 _session.Io.SetForeground(ConsoleColor.Magenta);
-                Ask($"Delete {(lineCount == 1 ? "this line" : "these lines")}?", new Dictionary<char, Action>
-                {
-                    {'y', () =>
-                    {
-                        for (int i=range.Item2-1; i>= range.Item1-1; i--)
-                        {
-                            lines.RemoveAt(i);
-                        }
-                        _session.Io.OutputLine($"{lineCount} line{(lineCount == 1 ? "" : "s")} deleted.");
-                    } }
-                });
+                if ('Y'==_session.Io.Ask($"Delete {(lineCount == 1 ? "this line" : "these lines")}?"))
+                { 
+                    for (int i=range.Item2-1; i>= range.Item1-1 && i < lines.Count; i--)
+                        lines.RemoveAt(i);
+                    _session.Io.OutputLine($"{lineCount} line{(lineCount == 1 ? "" : "s")} deleted.");
+                } 
             }
         }
 
@@ -553,7 +536,7 @@ namespace miniBBS.Services.Services
                 return;
             }
 
-            var range = ParseRange(args[0], lines.Count + 1);
+            var range = ParseRange.Execute(args[0], lines.Count + 1);
             
             if (insertPoint >= range.Item1 && insertPoint <= range.Item2)
             {
@@ -591,7 +574,7 @@ namespace miniBBS.Services.Services
         private void List(IList<string> lines, bool withLineNumbers, string range=null)
         {
             string body;
-            Tuple<int, int> rangeTuple = ParseRange(range, lines.Count+1);
+            Tuple<int, int> rangeTuple = ParseRange.Execute(range, lines.Count+1);
             var builder = new StringBuilder();
             for (int i=rangeTuple.Item1-1; i < lines.Count && i+1 <= rangeTuple.Item2; i++)
                 builder.AppendLine($"{(withLineNumbers ? $"{i + 1} : " : "")}{lines[i]}");
@@ -603,57 +586,10 @@ namespace miniBBS.Services.Services
             }
         }
 
-        private Tuple<int, int> ParseRange(string range, int upperLimit)
-        {
-            Func<int, int, Tuple<int, int>> MakeTuple = (_a, _b) =>
-            {
-                if (_a < 1) _a = 1;
-                if (_a > upperLimit) _a = upperLimit;
-                if (_b < 1) _b = 1;
-                if (_b > upperLimit) _b = upperLimit;
-                _a = Math.Min(_a, _b);
-                _b = Math.Max(_a, _b);
-                return new Tuple<int, int>(_a, _b);
-            };
-
-            if (string.IsNullOrWhiteSpace(range))
-                return MakeTuple(1, upperLimit);
-            if (int.TryParse(range, out int n))
-            {
-                if (n < 0)
-                    return MakeTuple(1, -n);
-                else if (n == 0)
-                    return MakeTuple(1, 1);
-                else
-                    return MakeTuple(n, n);
-            }
-            var parts = range.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 1 && int.TryParse(parts[0], out int a))
-                return MakeTuple(a, upperLimit);
-            if (parts.Length > 1 && int.TryParse(parts[0], out int a1) && int.TryParse(parts[1], out int b1))
-                return MakeTuple(a1, b1);
-            return MakeTuple(1, upperLimit);
-        }
-
         private string Compile(IList<string> lines)
         {
             string body = string.Join(Environment.NewLine, lines);
             return body;
-        }
-
-        private void Ask(string question, IDictionary<char, Action> actions)
-        {
-            using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-            {
-                _session.Io.Output($"{question}: ");
-                var c = _session.Io.InputKey();
-                _session.Io.OutputLine();
-                if (!c.HasValue)
-                    return;
-                char lowerC = Char.ToLower(c.Value);
-                if (actions.ContainsKey(lowerC))
-                    actions[lowerC].Invoke();
-            }
         }
 
         private void Notify(string notification)

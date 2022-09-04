@@ -266,8 +266,14 @@ namespace miniBBS.UserIo
             }
         }
 
-        protected override string ReplaceInlineColors(string line)
+        protected override string ReplaceInlineColors(string line, out int actualTextLength)
         {
+            // for every 2 control chars, 3 bytes need to be removed from length
+            actualTextLength = line?.Length ?? 0;
+            var ctrls = line?.Count(c => c == Constants.InlineColorizer) ?? 0;
+            ctrls /= 2;
+            actualTextLength -= ctrls * 3;
+
             return line;
         }
 

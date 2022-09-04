@@ -1,22 +1,22 @@
-﻿using miniBBS.Commands;
-using miniBBS.Core;
+﻿using miniBBS.Core;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Services.GlobalCommands;
 using System;
 using System.Collections.Concurrent;
 
-namespace miniBBS.Persistence
+namespace miniBBS.Services.Services
 {
     public class Logger : ILogger
     {
-        private ConcurrentQueue<LogEntry> _unwritten = new ConcurrentQueue<LogEntry>();
+        private readonly ConcurrentQueue<LogEntry> _unwritten = new ConcurrentQueue<LogEntry>();
         private readonly IRepository<LogEntry> _repo;
         private object _lock = new object();
 
         public Logger()
         {
-            _repo = DI.GetRepository<LogEntry>();
+            _repo = GlobalDependencyResolver.GetRepository<LogEntry>();
         }
 
         public void Flush()
@@ -38,16 +38,6 @@ namespace miniBBS.Persistence
                 consoleOnly: consoleOnly);
         }
 
-        //public void Log(string message, bool consoleOnly = false)
-        //{
-        //    Log(sessionId: null,
-        //        ipAddress: null,
-        //        userId: null,
-        //        username: null,
-        //        message: message,
-        //        consoleOnly: consoleOnly);
-        //}
-
         private void Log(Guid? sessionId, string ipAddress, int? userId, string username, string message, bool consoleOnly = false)
         {
             LogEntry entry = new LogEntry
@@ -62,7 +52,6 @@ namespace miniBBS.Persistence
             if (!consoleOnly)
                 _unwritten.Enqueue(entry);
 
-            //Console.WriteLine($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
             SysopScreen.AddLogMessage($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
             if (_unwritten.Count > Constants.NumberOfLogEntriesUntilWriteToDatabase)
                 Flush();

@@ -24,19 +24,8 @@ namespace miniBBS.Menus
             //string.Format("{0}{0}{0}/ch FooBar     :  if channel 'FooBar' exists (and you can access it) switches to it.", Constants.Spaceholder),
             //string.Format("{0}{0}{0}/ch 42         :  if channel #42 exists (and you can access it) switches to it.", Constants.Spaceholder),
             //string.Format("{0}{0}{0}/ch FooBar     :  if channel 'FooBar' does *not* exist, creates it and makes you the moderator.", Constants.Spaceholder),
-            $"--- {_clr("Channel Moderator Commands", ConsoleColor.Yellow)} ---",
-            $"{_clr("/ch +i", ConsoleColor.Green)} : Sets the channel to Invite Only.",
-            $"{_clr("/ch -i", ConsoleColor.Green)} : Removes the Invite Only flag.",
-            $"{_clr("/ch i (username)", ConsoleColor.Green)} : Toggle invite to user (username).",
-            //string.Format("{0}{0}{0}Examples: ", Constants.Spaceholder),
-            //string.Format("{0}{0}{0}/ch i jimbob    : If jimbob is not invited, then he becomes invited.", Constants.Spaceholder),
-            //string.Format("{0}{0}{0}/ch i jimbob    : If jimbob is already invited, then he becomes uninvited.", Constants.Spaceholder),
-            $"{_clr("/ch i", ConsoleColor.Green)} : Lists invited users.",
-            $"{_clr("/ch m (username)", ConsoleColor.Green)} : Toggles (username) as moderator.",
-            $"{_clr("/ch m", ConsoleColor.Green)} : Lists moderators.",
-            $"{_clr("/ch kick (username)", ConsoleColor.Green)} : Kicks (username) out of the channel.",
-            $"{_clr("/ch del", ConsoleColor.Green)} : Deletes the current channel.",
-            $"(See '{_clr("/? msgs", ConsoleColor.Green)}' help for info on channel messages, deleting etc...)"
+            $"See '{_clr("/? mod", ConsoleColor.Green)}' for help on channel moderator commands.",
+            $"See '{_clr("/? msgs", ConsoleColor.Green)}' for help for info on channel messages, deleting etc...)"
         };
 
         public static void Show(BbsSession session)

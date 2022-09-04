@@ -477,8 +477,6 @@ namespace miniBBS.Basic
             };
             vars["INKEY"] = () => _session.Io.GetPolledTicks().ToString();
 
-            // TODO: sql
-            //vars["QCOUNT"] = () => "0"; // Sql.LastQueryResultCount.ToString();
             return vars;
         }
 

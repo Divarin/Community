@@ -90,8 +90,9 @@ namespace miniBBS.UserIo
             }
         }
 
-        protected override string ReplaceInlineColors(string line)
+        protected override string ReplaceInlineColors(string line, out int actualTextLength)
         {
+            actualTextLength = 0;
             var resultBuilder = new StringBuilder();
             var codeBuilder = new StringBuilder();
             bool inCode = false;
@@ -111,7 +112,10 @@ namespace miniBBS.UserIo
                 else if (inCode)
                     codeBuilder.Append(c);
                 else
+                {
                     resultBuilder.Append(c);
+                    actualTextLength++;
+                }
             }
 
             return resultBuilder.ToString();

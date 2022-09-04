@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace miniBBS.Commands
+namespace miniBBS.Services.GlobalCommands
 {
     public static class SysopScreen
     {
@@ -36,8 +36,7 @@ namespace miniBBS.Commands
 
         private static readonly IList<string> _logMessages = new List<string>();
         private static readonly DateTime _startedAtLoc = DateTime.Now;
-        private static readonly DateTime _startedAtUtc = DateTime.UtcNow;
-
+        public static DateTime StartedAtUtc { get; private set; } = DateTime.UtcNow;
         private static readonly List<LoginRecord> _logins = new List<LoginRecord>();
 
         public static void Initialize(ISessionsList sessionsList)
@@ -92,7 +91,7 @@ namespace miniBBS.Commands
             Console.Write("║║");
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"Started at {_startedAtLoc:yy-MM-dd HH:mm:ss} (local) [{_startedAtUtc:HH:mm} (utc)]".PadAndCenter(78));
+            Console.Write($"Started at {_startedAtLoc:yy-MM-dd HH:mm:ss} (local) [{StartedAtUtc:HH:mm} (utc)]".PadAndCenter(78));
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("║║");
@@ -135,13 +134,13 @@ namespace miniBBS.Commands
 
             Console.SetCursorPosition(0, 6);
             Console.BackgroundColor = ConsoleColor.Black;
-            
+
             int i = 0;
             foreach (var session in _sessionsList.Sessions)
             {
                 if (i > _numSessionsToList)
                     break;
-                if (i%2==0)
+                if (i % 2 == 0)
                     Console.ForegroundColor = ConsoleColor.White;
                 else
                     Console.ForegroundColor = ConsoleColor.Gray;
@@ -158,7 +157,7 @@ namespace miniBBS.Commands
                 i++;
             }
 
-            for (int j=i; j <= _numSessionsToList; j++)
+            for (int j = i; j <= _numSessionsToList; j++)
             {
                 Console.Write(_blankLine);
             }

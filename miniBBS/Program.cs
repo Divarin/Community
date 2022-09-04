@@ -26,6 +26,7 @@ namespace miniBBS
     {
         private static ILogger _logger;
         private static List<string> _ipBans;
+        public static SystemControlFlag SysControl = SystemControlFlag.Normal;
 
         static void Main(string[] args)
         {
@@ -42,7 +43,6 @@ namespace miniBBS
             var listener = new TcpListener(IPAddress.Any, port);
             listener.Start();
 
-            SystemControlFlag sysControl = SystemControlFlag.Normal;
             var sessionsList = DI.Get<ISessionsList>();
             Console.WriteLine(Constants.Version);
             _ipBans = DI.GetRepository<Core.Models.Data.IpBan>().Get()
@@ -51,7 +51,7 @@ namespace miniBBS
 
             SysopScreen.Initialize(sessionsList);
 
-            while (!sysControl.HasFlag(SystemControlFlag.Shutdown))
+            while (!SysControl.HasFlag(SystemControlFlag.Shutdown))
             {
                 try
                 {
@@ -67,7 +67,7 @@ namespace miniBBS
                     thread.Start(new NodeParams
                     {
                         Client = client,
-                        SysControl = sysControl,
+                        SysControl = SysControl,
                         Messager = DI.Get<IMessager>()
                     });
                 } 
@@ -114,7 +114,6 @@ namespace miniBBS
                         User = null,
                         UserRepo = userRepo,
                         UcFlagRepo = DI.GetRepository<UserChannelFlag>(),
-                        SysControl = sysControl,
                         Stream = stream,
                         Messager = nodeParams.Messager,
                         IpAddress = ip,
@@ -247,6 +246,8 @@ namespace miniBBS
             session.Messager.Subscribe(session.UserMessageSubscriber);
             session.EmoteSubscriber = new EmoteSubscriber();
             session.Messager.Subscribe(session.EmoteSubscriber);
+            session.GlobalMessageSubscriber = new GlobalMessageSubscriber(session.Id);
+            session.Messager.Subscribe(session.GlobalMessageSubscriber);
 
             session.Usernames = session.UserRepo.Get().ToDictionary(k => k.Id, v => v.Name);
             var channelRepo = DI.GetRepository<Channel>();
@@ -257,6 +258,7 @@ namespace miniBBS
             session.ChannelPostSubscriber.OnMessageReceived = m => NotifyNewPost(m.Chat, session);
             session.UserLoginOrOutSubscriber.OnMessageReceived = m => NotifyUserLoginOrOut(m.User, session, m.IsLogin);
             session.ChannelMessageSubscriber.OnMessageReceived = m => NotifyChannelMessage(session, m);
+            session.GlobalMessageSubscriber.OnMessageReceived = m => NotifyGlobalMessage(session, m);
             session.UserMessageSubscriber.OnMessageReceived = m => NotifyUserMessage(session, m.Message);
             session.EmoteSubscriber.OnMessageReceived = m => NotifyEmote(session, m);
 
@@ -310,8 +312,6 @@ namespace miniBBS
                 }
                 else if (line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
                     ExecuteCommand(session, line);
-                else if (session.UcFlag.Flags.HasFlag(UCFlag.ReadyOnly) && (session.User.Access & (AccessFlag.Administrator | AccessFlag.GlobalModerator)) == 0)
-                    session.Io.OutputLine("You are not allowed to talk in this channel at this time.");
                 else if (line?.Length == 1)
                 {
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
@@ -326,33 +326,35 @@ namespace miniBBS
                     // in other words, filter out control characters only such as backspaces.  You would think 
                     // IsNullOrWhitespace would do this but it doesn't
 
-                    Chat chat = AddToChatLog(session, chatRepo, line);
-
-                    if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
+                    Chat chat = AddToChatLog.Execute(session, chatRepo, line);
+                    if (chat != null)
                     {
-                        notifiedAboutNoOneInChannel = true;
-                        using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                        if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
                         {
-                            string msg =
-                                $"Tutor:{Environment.NewLine}" +
-                                $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
-                                "Type /who to see who all is online and in what channels.";
-                            session.Io.OutputLine(msg);
+                            notifiedAboutNoOneInChannel = true;
+                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                            {
+                                string msg =
+                                    $"Tutor:{Environment.NewLine}" +
+                                    $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
+                                    "Type /who to see who all is online and in what channels.";
+                                session.Io.OutputLine(msg);
+                            }
                         }
-                    }
 
-                    if (!notifiedAboutHowToDeleteOwnMessages && chat.Message.Length < 4)
-                    {
-                        notifiedAboutHowToDeleteOwnMessages = true;
-                        using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                        if (!notifiedAboutHowToDeleteOwnMessages && chat.Message.Length < 4)
                         {
-                            string msg =
-                                $"Tutor:{Environment.NewLine}" +
-                                $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
-                                $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
-                                $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
-                                "This notification will not be shown again during this session.";
-                            session.Io.OutputLine(msg);
+                            notifiedAboutHowToDeleteOwnMessages = true;
+                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                            {
+                                string msg =
+                                    $"Tutor:{Environment.NewLine}" +
+                                    $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
+                                    $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
+                                    $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
+                                    "This notification will not be shown again during this session.";
+                                session.Io.OutputLine(msg);
+                            }
                         }
                     }
                 }
@@ -360,52 +362,26 @@ namespace miniBBS
 
         }
 
-        private static Chat AddToChatLog(BbsSession session, IRepository<Chat> chatRepo, string line, bool isNewTopic = false)
-        {
-            Chat chat = new Chat
-            {
-                DateUtc = DateTime.UtcNow,
-                ChannelId = session.Channel.Id,
-                FromUserId = session.User.Id,
-                Message = line,
-                ResponseToId = isNewTopic ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber
-            };
-
-            int lastRead =
-                session.LastReadMessageNumberWhenStartedTyping ??
-                session.LastReadMessageNumber ??
-                session.MsgPointer;
-
-            bool isAtEndOfMessages = true != session.Chats?.Any() || lastRead == session.Chats.Keys.Max();
-            chat = chatRepo.Insert(chat);         
-            session.Chats[chat.Id] = chat;
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
-            {
-                session.Io.OutputLine($"Message {session.Chats.ItemNumber(chat.Id)} Posted to {session.Channel.Name}.");
-                session.LastReadMessageNumber = chat.Id;
-            }
-            if (isAtEndOfMessages)
-                SetMessagePointer.Execute(session, chat.Id);
-            session.Messager.Publish(new ChannelPostMessage(chat, session.Id));
-            return chat;
-        }
-
         private static void Prompt(BbsSession session)
         {
-            int unreadMessageCount = GetUnreadMessageCount(session);
-
             session.Io.SetForeground(ConsoleColor.Cyan);
-            session.Io.Output($"(/?=help) ({unreadMessageCount}){(session.Cols <= 40 ? Environment.NewLine : " ")}<{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}> [{session.Channel.Id}:{session.Channel.Name}] ");
-            session.Io.SetForeground(ConsoleColor.White);
-        }
+            var lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
+            var count = session.Chats.Count-1;
+            var chanList = ListChannels.GetChannelList(session);
+            
+            var chanNum = chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
 
-        private static int GetUnreadMessageCount(BbsSession session)
-        {
-            int highMessage = (true == session.Chats?.Keys?.Any()) ? session.Chats.Keys.Max() : 0;
-            var unreadMessageCount = highMessage > 0 ? session.Chats.Count(c => c.Key > session.MsgPointer) : 0;
-            if (highMessage > 0 && session.LastReadMessageNumber != highMessage)
-                unreadMessageCount++;
-            return unreadMessageCount;
+            var prompt = 
+                $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
+                UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
+                UserIoExtensions.WrapInColor(lastRead.ToString(), lastRead == count ? ConsoleColor.Cyan : ConsoleColor.Magenta) +
+                UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
+                $"{count}" +
+                UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
+                $"{chanNum}:{session.Channel.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
+
+            session.Io.Output(prompt);
+            session.Io.SetForeground(ConsoleColor.White);
         }
 
         /// <summary>
@@ -465,6 +441,31 @@ namespace miniBBS
             if (message.ChannelId != session.Channel.Id)
                 return;
 
+            Action action = () =>
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                {
+                    session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
+                    message.OnReceive?.Invoke(session);
+                }
+            };
+
+            if (session.DoNotDisturb && !message.Disturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
+                session.Io.DelayNotification(action);
+            else
+            {
+                action();
+                session.ShowPrompt();
+            }
+        }
+
+        /// <summary>
+        /// a notification to any user in any channel
+        /// </summary>
+        private static void NotifyGlobalMessage(BbsSession session, GlobalMessage message)
+        {
             Action action = () =>
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -733,6 +734,22 @@ namespace miniBBS
                         session.Io.OutputLine(Constants.Version);
                     }
                     return;
+                case "/m":
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    {
+                        var _lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
+                        var _high = session.Chats.Count - 1;
+                        string msg = string.Join(Environment.NewLine, new[]
+                        {
+                            $"{UserIoExtensions.WrapInColor(session.Channel.Name, ConsoleColor.White)} Message Info:",
+                            $"High Msg  : {UserIoExtensions.WrapInColor(_high.ToString(), ConsoleColor.White)}",
+                            $"Last Read : {UserIoExtensions.WrapInColor(_lastRead.ToString(), ConsoleColor.White)}",
+                            $"Unread{UserIoExtensions.WrapInColor("*", ConsoleColor.DarkGray)}   : {UserIoExtensions.WrapInColor((_high - _lastRead).ToString(), ConsoleColor.White)}",
+                            UserIoExtensions.WrapInColor("*: High-Last Read = Unread", ConsoleColor.DarkGray)
+                        });
+                        session.Io.Output(msg);
+                    }
+                    return;
                 case "/o":
                 case "/off":
                 case "/g":
@@ -774,9 +791,11 @@ namespace miniBBS
                 case "/sound":
                     Bell.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
-                case "/shutdown":
+                case "/syscontrol":
+                case "/systemcontrol":
+                case "/sysctrl":
                     if (session.User.Access.HasFlag(AccessFlag.Administrator))
-                        Shutdown.Execute(session);
+                        SystemControl.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/announce":
                     if (parts.Length >= 2)
@@ -853,13 +872,13 @@ namespace miniBBS
                 case "/f":
                 case "/find":
                 case "/search":
-                    FindMessages.FindByKeyword(session, parts.Length > 1 ? parts[1] : null);
+                    FindMessages.FindByKeyword(session, parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null);
                     return;
                 case "/fu":
-                    FindMessages.FindBySender(session, parts.Length > 1 ? parts[1] : null);
+                    FindMessages.FindBySender(session, parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null);
                     return;
                 case "/fs":
-                    FindMessages.FindByStartsWith(session, parts.Length > 1 ? parts[1] : null);
+                    FindMessages.FindByStartsWith(session, parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null);
                     return;
                 case "/afk":
                     Afk.Execute(session, string.Join(" ", parts.Skip(1)));
@@ -876,7 +895,7 @@ namespace miniBBS
                     Commands.Context.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/new":
-                    AddToChatLog(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
+                    AddToChatLog.Execute(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
                     return;
                 case "/tz":
                 case "/timezone":
@@ -961,7 +980,7 @@ namespace miniBBS
                         var browser = DI.Get<ITextFilesBrowser>();
                         browser.OnChat = line =>
                         {
-                            AddToChatLog(session, DI.GetRepository<Chat>(), line);
+                            AddToChatLog.Execute(session, DI.GetRepository<Chat>(), line);
                         };
                         FilesLaunchFlags flags = 
                             "/myfiles".Equals(command, StringComparison.CurrentCultureIgnoreCase) ? 
@@ -997,6 +1016,25 @@ namespace miniBBS
                     return;
                 case "/blurbadmin":
                     Blurbs.BlurbAdmin(session, parts.Skip(1).ToArray());
+                    return;
+                case "/hand":
+                case "/raise":
+                case "/raisehand":
+                case "/voice":
+                    VoiceRequestQueueManager.RequestVoice(session);
+                    return;
+                case "/uptime":
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    {
+                        var uptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
+                        session.Io.OutputLine($"Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
+                    }
+                    return;
+                case "/vote":
+                case "/votes":
+                case "/poll":
+                case "/polls":
+                    Polls.Execute(session);
                     return;
                 case ",":
                 case "<":
@@ -1054,12 +1092,32 @@ namespace miniBBS
             {
                 switch (args[0].ToLower().Trim())
                 {
-                    case "+i": ToggleInviteOnly.Execute(session, true); break;
-                    case "-i": ToggleInviteOnly.Execute(session, false); break;
-                    case "m": ListModerators.Execute(session); break;
-                    case "i": ListInvitations.Execute(session); break;
-                    case "del": DeleteChannel.Execute(session); break;
-                    default: SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); break;
+                    case "+i":
+                        ToggleInviteOnly.Execute(session, true); 
+                        break;
+                    case "-i": 
+                        ToggleInviteOnly.Execute(session, false); 
+                        break;
+                    case "+v":
+                    case "-v":
+                    case "vq":
+                    case "vlist":
+                    case "vall":
+                    case "vnone":
+                        ChannelVoice.Execute(session, args);
+                        break;
+                    case "m": 
+                        ListModerators.Execute(session); 
+                        break;
+                    case "i": 
+                        ListInvitations.Execute(session); 
+                        break;
+                    case "del": 
+                        DeleteChannel.Execute(session); 
+                        break;
+                    default: 
+                        SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); 
+                        break;
                 }
             }
             else if (args.Length == 2)
@@ -1076,7 +1134,13 @@ namespace miniBBS
                         KickUser.Execute(session, args[1]);
                         break;
                 }
-                
+            }
+            else if (args.Length >= 3)
+            {
+                switch (args[0].ToLower().Trim())
+                {
+                    case "movemsg": MoveMsg.Execute(session, args.Skip(1).ToArray()); break;
+                }
             }
         }
 
@@ -1086,6 +1150,7 @@ namespace miniBBS
             {
                 case "channels":
                 case "chans":
+                case "ch":
                     Channels.Show(session);
                     break;
                 case "users":
@@ -1103,6 +1168,13 @@ namespace miniBBS
                     break;
                 case "emotes":
                     Menus.Emotes.Show(session);
+                    break;
+                case "mod":
+                case "moderator":
+                    Menus.Moderator.Show(session);
+                    break;
+                case "voice":
+                    Menus.Voice.Show(session);
                     break;
                 default:
                     MainMenu.Show(session);

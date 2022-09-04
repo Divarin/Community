@@ -16,6 +16,7 @@
         Calendar,
         BasicEditor,
         BasicInterpreter,
-        SqlUi
+        SqlUi,
+        Polls
     }
 }

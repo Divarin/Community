@@ -27,6 +27,7 @@ namespace miniBBS.Persistence
                 CreateMailTable(db);
                 CreateBlurbsTable(db);
                 CreatePinnedMessagesTable(db);
+                CreatePollTables(db);
 
                 db.Close();
             }
@@ -52,7 +53,7 @@ namespace miniBBS.Persistence
 
         private void CreateChannelsTable(SQLiteConnection db)
         {
-            string sql = "CREATE TABLE Channels (Id integer primary key autoincrement, Name TEXT not null, RequiresInvite TEXT not null default 'False', DateCreatedUtc TEXT null)";
+            string sql = "CREATE TABLE Channels (Id integer primary key autoincrement, Name TEXT not null, RequiresInvite TEXT not null default 'False', RequiresVoice TEXT not null default 'False', DateCreatedUtc TEXT null)";
             using (var cmd = new SQLiteCommand(sql, db))
             {
                 cmd.ExecuteNonQuery();
@@ -154,5 +155,21 @@ namespace miniBBS.Persistence
                 cmd.ExecuteNonQuery();
             }
         }
+
+        private void CreatePollTables(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE PollQuestions (Id integer primary key autoincrement, UserId integer not null, Question TEXT not null, DateAddedUtc TEXT not null, Answers TEXT not null)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+
+            sql = "CREATE TABLE PollVotes (Id integer primary key autoincrement, QuestionId integer not null, UserId integer not null, DateAddedUtc TEXT not null, Answer TEXT not null)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
     }
 }
