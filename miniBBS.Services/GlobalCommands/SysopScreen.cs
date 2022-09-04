@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace miniBBS.Commands
+namespace miniBBS.Services.GlobalCommands
 {
     public static class SysopScreen
     {
@@ -134,13 +134,13 @@ namespace miniBBS.Commands
 
             Console.SetCursorPosition(0, 6);
             Console.BackgroundColor = ConsoleColor.Black;
-            
+
             int i = 0;
             foreach (var session in _sessionsList.Sessions)
             {
                 if (i > _numSessionsToList)
                     break;
-                if (i%2==0)
+                if (i % 2 == 0)
                     Console.ForegroundColor = ConsoleColor.White;
                 else
                     Console.ForegroundColor = ConsoleColor.Gray;
@@ -157,7 +157,7 @@ namespace miniBBS.Commands
                 i++;
             }
 
-            for (int j=i; j <= _numSessionsToList; j++)
+            for (int j = i; j <= _numSessionsToList; j++)
             {
                 Console.Write(_blankLine);
             }

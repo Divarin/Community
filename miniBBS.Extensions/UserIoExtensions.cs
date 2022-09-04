@@ -27,5 +27,15 @@ namespace miniBBS.Extensions
         {
             return $"{Constants.InlineColorizer}{(int)color}{Constants.InlineColorizer}{message}{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
         }
+
+        public static void Pause(this IUserIo io)
+        {
+            using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+            {
+                io.Output("[Press Any Key]");
+                io.InputKey();
+                io.OutputLine();
+            }
+        }
     }
 }

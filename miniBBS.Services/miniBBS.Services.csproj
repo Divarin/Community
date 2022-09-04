@@ -51,18 +51,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GlobalCommands\AddToChatLog.cs" />
     <Compile Include="GlobalCommands\GetChannel.cs" />
     <Compile Include="GlobalCommands\ListChannels.cs" />
     <Compile Include="GlobalCommands\ParseRange.cs" />
     <Compile Include="GlobalCommands\SetMessagePointer.cs" />
     <Compile Include="GlobalCommands\ShowNextMessage.cs" />
     <Compile Include="GlobalCommands\SwitchOrMakeChannel.cs" />
+    <Compile Include="GlobalCommands\SysopScreen.cs" />
     <Compile Include="GlobalDependencyResolver.cs" />
     <Compile Include="Persistence\SqliteRepository.cs" />
     <Compile Include="Persistence\StructuredQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Compressor.cs" />
     <Compile Include="Services\LineEditor.cs" />
+    <Compile Include="Services\Logger.cs" />
     <Compile Include="Services\Messager.cs" />
     <Compile Include="Services\SessionsList.cs" />
     <Compile Include="Services\SqlUi.cs" />

@@ -14,7 +14,6 @@ namespace miniBBS
         private static Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
             {typeof(IHasher), () => GetOrSetSingleton(() => new Hasher())},
-            {typeof(ILogger), () => GetOrSetSingleton(() => new Logger())},
             {typeof(INotificationHandler), () => GetOrSetSingleton(() => new NotificationHandler())},
             {typeof(ITextFilesBrowser), () =>  new TextFiles.TextFilesBrowser()}
         };

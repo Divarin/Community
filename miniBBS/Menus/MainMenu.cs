@@ -30,6 +30,7 @@ namespace miniBBS.Menus
             $"--- {_clr("Subsystems", ConsoleColor.Yellow)} ---",
             $"{_clr("/cal", ConsoleColor.Green)} : Live-chat events calendar",
             $"{_clr("/mail", ConsoleColor.Green)} : E-Mail",
+            $"{_clr("/polls", ConsoleColor.Green)} : Vote on stuff",
             $"{_clr("/files", ConsoleColor.Green)} : Files, Games, BASIC & more",
             //$"{_clr("/polls", ConsoleColor.Green)} : Polls",
             $"--- {_clr("Misc", ConsoleColor.Yellow)} ---",

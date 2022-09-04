@@ -246,6 +246,8 @@ namespace miniBBS
             session.Messager.Subscribe(session.UserMessageSubscriber);
             session.EmoteSubscriber = new EmoteSubscriber();
             session.Messager.Subscribe(session.EmoteSubscriber);
+            session.GlobalMessageSubscriber = new GlobalMessageSubscriber(session.Id);
+            session.Messager.Subscribe(session.GlobalMessageSubscriber);
 
             session.Usernames = session.UserRepo.Get().ToDictionary(k => k.Id, v => v.Name);
             var channelRepo = DI.GetRepository<Channel>();
@@ -256,6 +258,7 @@ namespace miniBBS
             session.ChannelPostSubscriber.OnMessageReceived = m => NotifyNewPost(m.Chat, session);
             session.UserLoginOrOutSubscriber.OnMessageReceived = m => NotifyUserLoginOrOut(m.User, session, m.IsLogin);
             session.ChannelMessageSubscriber.OnMessageReceived = m => NotifyChannelMessage(session, m);
+            session.GlobalMessageSubscriber.OnMessageReceived = m => NotifyGlobalMessage(session, m);
             session.UserMessageSubscriber.OnMessageReceived = m => NotifyUserMessage(session, m.Message);
             session.EmoteSubscriber.OnMessageReceived = m => NotifyEmote(session, m);
 
@@ -323,7 +326,7 @@ namespace miniBBS
                     // in other words, filter out control characters only such as backspaces.  You would think 
                     // IsNullOrWhitespace would do this but it doesn't
 
-                    Chat chat = AddToChatLog(session, chatRepo, line);
+                    Chat chat = AddToChatLog.Execute(session, chatRepo, line);
                     if (chat != null)
                     {
                         if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
@@ -359,57 +362,14 @@ namespace miniBBS
 
         }
 
-        /// <summary>
-        /// Creates a new chat message and adds to the channel.  Returns null if the chat could not be added.
-        /// </summary>
-        private static Chat AddToChatLog(BbsSession session, IRepository<Chat> chatRepo, string line, bool isNewTopic = false)
-        {
-            var canPost =
-                true == session.User?.Access.HasFlag(AccessFlag.Administrator) ||
-                true == session.User?.Access.HasFlag(AccessFlag.GlobalModerator) ||
-                true == session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
-                true != session.Channel?.RequiresVoice ||
-                session.UcFlag.Flags.HasFlag(UCFlag.HasVoice);
-
-            if (!canPost)
-            {
-                session.Io.Error("Sorry you're not allowed to talk in this channel at this time.  You may require 'voice', to request voice type '/voice'.");
-                return null;
-            }
-
-            Chat chat = new Chat
-            {
-                DateUtc = DateTime.UtcNow,
-                ChannelId = session.Channel.Id,
-                FromUserId = session.User.Id,
-                Message = line,
-                ResponseToId = isNewTopic ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber
-            };
-
-            int lastRead =
-                session.LastReadMessageNumberWhenStartedTyping ??
-                session.LastReadMessageNumber ??
-                session.MsgPointer;
-
-            bool isAtEndOfMessages = true != session.Chats?.Any() || lastRead == session.Chats.Keys.Max();
-            chat = chatRepo.Insert(chat);         
-            session.Chats[chat.Id] = chat;
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
-            {
-                session.Io.OutputLine($"Message {session.Chats.ItemNumber(chat.Id)} Posted to {session.Channel.Name}.");
-                session.LastReadMessageNumber = chat.Id;
-            }
-            if (isAtEndOfMessages)
-                SetMessagePointer.Execute(session, chat.Id);
-            session.Messager.Publish(new ChannelPostMessage(chat, session.Id));
-            return chat;
-        }
-
         private static void Prompt(BbsSession session)
         {
             session.Io.SetForeground(ConsoleColor.Cyan);
             var lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
             var count = session.Chats.Count-1;
+            var chanList = ListChannels.GetChannelList(session);
+            
+            var chanNum = chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
 
             var prompt = 
                 $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
@@ -418,7 +378,7 @@ namespace miniBBS
                 UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
                 $"{count}" +
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
-                $"{session.Channel.Id}:{session.Channel.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
+                $"{chanNum}:{session.Channel.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
 
             session.Io.Output(prompt);
             session.Io.SetForeground(ConsoleColor.White);
@@ -481,6 +441,31 @@ namespace miniBBS
             if (message.ChannelId != session.Channel.Id)
                 return;
 
+            Action action = () =>
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                {
+                    session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
+                    message.OnReceive?.Invoke(session);
+                }
+            };
+
+            if (session.DoNotDisturb && !message.Disturb)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
+                session.Io.DelayNotification(action);
+            else
+            {
+                action();
+                session.ShowPrompt();
+            }
+        }
+
+        /// <summary>
+        /// a notification to any user in any channel
+        /// </summary>
+        private static void NotifyGlobalMessage(BbsSession session, GlobalMessage message)
+        {
             Action action = () =>
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -910,7 +895,7 @@ namespace miniBBS
                     Commands.Context.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
                 case "/new":
-                    AddToChatLog(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
+                    AddToChatLog.Execute(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
                     return;
                 case "/tz":
                 case "/timezone":
@@ -995,7 +980,7 @@ namespace miniBBS
                         var browser = DI.Get<ITextFilesBrowser>();
                         browser.OnChat = line =>
                         {
-                            AddToChatLog(session, DI.GetRepository<Chat>(), line);
+                            AddToChatLog.Execute(session, DI.GetRepository<Chat>(), line);
                         };
                         FilesLaunchFlags flags = 
                             "/myfiles".Equals(command, StringComparison.CurrentCultureIgnoreCase) ? 
@@ -1044,6 +1029,12 @@ namespace miniBBS
                         var uptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
                         session.Io.OutputLine($"Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
                     }
+                    return;
+                case "/vote":
+                case "/votes":
+                case "/poll":
+                case "/polls":
+                    Polls.Execute(session);
                     return;
                 case ",":
                 case "<":

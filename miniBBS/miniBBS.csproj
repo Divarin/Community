@@ -96,10 +96,10 @@
     <Compile Include="Commands\Mail.cs" />
     <Compile Include="Commands\MoveMsg.cs" />
     <Compile Include="Commands\Pin.cs" />
+    <Compile Include="Commands\Polls.cs" />
     <Compile Include="Commands\ReadFile.cs" />
     <Compile Include="Commands\Roll.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
-    <Compile Include="Commands\SysopScreen.cs" />
     <Compile Include="Commands\TermSetup.cs" />
     <Compile Include="Commands\TimeZone.cs" />
     <Compile Include="Commands\ChannelVoice.cs" />
@@ -127,10 +127,10 @@
     <Compile Include="Menus\Users.cs" />
     <Compile Include="Menus\Voice.cs" />
     <Compile Include="Persistence\DatabaseMaint.cs" />
-    <Compile Include="Persistence\Logger.cs" />
     <Compile Include="Subscribers\ChannelMessageSubscriber.cs" />
     <Compile Include="Subscribers\ChannelPostSubscriber.cs" />
     <Compile Include="Subscribers\EmoteSubscriber.cs" />
+    <Compile Include="Subscribers\GlobalMessageSubscriber.cs" />
     <Compile Include="Subscribers\UserLoginOrOutSubscriber.cs" />
     <Compile Include="Subscribers\UserMessageSuibscriber.cs" />
     <Compile Include="UserIo\Ansi.cs" />

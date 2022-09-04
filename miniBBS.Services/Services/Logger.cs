@@ -1,22 +1,22 @@
-﻿using miniBBS.Commands;
-using miniBBS.Core;
+﻿using miniBBS.Core;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Services.GlobalCommands;
 using System;
 using System.Collections.Concurrent;
 
-namespace miniBBS.Persistence
+namespace miniBBS.Services.Services
 {
     public class Logger : ILogger
     {
-        private ConcurrentQueue<LogEntry> _unwritten = new ConcurrentQueue<LogEntry>();
+        private readonly ConcurrentQueue<LogEntry> _unwritten = new ConcurrentQueue<LogEntry>();
         private readonly IRepository<LogEntry> _repo;
         private object _lock = new object();
 
         public Logger()
         {
-            _repo = DI.GetRepository<LogEntry>();
+            _repo = GlobalDependencyResolver.GetRepository<LogEntry>();
         }
 
         public void Flush()
