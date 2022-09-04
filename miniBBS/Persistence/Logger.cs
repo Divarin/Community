@@ -38,16 +38,6 @@ namespace miniBBS.Persistence
                 consoleOnly: consoleOnly);
         }
 
-        //public void Log(string message, bool consoleOnly = false)
-        //{
-        //    Log(sessionId: null,
-        //        ipAddress: null,
-        //        userId: null,
-        //        username: null,
-        //        message: message,
-        //        consoleOnly: consoleOnly);
-        //}
-
         private void Log(Guid? sessionId, string ipAddress, int? userId, string username, string message, bool consoleOnly = false)
         {
             LogEntry entry = new LogEntry
@@ -62,7 +52,6 @@ namespace miniBBS.Persistence
             if (!consoleOnly)
                 _unwritten.Enqueue(entry);
 
-            //Console.WriteLine($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
             SysopScreen.AddLogMessage($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
             if (_unwritten.Count > Constants.NumberOfLogEntriesUntilWriteToDatabase)
                 Flush();

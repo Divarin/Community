@@ -26,6 +26,7 @@ namespace miniBBS
     {
         private static ILogger _logger;
         private static List<string> _ipBans;
+        public static SystemControlFlag SysControl = SystemControlFlag.Normal;
 
         static void Main(string[] args)
         {
@@ -42,7 +43,6 @@ namespace miniBBS
             var listener = new TcpListener(IPAddress.Any, port);
             listener.Start();
 
-            SystemControlFlag sysControl = SystemControlFlag.Normal;
             var sessionsList = DI.Get<ISessionsList>();
             Console.WriteLine(Constants.Version);
             _ipBans = DI.GetRepository<Core.Models.Data.IpBan>().Get()
@@ -51,7 +51,7 @@ namespace miniBBS
 
             SysopScreen.Initialize(sessionsList);
 
-            while (!sysControl.HasFlag(SystemControlFlag.Shutdown))
+            while (!SysControl.HasFlag(SystemControlFlag.Shutdown))
             {
                 try
                 {
@@ -67,7 +67,7 @@ namespace miniBBS
                     thread.Start(new NodeParams
                     {
                         Client = client,
-                        SysControl = sysControl,
+                        SysControl = SysControl,
                         Messager = DI.Get<IMessager>()
                     });
                 } 
@@ -114,7 +114,6 @@ namespace miniBBS
                         User = null,
                         UserRepo = userRepo,
                         UcFlagRepo = DI.GetRepository<UserChannelFlag>(),
-                        SysControl = sysControl,
                         Stream = stream,
                         Messager = nodeParams.Messager,
                         IpAddress = ip,
@@ -408,20 +407,21 @@ namespace miniBBS
 
         private static void Prompt(BbsSession session)
         {
-            int unreadMessageCount = GetUnreadMessageCount(session);
-
             session.Io.SetForeground(ConsoleColor.Cyan);
-            session.Io.Output($"(/?=help) ({unreadMessageCount}){(session.Cols <= 40 ? Environment.NewLine : " ")}<{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}> [{session.Channel.Id}:{session.Channel.Name}] ");
-            session.Io.SetForeground(ConsoleColor.White);
-        }
+            var lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
+            var count = session.Chats.Count-1;
 
-        private static int GetUnreadMessageCount(BbsSession session)
-        {
-            int highMessage = (true == session.Chats?.Keys?.Any()) ? session.Chats.Keys.Max() : 0;
-            var unreadMessageCount = highMessage > 0 ? session.Chats.Count(c => c.Key > session.MsgPointer) : 0;
-            if (highMessage > 0 && session.LastReadMessageNumber != highMessage)
-                unreadMessageCount++;
-            return unreadMessageCount;
+            var prompt = 
+                $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
+                UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
+                UserIoExtensions.WrapInColor(lastRead.ToString(), lastRead == count ? ConsoleColor.Cyan : ConsoleColor.Magenta) +
+                UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
+                $"{count}" +
+                UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
+                $"{session.Channel.Id}:{session.Channel.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
+
+            session.Io.Output(prompt);
+            session.Io.SetForeground(ConsoleColor.White);
         }
 
         /// <summary>
@@ -749,6 +749,22 @@ namespace miniBBS
                         session.Io.OutputLine(Constants.Version);
                     }
                     return;
+                case "/m":
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    {
+                        var _lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
+                        var _high = session.Chats.Count - 1;
+                        string msg = string.Join(Environment.NewLine, new[]
+                        {
+                            $"{UserIoExtensions.WrapInColor(session.Channel.Name, ConsoleColor.White)} Message Info:",
+                            $"High Msg  : {UserIoExtensions.WrapInColor(_high.ToString(), ConsoleColor.White)}",
+                            $"Last Read : {UserIoExtensions.WrapInColor(_lastRead.ToString(), ConsoleColor.White)}",
+                            $"Unread{UserIoExtensions.WrapInColor("*", ConsoleColor.DarkGray)}   : {UserIoExtensions.WrapInColor((_high - _lastRead).ToString(), ConsoleColor.White)}",
+                            UserIoExtensions.WrapInColor("*: High-Last Read = Unread", ConsoleColor.DarkGray)
+                        });
+                        session.Io.Output(msg);
+                    }
+                    return;
                 case "/o":
                 case "/off":
                 case "/g":
@@ -790,9 +806,11 @@ namespace miniBBS
                 case "/sound":
                     Bell.Execute(session, parts.Length >= 2 ? parts[1] : null);
                     return;
-                case "/shutdown":
+                case "/syscontrol":
+                case "/systemcontrol":
+                case "/sysctrl":
                     if (session.User.Access.HasFlag(AccessFlag.Administrator))
-                        Shutdown.Execute(session);
+                        SystemControl.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/announce":
                     if (parts.Length >= 2)
@@ -869,13 +887,13 @@ namespace miniBBS
                 case "/f":
                 case "/find":
                 case "/search":
-                    FindMessages.FindByKeyword(session, parts.Length > 1 ? parts[1] : null);
+                    FindMessages.FindByKeyword(session, parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null);
                     return;
                 case "/fu":
-                    FindMessages.FindBySender(session, parts.Length > 1 ? parts[1] : null);
+                    FindMessages.FindBySender(session, parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null);
                     return;
                 case "/fs":
-                    FindMessages.FindByStartsWith(session, parts.Length > 1 ? parts[1] : null);
+                    FindMessages.FindByStartsWith(session, parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null);
                     return;
                 case "/afk":
                     Afk.Execute(session, string.Join(" ", parts.Skip(1)));

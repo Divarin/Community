@@ -12,6 +12,7 @@ namespace miniBBS.Commands
     {
         public static void FindByKeyword(BbsSession session, string searchTerm)
         {
+            searchTerm = (searchTerm ?? string.Empty).ToLower();
             FindBy(session, searchTerm, c => c.Message.ToLower().Contains(searchTerm), "containing");
         }
 
@@ -43,6 +44,7 @@ namespace miniBBS.Commands
 
         public static void FindByStartsWith(BbsSession session, string searchTerm)
         {
+            searchTerm = (searchTerm ?? string.Empty).ToLower();
             FindBy(session, searchTerm, c => c.Message.ToLower().StartsWith(searchTerm), "starting with");
         }
 

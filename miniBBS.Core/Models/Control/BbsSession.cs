@@ -42,7 +42,6 @@ namespace miniBBS.Core.Models.Control
         public Action ShowPrompt { get; set; }
         public Guid Id { get; set; }
         public Stream Stream { get; set; }
-        public SystemControlFlag SysControl { get; set; }
         public IRepository<User> UserRepo { get; set; }
         public IRepository<UserChannelFlag> UcFlagRepo { get; set; }
         public User User { get; set; }

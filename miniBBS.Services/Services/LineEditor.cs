@@ -143,25 +143,23 @@ namespace miniBBS.Services.Services
                         var result = CommandResult.ExitEditor;
                         if (HasUnsavedChanges(lines) && OnSave != null)
                         {
-                            Ask("Save changes first? (Y)es, (N)o, (A)bort (don't quit)", new Dictionary<char, Action>
+                            var k = _session.Io.Ask("Save changes first? (Y)es, (N)o, (A)bort (don't quit)");
+                            switch (k)
                             {
-                                {'n', () =>
-                                { 
+                                case 'N':
                                     result |= CommandResult.RevertToOriginal;
                                     Notify("Undoing changes");
-                                } },
-                                {'a', () => 
-                                {
-                                    result = CommandResult.None;
-                                    Notify("Continue editing");
-                                } },
-                                {'y', () =>
-                                {
+                                    break;
+                                case 'Y':
                                     var body = Compile(lines);
                                     var status = OnSave(body);
                                     Notify(status);
-                                } }
-                            });
+                                    break;
+                                default:
+                                    result = CommandResult.None;
+                                    Notify("Continue editing");
+                                    break;
+                            }
                         }
                         return result;
                     }
@@ -170,11 +168,8 @@ namespace miniBBS.Services.Services
                     // list (with or without line numbers)
                     {
                         var range = args.Length >= 2 ? args[1] : null;
-                        Ask("With line numbers? (Y)es, (N)o, (A)bort", new Dictionary<char, Action>
-                        {
-                            {'n', () => List(lines, false, range) },
-                            {'y', () => List(lines, true, range) }
-                        });
+                        var k = _session.Io.Ask("With line numbers? (Y)es, (N)o, (A)bort");
+                        List(lines, 'Y' == k, range);
                     }
                     break;
                 case "insert":
@@ -355,17 +350,12 @@ namespace miniBBS.Services.Services
             if (builder.Length > 0)
             {
                 _session.Io.OutputLine(builder.ToString());
-                Ask("Update these lines?", new Dictionary<char, Action>
+                if ('Y' == _session.Io.Ask("Update these lines?"))
                 {
-                    {'y', () =>
-                    {
-                        foreach (var l in newLines)
-                        {
-                            lines[l.Key] = l.Value;
-                        }
-                        Notify("Done");
-                    } }
-                });
+                    foreach (var l in newLines)
+                        lines[l.Key] = l.Value;
+                    Notify("Done");
+                } 
             }
         }
 
@@ -432,14 +422,11 @@ namespace miniBBS.Services.Services
                 _session.Io.OutputLine("After:");
                 _session.Io.SetForeground(ConsoleColor.White);
                 _session.Io.OutputLine(line);
-                Ask("Make this edit?", new Dictionary<char, Action>
+                if ('Y'==_session.Io.Ask("Make this edit?"))
                 {
-                    {'y', () =>
-                    {
-                        lines[lineNum] = line;
-                        _session.Io.OutputLine("Line edited");
-                    } }
-                });
+                    lines[lineNum] = line;
+                    _session.Io.OutputLine("Line edited");
+                } 
             }
         }
 
@@ -509,17 +496,12 @@ namespace miniBBS.Services.Services
                 for (int i = range.Item1 - 1; i <= range.Item2 - 1 && i < lines.Count; i++)
                     _session.Io.OutputLine(lines[i]);
                 _session.Io.SetForeground(ConsoleColor.Magenta);
-                Ask($"Delete {(lineCount == 1 ? "this line" : "these lines")}?", new Dictionary<char, Action>
-                {
-                    {'y', () =>
-                    {
-                        for (int i=range.Item2-1; i>= range.Item1-1 && i < lines.Count; i--)
-                        {
-                            lines.RemoveAt(i);
-                        }
-                        _session.Io.OutputLine($"{lineCount} line{(lineCount == 1 ? "" : "s")} deleted.");
-                    } }
-                });
+                if ('Y'==_session.Io.Ask($"Delete {(lineCount == 1 ? "this line" : "these lines")}?"))
+                { 
+                    for (int i=range.Item2-1; i>= range.Item1-1 && i < lines.Count; i--)
+                        lines.RemoveAt(i);
+                    _session.Io.OutputLine($"{lineCount} line{(lineCount == 1 ? "" : "s")} deleted.");
+                } 
             }
         }
 
@@ -608,21 +590,6 @@ namespace miniBBS.Services.Services
         {
             string body = string.Join(Environment.NewLine, lines);
             return body;
-        }
-
-        private void Ask(string question, IDictionary<char, Action> actions)
-        {
-            using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-            {
-                _session.Io.Output($"{question}: ");
-                var c = _session.Io.InputKey();
-                _session.Io.OutputLine();
-                if (!c.HasValue)
-                    return;
-                char lowerC = Char.ToLower(c.Value);
-                if (actions.ContainsKey(lowerC))
-                    actions[lowerC].Invoke();
-            }
         }
 
         private void Notify(string notification)

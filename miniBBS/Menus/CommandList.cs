@@ -15,10 +15,11 @@ namespace miniBBS.Menus
             new Cmd("/g",1), new Cmd("/logoff",1), new Cmd("/cls",2), new Cmd("/clr",2), 
             new Cmd("/clear",2), new Cmd("/c",2), 
             new Cmd("/pass",3), new Cmd("/password",3), new Cmd("/pw",3), new Cmd("/pwd",3),
-            new Cmd("/fauxmain", 4), new Cmd("/main", 4), new Cmd("/menu", 4), new Cmd("fauxmenu", 4), 
+            new Cmd("/fauxmain", 4), new Cmd("/main", 4), new Cmd("/menu", 4), new Cmd("/fauxmenu", 4), 
             new Cmd("/fakemain", 4), new Cmd("/fakemenu", 4),
             new Cmd("/term",5), new Cmd("/setup",5), new Cmd("/emu",5), new Cmd("/bell",6), 
-            new Cmd("/sound",6), new Cmd("/shutdown",7), new Cmd("/announce",8), new Cmd("/help",9), new Cmd("/?",9), 
+            new Cmd("/sound",6), 
+            new Cmd("/announce",8), new Cmd("/help",9), new Cmd("/?",9), 
             new Cmd("?",9), new Cmd("/??",9), new Cmd("/about",10), new Cmd("/a",10), new Cmd("/del",11), new Cmd("/delete",11), 
             new Cmd("/d",11), new Cmd("/typo",12), new Cmd("/edit",12), new Cmd("/s",12), new Cmd("/rere",13), new Cmd("/pin",14), 
             new Cmd("/pins",14), new Cmd("/e",15), new Cmd("/end",15), new Cmd("/chl",16), new Cmd("/chanlist",16), 
@@ -37,7 +38,7 @@ namespace miniBBS.Menus
             new Cmd("/file",38), new Cmd("/files",38), new Cmd("/filez",38), new Cmd("/myfiles",38), new Cmd("/textread",39), new Cmd("/tr",39), 
             new Cmd("/run",39), new Cmd("/exec",39), new Cmd(",",40), new Cmd("<",40), new Cmd(".",40), new Cmd(">",40), new Cmd("[",40), 
             new Cmd("]",40), new Cmd("{",40), new Cmd("}",40), new Cmd("/blurb", 41), new Cmd("/blurbadmin", 42),
-            new Cmd("/hand", 43), new Cmd("/raise", 43), new Cmd("/raisehand", 43), new Cmd("/voice", 43)
+            new Cmd("/hand", 43), new Cmd("/raise", 43), new Cmd("/raisehand", 43), new Cmd("/voice", 43), new Cmd("/m", 44)
         };
 
         public static void Execute(BbsSession session)
