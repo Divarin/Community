@@ -154,7 +154,7 @@ namespace miniBBS.Commands
             }
 
             var msg = $"{session.User.Name} added a new Blurb: {newBlurb.BlurbText}";
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg));
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
         }
 
         private static void LoadBlurbs()

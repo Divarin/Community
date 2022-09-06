@@ -109,7 +109,7 @@ namespace miniBBS
                 {
                     var userRepo = DI.GetRepository<User>();
 
-                    session = new BbsSession(sessionsList, _logger)
+                    session = new BbsSession(sessionsList)
                     {
                         User = null,
                         UserRepo = userRepo,
@@ -156,7 +156,7 @@ namespace miniBBS
                             finally
                             {
                                 SysopScreen.EndLogin(session);
-                                session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, false));
+                                session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, false));
                             }
                         }
                         _logger.Flush();
@@ -669,7 +669,21 @@ namespace miniBBS
             if (session.User.Timezone != 0)
                 Commands.TimeZone.Execute(session, session.User.Timezone.ToString());
 
-            session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, true));
+            if (user.Access.HasFlag(AccessFlag.Administrator))
+            {
+                var k = session.Io.Ask("(N)ormal, (S)ilent, (I)nvisible");
+                switch (k)
+                {
+                    case 'S':
+                        session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+                        break;
+                    case 'I':
+                        session.ControlFlags |= SessionControlFlags.Invisible | SessionControlFlags.DoNotSendNotifications;
+                        break;
+                }
+            }
+
+            session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, true));
         }
 
         private static User RegisterNewUser(BbsSession session, string username, IRepository<User> userRepo)
@@ -905,7 +919,7 @@ namespace miniBBS
                 case "/si":
                 case "/session":
                 case "/sessioninfo":
-                    SessionInfo.Execute(session, parts.Length >= 2 ? parts[1] : null);
+                    SessionInfo.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/ui":
                 case "/user":

@@ -87,7 +87,7 @@ namespace miniBBS.Services.GlobalCommands
 
             var messager = GlobalDependencyResolver.Get<IMessager>();
             if (session.Channel != null) // will be null during logon while here to join default channel
-                messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
+                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
 
             session.Channel = channel;
             session.Chats = new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id)
@@ -111,7 +111,7 @@ namespace miniBBS.Services.GlobalCommands
                 session.Io.OutputLine($"Users currently online in {channel.Name} : {string.Join(", ", channelUsers)}");
             }
 
-            messager.Publish(new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
+            messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {

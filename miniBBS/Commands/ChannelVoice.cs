@@ -135,7 +135,7 @@ namespace miniBBS.Commands
 
             var msg = $"{session.User.Name} has removed voice from everybody in this channel.";
             session.Io.OutputLine(msg);
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg));
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
         }
 
         private static void ToggleUserVoice(BbsSession session, string username, bool giveVoice)
@@ -191,7 +191,7 @@ namespace miniBBS.Commands
 
             var msg = $"{session.User.Name} has given channel voice to {user.Name}.";
             session.Io.OutputLine(msg);
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg));
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
         }
 
         private static void HandleQueueOperation(BbsSession session, params string[] args)
@@ -223,11 +223,11 @@ namespace miniBBS.Commands
                     }
 
                     session.Io.Output(msg);
-                    session.Messager.Publish(new ChannelMessage(session.Id, chan.Id, msg));
+                    session.Messager.Publish(session, new ChannelMessage(session.Id, chan.Id, msg));
                 };
                 msg = $"{session.User.Name} has created a voice request queue for the channel.  To request voice use '/voice'.";
                 session.Io.OutputLine(msg);
-                session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg));
+                session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
                 return;
             }
 
@@ -289,7 +289,7 @@ namespace miniBBS.Commands
                             VoiceRequestQueueManager.RemoveQueue(session.Channel.Id);
                             msg = $"{session.User.Name} has removed the voice request queue from the channel.";
                             session.Io.OutputLine(msg);
-                            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg));
+                            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
                             if ('Q' == session.Io.Ask("Remove voice requirement on channel?"))
                                 SetChannelRequiresVoice(session, false);
                         }
@@ -323,7 +323,7 @@ namespace miniBBS.Commands
         private static void OutputAndPublish(BbsSession session, string message)
         {
             session.Io.OutputLine(message);
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message));
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message));
         }
 
     }

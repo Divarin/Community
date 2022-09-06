@@ -53,7 +53,7 @@ namespace miniBBS.Services.GlobalCommands
             }
             if (isAtEndOfMessages)
                 SetMessagePointer.Execute(session, chat.Id);
-            session.Messager.Publish(new ChannelPostMessage(chat, session.Id));
+            session.Messager.Publish(session, new ChannelPostMessage(chat, session.Id));
             return chat;
         }
     }

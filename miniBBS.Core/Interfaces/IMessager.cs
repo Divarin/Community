@@ -1,4 +1,5 @@
-﻿using System;
+﻿using miniBBS.Core.Models.Control;
+using System;
 
 namespace miniBBS.Core.Interfaces
 {
@@ -11,7 +12,7 @@ namespace miniBBS.Core.Interfaces
             where TMessage : IMessage;
         void Unsubscribe<TMessage>(ISubscriber<TMessage> subscriber)
             where TMessage : IMessage;
-        void Publish<TMessage>(TMessage message)
+        void Publish<TMessage>(BbsSession session, TMessage message)
             where TMessage : IMessage;
     }
 

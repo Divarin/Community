@@ -50,7 +50,7 @@ namespace miniBBS.Commands
                 builder.Append($"={sum}");
 
             var msg = builder.ToString();
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg));
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 session.Io.OutputLine(msg);
         }

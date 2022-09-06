@@ -72,6 +72,7 @@
     <Compile Include="Enums\PauseResult.cs" />
     <Compile Include="Enums\PingPongType.cs" />
     <Compile Include="Enums\SearchFrom.cs" />
+    <Compile Include="Enums\SessionControlFlags.cs" />
     <Compile Include="Enums\SystemControlFlag.cs" />
     <Compile Include="Enums\TerminalEmulation.cs" />
     <Compile Include="Enums\TextFilesSessionFlags.cs" />

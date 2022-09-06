@@ -55,7 +55,7 @@ namespace miniBBS.Commands
                         session.Chats.Remove(toBeDeleted.Id);
                         session.Io.OutputLine("Done.");
                         DI.GetRepository<Chat>().Delete(toBeDeleted);
-                        session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message)
+                        session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message)
                         {
                             OnReceive = (s) => s.Chats.Remove(toBeDeleted.Id)
                         });

@@ -43,7 +43,7 @@ namespace miniBBS.Commands
                 string message = $"{session.User.Name} has kicked {targetSession.User.Name} out of {session.Channel.Name}!";
                 
                 DI.Get<ILogger>().Log(session, message);
-                session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message));
+                session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message));
                 
                 if (targetSession.Channel.Name.Equals(Constants.DefaultChannelName))
                 {

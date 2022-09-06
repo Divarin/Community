@@ -20,7 +20,7 @@ namespace miniBBS.Commands
             session.AfkReason = session.Afk ? reason : null;
 
             string afk = $"{(session.Afk ? "" : "no longer ")}AFK ({reason}).";
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} is {afk}"));
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} is {afk}"));
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 session.Io.OutputLine($"You are {afk}");

@@ -208,7 +208,7 @@ namespace miniBBS.Commands
                     Answers = SerializeAnswers(answers)
                 });
 
-                session.Messager.Publish(new GlobalMessage(session.Id, $"{session.User.Name} added new poll question: '{q}'{Environment.NewLine}Type /poll from chat prompt to cast your vote!"));
+                session.Messager.Publish(session, new GlobalMessage(session.Id, $"{session.User.Name} added new poll question: '{q}'{Environment.NewLine}Type /poll from chat prompt to cast your vote!"));
             }
         }
 
@@ -226,7 +226,7 @@ namespace miniBBS.Commands
                 if (true == votesToDelete?.Any())
                     voteRepo.DeleteRange(votesToDelete);
 
-                session.Messager.Publish(new GlobalMessage(session.Id, $"{session.User.Name} has deleted the poll question '{question.Question}'."));
+                session.Messager.Publish(session, new GlobalMessage(session.Id, $"{session.User.Name} has deleted the poll question '{question.Question}'."));
             }
         }
 
@@ -272,7 +272,7 @@ namespace miniBBS.Commands
                         question.Answers = SerializeAnswers(answers);
                         DI.GetRepository<PollQuestion>().Update(question);
                         if ('Y' == session.Io.Ask("Announce that you added this option?"))
-                            session.Messager.Publish(new GlobalMessage(session.Id, $"{session.User.Name} added new option to poll question '{question.Question}': '{opn}'"));
+                            session.Messager.Publish(session, new GlobalMessage(session.Id, $"{session.User.Name} added new option to poll question '{question.Question}': '{opn}'"));
                         VoteQuestion(session, voteRepo, question, votes);
                     }
                 }
@@ -312,7 +312,7 @@ namespace miniBBS.Commands
                         var announcement = $"{session.User.Name} voted on the poll question '{question.Question}'";
                         if (k == 'Y')
                             announcement += $": '{answers[n - 1]}'";
-                        session.Messager.Publish(new GlobalMessage(session.Id, announcement));
+                        session.Messager.Publish(session, new GlobalMessage(session.Id, announcement));
                     }
 
                     // view results

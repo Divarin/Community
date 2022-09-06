@@ -1,4 +1,6 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,11 +10,14 @@ namespace miniBBS.Services.Services
     public class Messager : IMessager
     {
         private readonly ConcurrentDictionary<Type, object> _subscribers = new ConcurrentDictionary<Type, object>();
-        private object _lock = new object();
+        private readonly object _lock = new object();
 
-        public void Publish<TMessage>(TMessage message)
+        public void Publish<TMessage>(BbsSession session, TMessage message)
             where TMessage : IMessage
         {
+            if (session.ControlFlags.HasFlag(SessionControlFlags.DoNotSendNotifications))
+                return;
+
             lock (_lock)
             {
                 var set = GetSet<TMessage>();

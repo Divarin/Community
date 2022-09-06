@@ -126,7 +126,7 @@ namespace miniBBS.Commands
                         SendMail(session, toId, subject, builder.ToString());
                         session.Io.SetForeground(ConsoleColor.Yellow);
                         session.Io.OutputLine("Mail sent!");
-                        session.Messager.Publish(new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
+                        session.Messager.Publish(session, new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
                         break;
                     }
                     else if ("/a".Equals(line, StringComparison.CurrentCultureIgnoreCase))

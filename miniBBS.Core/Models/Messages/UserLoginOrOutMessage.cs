@@ -14,7 +14,7 @@ namespace miniBBS.Core.Models.Messages
         }
 
         public Guid SessionId { get; private set; }
-        private WeakReference _userRef = null;
+        private readonly WeakReference _userRef = null;
         public User User => _userRef.Target as User;
         public bool IsLogin { get; private set; }
     }

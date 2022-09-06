@@ -13,11 +13,10 @@ namespace miniBBS.Core.Models.Control
     public class BbsSession : IDisposable
     {
         private bool _disposed = false;
-        private ISessionsList _sessionsList;
+        private readonly ISessionsList _sessionsList;
 
-        public BbsSession(ISessionsList sessionsList, ILogger logger)
+        public BbsSession(ISessionsList sessionsList)
         {
-            _logger = logger;
             SessionStartUtc = DateTime.UtcNow;
             Rows = 24;
             Cols = 80;
@@ -78,18 +77,13 @@ namespace miniBBS.Core.Models.Control
         
         private DateTime _lastActivityUtc = new DateTime();
         public TimeSpan IdleTime => DateTime.UtcNow - _lastActivityUtc;
-
         public IDictionary<int, string> Usernames { get; set; } 
         public SortedList<int, Chat> Chats { get; set; }
         public int MsgPointer => UcFlag?.LastReadMessageNumber ?? 0;
         public int? ContextPointer { get; set; }
         public UserChannelFlag UcFlag { get; set; }
         public Channel Channel { get; set; }
-
         public bool ForceLogout { get; set; }
-
-        private readonly ILogger _logger;
-
         public DateTime SessionStartUtc { get; private set; }
 
         /// <summary>
@@ -97,6 +91,7 @@ namespace miniBBS.Core.Models.Control
         /// </summary>
         public bool Afk { get; set; }
         public string AfkReason { get; set; }
+        public SessionControlFlags ControlFlags { get; set; } = SessionControlFlags.None;
         public int? LastReadMessageNumber { get; set; }
         public int? LastReadMessageNumberWhenStartedTyping { get; set; }
 
@@ -139,7 +134,6 @@ namespace miniBBS.Core.Models.Control
         }
 
         public string LastLine { get; set; }
-        
 
         private static void PingPong(object o)
         {
