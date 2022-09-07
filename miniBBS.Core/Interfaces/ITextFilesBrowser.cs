@@ -1,6 +1,7 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using System;
+using System.Collections.Generic;
 
 namespace miniBBS.Core.Interfaces
 {
@@ -16,5 +17,10 @@ namespace miniBBS.Core.Interfaces
         /// Returns true if a link was found in the <paramref name="msg"/>
         /// </summary>
         bool ReadLink(BbsSession session, string msg);
+
+        /// <summary>
+        /// Searches the CommunityUsers directories for published BASIC (.bas) programs and brings back links to them.
+        /// </summary>
+        IEnumerable<string> FindBasicPrograms(BbsSession session);
     }
 }

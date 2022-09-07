@@ -62,14 +62,14 @@ namespace miniBBS.Commands
                         question = question.Substring(0, session.Cols - 7);
                     builder.Append(UserIoExtensions.WrapInColor($"{i + 1,3} ", ConsoleColor.White));
                     builder.Append($"{(voted ? star : " ")} ");
-                    builder.AppendLine(UserIoExtensions.WrapInColor($"{question}".MaxLength(session.Cols - 5), ConsoleColor.Cyan));
+                    builder.AppendLine(UserIoExtensions.WrapInColor($"{question}".MaxLength(session.Cols - 5), ConsoleColor.Blue));
                 }
 
                 builder.AppendLine("* = You voted on this.");
                 builder.AppendLine("#   : Vote on Question #");
                 builder.AppendLine("A   : Add Question");
                 builder.AppendLine("D # : Delete Question #");
-                builder.AppendLine("P # : Print Question # & Responses to Channel");
+                builder.AppendLine("P # : Print Question # to Channel");
                 builder.AppendLine("Q   : Quit");
                 session.Io.Output(builder.ToString());
                 session.Io.SetForeground(ConsoleColor.Yellow);
@@ -109,11 +109,7 @@ namespace miniBBS.Commands
                         n <= questions.Count &&
                         questions.Count > 0;
                     if (canPost)
-                    {
-                        var _q = questions[n - 1];
-                        var _vs = votes.ContainsKey(_q.Id) ? votes[_q.Id] : new List<PollVote>();
-                        PostQuestion(session, _q, _vs);
-                    }
+                        PostQuestionToChannel(session, questions[n - 1]);
                     else
                         session.Io.Error("Invalid question number.");
                 }
@@ -128,36 +124,44 @@ namespace miniBBS.Commands
             }
         }
 
-        private static void PostQuestion(BbsSession session, PollQuestion question, List<PollVote> votes)
+        private static void PostQuestionToChannel(BbsSession session, PollQuestion question)
         {
-            // post question and results to channel
-            string post = GetQuestionResults(question);
+            bool includeResults = 'Y' == session.Io.Ask("Include results?");
+            string post = GetQuestionText(question, includeResults);
+            
+            if (!includeResults)
+                post += $"{Environment.NewLine}Use '{UserIoExtensions.WrapInColor("/polls", ConsoleColor.Green)}' to vote on this and other topics.";
+
             AddToChatLog.Execute(session, DI.GetRepository<Chat>(), post, isNewTopic: true);
         }
 
-        private static string GetQuestionResults(PollQuestion question)
+        private static string GetQuestionText(PollQuestion question, bool includeResults)
         {
             var builder = new StringBuilder();
-            builder.AppendLine($"[Poll Question]: {question.Question}");
-            var unanswered = DeserializeAnswers(question.Answers).ToList();
-            var votes = DI.GetRepository<PollVote>()
-                .Get(v => v.QuestionId, question.Id)
-                .GroupBy(v => v.Answer)
-                .OrderByDescending(g => g.Count());
-            double totalVotes = votes.Count();
-            foreach (var vote in votes)
-            {
-                if (unanswered.Contains(vote.Key))
-                    unanswered.Remove(vote.Key);
-                var percent = Math.Round(100.0 * (vote.Count() / totalVotes), 1);
-                builder.AppendLine($"{percent,3}% {vote.Key}");
-            }
-            
-            foreach (var a in unanswered)
-                builder.AppendLine($"  0% {a}");
+            builder.AppendLine($"[Poll Question]: {UserIoExtensions.WrapInColor(question.Question, ConsoleColor.White)}");
 
-            string post = builder.ToString();
-            return post;
+            if (includeResults)
+            {
+                var unanswered = DeserializeAnswers(question.Answers).ToList();
+                var votes = DI.GetRepository<PollVote>()
+                    .Get(v => v.QuestionId, question.Id)
+                    .GroupBy(v => v.Answer)
+                    .OrderByDescending(g => g.Count());
+                double totalVotes = votes.Count();
+                foreach (var vote in votes)
+                {
+                    if (unanswered.Contains(vote.Key))
+                        unanswered.Remove(vote.Key);
+                    var percent = Math.Round(100.0 * (vote.Count() / totalVotes), 1);
+                    builder.AppendLine($"{percent,3}% {vote.Key}");
+                }
+
+                foreach (var a in unanswered)
+                    builder.AppendLine($"  0% {a}");
+            }
+
+            string text = builder.ToString();
+            return text;
         }
 
         private static void AddQuestion(BbsSession session, IRepository<PollQuestion> questionRepo)
@@ -279,7 +283,7 @@ namespace miniBBS.Commands
                 else if (line.StartsWith("v", StringComparison.CurrentCultureIgnoreCase))
                 {
                     // view results
-                    var results = GetQuestionResults(question);
+                    var results = GetQuestionText(question, true);
                     session.Io.OutputLine(results);
                     session.Io.Pause();
                 }
@@ -316,7 +320,7 @@ namespace miniBBS.Commands
                     }
 
                     // view results
-                    var results = GetQuestionResults(question);
+                    var results = GetQuestionText(question, true);
                     session.Io.OutputLine(results);
                     session.Io.Pause();
                 }

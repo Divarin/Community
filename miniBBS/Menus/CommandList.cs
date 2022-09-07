@@ -39,7 +39,8 @@ namespace miniBBS.Menus
             new Cmd("/run",39), new Cmd("/exec",39), new Cmd(",",40), new Cmd("<",40), new Cmd(".",40), new Cmd(">",40), new Cmd("[",40), 
             new Cmd("]",40), new Cmd("{",40), new Cmd("}",40), new Cmd("/blurb", 41), new Cmd("/blurbadmin", 42),
             new Cmd("/hand", 43), new Cmd("/raise", 43), new Cmd("/raisehand", 43), new Cmd("/voice", 43), new Cmd("/m", 44),
-            new Cmd("/vote", 45), new Cmd("/votes", 45), new Cmd("/poll", 45), new Cmd("/polls", 45)
+            new Cmd("/vote", 45), new Cmd("/votes", 45), new Cmd("/poll", 45), new Cmd("/polls", 45),
+            new Cmd("/game", 46), new Cmd("/games", 46),new Cmd("/prog", 46),new Cmd("/progs", 46),new Cmd("/door", 46),new Cmd("/doors", 46),
         };
 
         public static void Execute(BbsSession session)

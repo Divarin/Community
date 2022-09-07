@@ -671,7 +671,7 @@ namespace miniBBS
 
             if (user.Access.HasFlag(AccessFlag.Administrator))
             {
-                var k = session.Io.Ask("(N)ormal, (S)ilent, (I)nvisible");
+                var k = session.Io.Ask("Admin login option: (N)ormal, (S)ilent, (I)nvisible");
                 switch (k)
                 {
                     case 'S':
@@ -1008,22 +1008,7 @@ namespace miniBBS
                 case "/tr":
                 case "/run":
                 case "/exec":
-                    {
-                        bool linkFound = false;
-                        var browser = DI.Get<ITextFilesBrowser>();
-                        Chat msg = null;
-                        if (session.LastReadMessageNumber.HasValue && session.Chats.ContainsKey(session.LastReadMessageNumber.Value))
-                        {
-                            msg = session.Chats[session.LastReadMessageNumber.Value];
-                            linkFound = browser.ReadLink(session, msg.Message);
-                        }
-
-                        if (!linkFound && session.ContextPointer.HasValue && session.Chats.ContainsKey(session.ContextPointer.Value))
-                        {
-                            msg = session.Chats[session.ContextPointer.Value];
-                            browser.ReadLink(session, msg.Message);
-                        }
-                    }
+                    ReadTextFile.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/blurb":
                     Blurbs.Execute(session, string.Join(" ", parts.Skip(1)));
@@ -1049,6 +1034,14 @@ namespace miniBBS
                 case "/poll":
                 case "/polls":
                     Polls.Execute(session);
+                    return;
+                case "/game":
+                case "/games":
+                case "/prog":
+                case "/progs":
+                case "/door":
+                case "/doors":
+                    BrowseGames.Execute(session);
                     return;
                 case ",":
                 case "<":

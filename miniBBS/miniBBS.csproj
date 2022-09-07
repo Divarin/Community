@@ -78,6 +78,7 @@
     <Compile Include="Commands\Announce.cs" />
     <Compile Include="Commands\Bell.cs" />
     <Compile Include="Commands\Blurbs.cs" />
+    <Compile Include="Commands\BrowseGames.cs" />
     <Compile Include="Commands\Calendar.cs" />
     <Compile Include="Commands\ChatInfo.cs" />
     <Compile Include="Commands\Context.cs" />
@@ -98,6 +99,7 @@
     <Compile Include="Commands\Pin.cs" />
     <Compile Include="Commands\Polls.cs" />
     <Compile Include="Commands\ReadFile.cs" />
+    <Compile Include="Commands\ReadTextFile.cs" />
     <Compile Include="Commands\Roll.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
     <Compile Include="Commands\TermSetup.cs" />
