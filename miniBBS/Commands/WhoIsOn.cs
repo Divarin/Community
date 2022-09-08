@@ -10,6 +10,11 @@ namespace miniBBS.Commands
 {
     public static class WhoIsOn
     {
+        public static void Execute(BbsSession session)
+        {
+            Execute(session, DI.Get<ISessionsList>());
+        }
+
         public static void Execute(BbsSession session, ISessionsList sessionsList)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -74,9 +79,6 @@ namespace miniBBS.Commands
                 string result = string.Join(Environment.NewLine, list);
                 session.Io.OutputLine(result);
             }
-
-            //var option = session.Io.Ask("Do you want to see a list of all users? (Y)es, (N)o, (D)on't ask again");
-
         }
     }
 }

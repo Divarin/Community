@@ -524,9 +524,7 @@ namespace miniBBS
                         ?.Where(s => user.Id == s.User?.Id)
                         ?.Count();
 
-                    string message = $"{Environment.NewLine}{user.Name} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
-                    if (sessionsForThisUser > 1)
-                        message += $" ({sessionsForThisUser})";
+                    string message = $"{Environment.NewLine}{UserIoExtensions.WrapInColor(user.Name, ConsoleColor.Yellow)}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(isLogin ? UserIoExtensions.WrapInColor("logged in", ConsoleColor.Green) : UserIoExtensions.WrapInColor("logged out", ConsoleColor.Red))} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
 
                     session.Io.OutputLine(message);
                 }
@@ -610,6 +608,12 @@ namespace miniBBS
                 return;
             }
 
+            if ("Guest".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.Error("Guest logins not allowed.  All you need to register is to specify a username and a password, I'm not going to ask for your phone number, address, email address, who referred you, you social security number, your favorite flavor of ice cream, etc... We just need to make an account for you to log in with and don't really care about anything personal.");
+                return;
+            }
+
             var user = userRepo.Get(x => x.Name, username)?.FirstOrDefault();
             if (user == null)
             {
@@ -671,6 +675,7 @@ namespace miniBBS
 
             if (user.Access.HasFlag(AccessFlag.Administrator))
             {
+                WhoIsOn.Execute(session);
                 var k = session.Io.Ask("Admin login option: (N)ormal, (S)ilent, (I)nvisible");
                 switch (k)
                 {

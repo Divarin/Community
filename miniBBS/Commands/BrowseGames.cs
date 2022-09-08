@@ -16,10 +16,10 @@ namespace miniBBS.Commands
             var gamesList = browser.FindBasicPrograms(session).ToList();
             var builder = new StringBuilder();
 
-            builder.AppendLine(UserIoExtensions.WrapInColor("*** User Programs Listing ***", ConsoleColor.Yellow));
-            builder.Append(UserIoExtensions.WrapInColor("To run a program, type '", ConsoleColor.White));
-            builder.Append(UserIoExtensions.WrapInColor("/run #", ConsoleColor.Green));
-            builder.AppendLine(UserIoExtensions.WrapInColor("' where # is the program number.", ConsoleColor.White));
+            builder.AppendLine("*** User Programs Listing ***".Color(ConsoleColor.Yellow));
+            builder.Append("To run a program, type '".Color(ConsoleColor.White));
+            builder.Append("/run #".Color(ConsoleColor.Green));
+            builder.AppendLine("' where # is the program number.".Color(ConsoleColor.White));
 
             for (int i=0; i < gamesList.Count; i++)
             {
@@ -27,8 +27,11 @@ namespace miniBBS.Commands
                 var path = parts[0];
                 var desc = parts.Length > 1 ? parts[1] : string.Empty;
                 builder.AppendLine($"{(i + 1).ToString().PadLeft(3, Constants.Spaceholder)} : {UserIoExtensions.WrapInColor(path, ConsoleColor.DarkGray)}");
-                builder.AppendLine(UserIoExtensions.WrapInColor(desc, ConsoleColor.Blue));
+                builder.AppendLine(desc.Color(ConsoleColor.Blue));
             }
+
+            builder.AppendLine("Want to write your own programs in Basic?  Use '/feedback' to ask the Sysop about it to get started!".Color(ConsoleColor.White));
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
             {
                 session.Io.Output(builder.ToString());
