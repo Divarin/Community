@@ -48,7 +48,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine(emote);
             }
 
-            session.Messager.Publish(emoteMessage);
+            session.Messager.Publish(session, emoteMessage);
         }
 
         private static bool ValidateTargetUser(int channelId, int? targetUserId)

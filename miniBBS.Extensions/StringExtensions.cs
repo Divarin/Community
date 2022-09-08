@@ -224,5 +224,10 @@ namespace miniBBS.Extensions
 
             return result;
         }
+
+        public static string Color(this string str, ConsoleColor color)
+        {
+            return UserIoExtensions.WrapInColor(str, color);
+        }
     }
 }

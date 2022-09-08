@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
@@ -9,23 +10,41 @@ namespace miniBBS.Commands
 {
     public static class WhoIsOn
     {
+        public static void Execute(BbsSession session)
+        {
+            Execute(session, DI.Get<ISessionsList>());
+        }
+
         public static void Execute(BbsSession session, ISessionsList sessionsList)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 session.Io.OutputLine($"* Who is on Community right now *");
 
-                var online = DI.Get<ISessionsList>()
+                var online = sessionsList
                     .Sessions
                     ?.Where(s => s.User != null && s.Channel != null)
-                    ?.Select(s => new
+                    ?.Select(s =>
                     {
-                        Username = s.User.Name,
-                        Afk = s.Afk,
-                        AfkReason = s.AfkReason,
-                        IdleTime = s.IdleTime,
-                        ChannelName = s.Channel.Name
+                        string username = s.User.Name;
+                        if (s.ControlFlags.HasFlag(SessionControlFlags.Invisible))
+                        {
+                            if (session.User.Access.HasFlag(AccessFlag.Administrator))
+                                username += " (Invis)";
+                            else
+                                return null;
+                        }
+
+                        return new
+                        {
+                            Username = username,
+                            s.Afk,
+                            s.AfkReason,
+                            s.IdleTime,
+                            ChannelName = s.Channel.Name
+                        };
                     })
+                    .Where(s => s != null)
                     .GroupBy(s => s.Username)
                     .ToDictionary(k => k.Key, v => v.ToList());
 
@@ -60,9 +79,6 @@ namespace miniBBS.Commands
                 string result = string.Join(Environment.NewLine, list);
                 session.Io.OutputLine(result);
             }
-
-            //var option = session.Io.Ask("Do you want to see a list of all users? (Y)es, (N)o, (D)on't ask again");
-
         }
     }
 }

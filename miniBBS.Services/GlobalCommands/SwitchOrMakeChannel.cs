@@ -4,6 +4,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,7 +88,7 @@ namespace miniBBS.Services.GlobalCommands
 
             var messager = GlobalDependencyResolver.Get<IMessager>();
             if (session.Channel != null) // will be null during logon while here to join default channel
-                messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
+                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{UserIoExtensions.WrapInColor(session.User.Name, ConsoleColor.Yellow)} has {UserIoExtensions.WrapInColor("left", ConsoleColor.Red)} {session.Channel.Name}"));
 
             session.Channel = channel;
             session.Chats = new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id)
@@ -111,7 +112,7 @@ namespace miniBBS.Services.GlobalCommands
                 session.Io.OutputLine($"Users currently online in {channel.Name} : {string.Join(", ", channelUsers)}");
             }
 
-            messager.Publish(new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
+            messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{UserIoExtensions.WrapInColor(session.User.Name, ConsoleColor.Yellow)} has {UserIoExtensions.WrapInColor("joined", ConsoleColor.Green)} {channel.Name}"));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {

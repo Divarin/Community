@@ -142,6 +142,31 @@ namespace miniBBS.TextFiles
             }
         }
 
+        public IEnumerable<string> FindBasicPrograms(BbsSession session)
+        {
+            var root = TopLevel.GetLinks()
+                .FirstOrDefault(l => l.IsDirectory && "CommunityUsers".Equals(l.DisplayedFilename, StringComparison.CurrentCultureIgnoreCase));
+            Queue<Link> subdirs = new Queue<Link>();
+            subdirs.Enqueue(root);
+            do
+            {
+                var dir = subdirs.Dequeue();
+                var linksInDir = LinkParser
+                    .GetLinksFromIndex(session, dir)
+                    .Where(l => 
+                        !string.IsNullOrWhiteSpace(l.Description) && 
+                        !"(UNPUBLISHED)".Equals(l.Description, StringComparison.CurrentCultureIgnoreCase)); // exclude unpublished
+
+                foreach (var link in linksInDir)
+                {
+                    if (link.IsDirectory)
+                        subdirs.Enqueue(link);
+                    else if (link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
+                        yield return $"{link.Parent.Path}{link.Path}|{link.Description}";
+                }
+            } while (subdirs.Count > 0);
+        }
+
         private Link FindLink(string msg, IList<Link> links)
         {
             if (string.IsNullOrWhiteSpace(msg))

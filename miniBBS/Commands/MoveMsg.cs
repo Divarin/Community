@@ -76,7 +76,7 @@ namespace miniBBS.Commands
             var msg1 = $"{session.User.Name} moved the following message from this channel to {targetChannel.Name}{Environment.NewLine}{chatString}";
             var msg2 = $"{session.User.Name} moved the following message from another channel to here{Environment.NewLine}{chatString}";
 
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg1)
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg1)
             {
                 OnReceive = (_remoteSession) =>
                 {
@@ -85,7 +85,7 @@ namespace miniBBS.Commands
                 }
             });
 
-            session.Messager.Publish(new ChannelMessage(session.Id, targetChannel.Id, msg2)
+            session.Messager.Publish(session, new ChannelMessage(session.Id, targetChannel.Id, msg2)
             {
                 OnReceive = (_remoteSession) =>
                 {

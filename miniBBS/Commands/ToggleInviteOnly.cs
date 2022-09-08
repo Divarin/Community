@@ -19,7 +19,7 @@ namespace miniBBS.Commands
             string message = $"{session.User.Name} has made channel {session.Channel.Name} {(inviteOnly ? "" : "not ")}invite only.";
 
             DI.Get<ILogger>().Log(session, message);
-            session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message));            
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message));            
             session.Io.OutputLine(message);
         }
     }

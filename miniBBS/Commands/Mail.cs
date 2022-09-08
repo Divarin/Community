@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -100,6 +101,13 @@ namespace miniBBS.Commands
         { 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
+                if (session.Usernames.ContainsKey(toId))
+                {
+                    session.Io.SetForeground(ConsoleColor.White);
+                    session.Io.OutputLine($"Sending mail to {UserIoExtensions.WrapInColor(session.Usernames[toId], ConsoleColor.Yellow)}");
+                    session.Io.SetForeground(ConsoleColor.Magenta);
+                }
+
                 if (!string.IsNullOrWhiteSpace(subject))
                     session.Io.Output($"Subject (ENTER='{subject}'): ");
                 else
@@ -126,7 +134,7 @@ namespace miniBBS.Commands
                         SendMail(session, toId, subject, builder.ToString());
                         session.Io.SetForeground(ConsoleColor.Yellow);
                         session.Io.OutputLine("Mail sent!");
-                        session.Messager.Publish(new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
+                        session.Messager.Publish(session, new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
                         break;
                     }
                     else if ("/a".Equals(line, StringComparison.CurrentCultureIgnoreCase))

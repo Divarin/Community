@@ -109,7 +109,7 @@ namespace miniBBS.Commands
                     toBeEdited.Message = newMessage;
                     session.Io.OutputLine("Done.");
                     DI.GetRepository<Chat>().Update(toBeEdited);
-                    session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message)
+                    session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message)
                     {
                         OnReceive = (s) => s.Chats[toBeEdited.Id].Message = newMessage
                     });

@@ -36,6 +36,7 @@ namespace miniBBS.Menus
             $"--- {_clr("Misc", ConsoleColor.Yellow)} ---",
             $"{_clr("/fauxmain", ConsoleColor.Green)} : Shows the 'new user' faux-main-menu",
             $"{_clr("/newuser", ConsoleColor.Green)} : Read new user docs",
+            $"{_clr("/doors", ConsoleColor.Green)} : Finds all user-made BASIC programs and provides a way to quick-launch them.",
             $"{_clr("/term", ConsoleColor.Green)} : Config Terminal",
             $"{_clr("/dnd", ConsoleColor.Green)} : Toggle Do Not Disturb",
             $"{_clr("/afk", ConsoleColor.Green)} : Toggle Away from Keyboard",

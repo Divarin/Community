@@ -44,8 +44,8 @@ namespace miniBBS.Commands
                 string message = $"{session.User.Name} has {(userFlags.Flags.HasFlag(UCFlag.Moderator) ? "" : "un-")}made {user.Name} to moderator on channel {session.Channel.Name}.";
 
                 var messager = DI.Get<IMessager>();
-                messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, message));
-                messager.Publish(new UserMessage(session.Id, user.Id, message));
+                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message));
+                messager.Publish(session, new UserMessage(session.Id, user.Id, message));
                 DI.Get<INotificationHandler>().SendNotification(user.Id, message);
                 DI.Get<ILogger>().Log(session, message);
                 session.Io.OutputLine(message);

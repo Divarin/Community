@@ -66,9 +66,9 @@ namespace miniBBS.Commands
             "Press L for \"Let's go to the BBS\", then type /polls.";
 
         private const string _games =
-            "Want to play (or make) some games? \r\n " +
-            "Press L for \"Let's go to the BBS\", then type /files. \r\n " +
-            "Explore the CommunityUsers area using DOS/*nix like commands, and look for BASIC (.bas) files. \r\n" +
+            "Want to play some games? \r\n " +
+            "Press L for \"Let's go to the BBS\", then type /games. \r\n " +
+            "You can also write your own door games using the system's online basic programming environment. \r\n" +
             "If you're feeling nostalgic for more familiar BBS door games check out mutinybbs.com:2332";
 
         //"Okay so here's the deal.  Are there games here?  Well potentially, you see this system has a built-in online Basic programming environment which allows users " +

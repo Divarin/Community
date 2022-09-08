@@ -18,7 +18,7 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine(msg);
             }
-            session.Messager.Publish(new GlobalMessage(session.Id, msg, disturb: true));
+            session.Messager.Publish(session, new GlobalMessage(session.Id, msg, disturb: true));
 
         }
     }

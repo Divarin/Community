@@ -109,7 +109,7 @@ namespace miniBBS
                 {
                     var userRepo = DI.GetRepository<User>();
 
-                    session = new BbsSession(sessionsList, _logger)
+                    session = new BbsSession(sessionsList)
                     {
                         User = null,
                         UserRepo = userRepo,
@@ -156,7 +156,7 @@ namespace miniBBS
                             finally
                             {
                                 SysopScreen.EndLogin(session);
-                                session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, false));
+                                session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, false));
                             }
                         }
                         _logger.Flush();
@@ -524,9 +524,7 @@ namespace miniBBS
                         ?.Where(s => user.Id == s.User?.Id)
                         ?.Count();
 
-                    string message = $"{Environment.NewLine}{user.Name} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
-                    if (sessionsForThisUser > 1)
-                        message += $" ({sessionsForThisUser})";
+                    string message = $"{Environment.NewLine}{UserIoExtensions.WrapInColor(user.Name, ConsoleColor.Yellow)}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(isLogin ? UserIoExtensions.WrapInColor("logged in", ConsoleColor.Green) : UserIoExtensions.WrapInColor("logged out", ConsoleColor.Red))} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
 
                     session.Io.OutputLine(message);
                 }
@@ -610,6 +608,12 @@ namespace miniBBS
                 return;
             }
 
+            if ("Guest".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.Error("Guest logins not allowed.  All you need to register is to specify a username and a password, I'm not going to ask for your phone number, address, email address, who referred you, you social security number, your favorite flavor of ice cream, etc... We just need to make an account for you to log in with and don't really care about anything personal.");
+                return;
+            }
+
             var user = userRepo.Get(x => x.Name, username)?.FirstOrDefault();
             if (user == null)
             {
@@ -669,7 +673,22 @@ namespace miniBBS
             if (session.User.Timezone != 0)
                 Commands.TimeZone.Execute(session, session.User.Timezone.ToString());
 
-            session.Messager.Publish(new UserLoginOrOutMessage(session.User, session.Id, true));
+            if (user.Access.HasFlag(AccessFlag.Administrator))
+            {
+                WhoIsOn.Execute(session);
+                var k = session.Io.Ask("Admin login option: (N)ormal, (S)ilent, (I)nvisible");
+                switch (k)
+                {
+                    case 'S':
+                        session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+                        break;
+                    case 'I':
+                        session.ControlFlags |= SessionControlFlags.Invisible | SessionControlFlags.DoNotSendNotifications;
+                        break;
+                }
+            }
+
+            session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, true));
         }
 
         private static User RegisterNewUser(BbsSession session, string username, IRepository<User> userRepo)
@@ -905,7 +924,7 @@ namespace miniBBS
                 case "/si":
                 case "/session":
                 case "/sessioninfo":
-                    SessionInfo.Execute(session, parts.Length >= 2 ? parts[1] : null);
+                    SessionInfo.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/ui":
                 case "/user":
@@ -994,22 +1013,7 @@ namespace miniBBS
                 case "/tr":
                 case "/run":
                 case "/exec":
-                    {
-                        bool linkFound = false;
-                        var browser = DI.Get<ITextFilesBrowser>();
-                        Chat msg = null;
-                        if (session.LastReadMessageNumber.HasValue && session.Chats.ContainsKey(session.LastReadMessageNumber.Value))
-                        {
-                            msg = session.Chats[session.LastReadMessageNumber.Value];
-                            linkFound = browser.ReadLink(session, msg.Message);
-                        }
-
-                        if (!linkFound && session.ContextPointer.HasValue && session.Chats.ContainsKey(session.ContextPointer.Value))
-                        {
-                            msg = session.Chats[session.ContextPointer.Value];
-                            browser.ReadLink(session, msg.Message);
-                        }
-                    }
+                    ReadTextFile.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/blurb":
                     Blurbs.Execute(session, string.Join(" ", parts.Skip(1)));
@@ -1035,6 +1039,14 @@ namespace miniBBS
                 case "/poll":
                 case "/polls":
                     Polls.Execute(session);
+                    return;
+                case "/game":
+                case "/games":
+                case "/prog":
+                case "/progs":
+                case "/door":
+                case "/doors":
+                    BrowseGames.Execute(session);
                     return;
                 case ",":
                 case "<":

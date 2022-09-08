@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using System;
@@ -16,12 +17,16 @@ namespace miniBBS.Commands
 
             var online = DI.Get<ISessionsList>()
                 .Sessions
-                ?.Where(s => s.User != null && s.Channel != null)
+                ?.Where(s => 
+                    s.User != null && 
+                    s.Channel != null && 
+                    (session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                    (!s.ControlFlags.HasFlag(SessionControlFlags.Invisible))))
                 ?.Select(s => new
                 {
                     Username = s.User.Name,
-                    Afk = s.Afk,
-                    AfkReason = s.AfkReason,
+                    s.Afk,
+                    s.AfkReason,
                     ChannelName = s.Channel.Name
                 })
                 .GroupBy(s => s.Username)

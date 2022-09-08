@@ -77,7 +77,7 @@ namespace miniBBS.Helpers
                 q.Enqueue(session.User.Id);
                 var msg = $"{session.User.Name} has been added to the voice request queue in position #{q.Count}";
                 session.Io.OutputLine(msg);
-                session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg, disturb: false, predicate: _s =>
+                session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg, disturb: false, predicate: _s =>
                 {
                     return
                         true == _s.User?.Access.HasFlag(AccessFlag.Administrator) ||
@@ -89,7 +89,7 @@ namespace miniBBS.Helpers
             {
                 session.Io.OutputLine("Voice request submitted.");
                 var msg = $"{session.User.Name} has requested voice for this channel, use '/ch +v {session.User.Name}' to give it.";
-                session.Messager.Publish(new ChannelMessage(session.Id, session.Channel.Id, msg, disturb: false, predicate: _s =>
+                session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg, disturb: false, predicate: _s =>
                 {
                     return
                         true == _s.User?.Access.HasFlag(AccessFlag.Administrator) ||
