@@ -6,14 +6,18 @@ using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace miniBBS.Commands
 {
     public static class EditMessage
     {
-        public static void Execute(BbsSession session, string[] args)
+        public static void Execute(BbsSession session, string line)
         {
+            string[] args = SplitArguments(line).ToArray();
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
             {
                 if (args?.Length < 2)
@@ -38,43 +42,43 @@ namespace miniBBS.Commands
 
                 if (!canUpdate)
                 {
-                    session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minues) or you aren't a moderator.");
+                    session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minutes) or you aren't a moderator.");
                     return;
                 }
 
                 int searchArgIndex = args.Length >= 3 ? 1 : 0;
                 int replaceArgIndex = searchArgIndex + 1;
-                string search = args[searchArgIndex];
-                string replace = args[replaceArgIndex];
+                string search = args.Length > searchArgIndex ? args[searchArgIndex] : null;
+                string replace = args.Length > replaceArgIndex ? args[replaceArgIndex] : null;
 
-                string line = string.Join(" ", args);
-                bool parsedWithSpaceDelim = true;
-                if (line.Count(c => c == '"') == 4)
-                {
-                    var parts = line
-                        .Split(new[] { '"' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Where(x => !string.IsNullOrWhiteSpace(x))
-                        .ToArray();
-                    if (parts?.Length >= 2)
-                    {
-                        search = parts[searchArgIndex];
-                        replace = parts[replaceArgIndex];
-                        parsedWithSpaceDelim = false;
-                    }
-                }
-                else if (line.Count(c => c == '/') == 1)
-                {
-                    var parts = line
-                        .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(x => x.Trim())
-                        .ToArray();
-                    if (parts?.Length == 2)
-                    {
-                        search = parts[0];
-                        replace = parts[1];
-                        parsedWithSpaceDelim = false;
-                    }
-                }
+                //string line = string.Join(" ", args);
+                //bool parsedWithSpaceDelim = true;
+                //if (line.Count(c => c == '"') == 4)
+                //{
+                //    var parts = line
+                //        .Split(new[] { '"' }, StringSplitOptions.RemoveEmptyEntries)
+                //        .Where(x => !string.IsNullOrWhiteSpace(x))
+                //        .ToArray();
+                //    if (parts?.Length >= 2)
+                //    {
+                //        search = parts[searchArgIndex];
+                //        replace = parts[replaceArgIndex];
+                //        parsedWithSpaceDelim = false;
+                //    }
+                //}
+                //else if (line.Count(c => c == '/') == 1)
+                //{
+                //    var parts = line
+                //        .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                //        .Select(x => x.Trim())
+                //        .ToArray();
+                //    if (parts?.Length == 2)
+                //    {
+                //        search = parts[0];
+                //        replace = parts[1];
+                //        parsedWithSpaceDelim = false;
+                //    }
+                //}
 
                 if (string.IsNullOrWhiteSpace(search) || string.IsNullOrWhiteSpace(replace))
                 {
@@ -82,11 +86,11 @@ namespace miniBBS.Commands
                     return;
                 }
 
-                if (parsedWithSpaceDelim)
-                {
-                    search = search.Replace('-', ' ');
-                    replace = replace.Replace('-', ' ');
-                }
+                //if (parsedWithSpaceDelim)
+                //{
+                //    search = search.Replace('-', ' ');
+                //    replace = replace.Replace('-', ' ');
+                //}
 
                 string oldMessage = toBeEdited.Message;
                 string newMessage = toBeEdited.Message.Replace(search, replace);
@@ -116,6 +120,29 @@ namespace miniBBS.Commands
                     DI.Get<ILogger>().Log(session, message);
                 }
             }
+        }
+
+        private static IEnumerable<string> SplitArguments(string line)
+        {
+            var builder = new StringBuilder();
+            bool inQuotes = false;
+            int argsReturned = 0;
+
+            foreach (char c in line)
+            {
+                if (c == '"')
+                    inQuotes = !inQuotes;
+                else if (c == ' ' && !inQuotes && argsReturned < 3)
+                {
+                    yield return builder.ToString();
+                    argsReturned++;
+                    builder.Clear();
+                }
+                else
+                    builder.Append(c);
+            }
+            if (builder.Length > 0)
+                yield return builder.ToString();
         }
 
         public static void ReassignReNumber(BbsSession session, params string[] args)
@@ -180,7 +207,7 @@ namespace miniBBS.Commands
 
             if (!canUpdate)
             {
-                session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minues) or you aren't a moderator.");
+                session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minutes) or you aren't a moderator.");
                 return;
             }
 

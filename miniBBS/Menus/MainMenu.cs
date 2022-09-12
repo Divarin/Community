@@ -41,7 +41,7 @@ namespace miniBBS.Menus
             $"{_clr("/dnd", ConsoleColor.Green)} : Toggle Do Not Disturb",
             $"{_clr("/afk", ConsoleColor.Green)} : Toggle Away from Keyboard",
             $"{_clr("/password", ConsoleColor.Green)} : Change your password",
-            //$"/pp (minutes) : Changes the 'keep alive' (ping pong) timer.  This sends a space followed by a backspace every so often (default {Constants.DefaultPingPongDelayMin} minues).  Some terminals may need this more frequent or may need it disabled.",
+            //$"/pp (minutes) : Changes the 'keep alive' (ping pong) timer.  This sends a space followed by a backspace every so often (default {Constants.DefaultPingPongDelayMin} minutes).  Some terminals may need this more frequent or may need it disabled.",
             //$"{Constants.Spaceholder.Repeat(2)}/pp 0 : Stops ping/pongs",
             //$"{Constants.Spaceholder.Repeat(2)}/pp 1 : Sets ping/pongs to every 1 minute",
             //$"{Constants.Spaceholder.Repeat(2)}/pp 5 : Sets ping/pongs to every 5 minutes",

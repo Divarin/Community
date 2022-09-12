@@ -524,7 +524,7 @@ namespace miniBBS
                         ?.Where(s => user.Id == s.User?.Id)
                         ?.Count();
 
-                    string message = $"{Environment.NewLine}{UserIoExtensions.WrapInColor(user.Name, ConsoleColor.Yellow)}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(isLogin ? UserIoExtensions.WrapInColor("logged in", ConsoleColor.Green) : UserIoExtensions.WrapInColor("logged out", ConsoleColor.Red))} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
+                    string message = $"{Environment.NewLine}{user.Name}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
 
                     session.Io.OutputLine(message);
                 }
@@ -846,7 +846,7 @@ namespace miniBBS
                 case "/typo":
                 case "/edit":
                 case "/s":
-                    EditMessage.Execute(session, parts.Skip(1).ToArray());
+                    EditMessage.Execute(session, string.Join(" ", parts.Skip(1)));
                     return;
                 case "/rere":
                     EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());
@@ -982,7 +982,7 @@ namespace miniBBS
                 case "/mail":
                 case "/email":
                 case "/e-mail":
-                    Commands.Mail.Execute(session, parts.Length >= 2 ? parts.Skip(1).ToArray() : null);
+                    Commands.Mail.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/feedback":
                     Commands.Mail.Execute(session, "send", Constants.SysopName);
