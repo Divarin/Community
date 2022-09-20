@@ -152,7 +152,7 @@ namespace miniBBS.Commands
                 {
                     if (unanswered.Contains(vote.Key))
                         unanswered.Remove(vote.Key);
-                    var percent = Math.Round(100.0 * (vote.Count() / totalVotes), 1);
+                    var percent = Math.Round(100.0 * (vote.Count() / totalVotes), 0);
                     builder.Append(percent.ToString().PadLeft(3, Constants.Spaceholder));
                     builder.Append("% ");
                     builder.Append(vote.Count().ToString().PadLeft(3, Constants.Spaceholder));
@@ -160,7 +160,7 @@ namespace miniBBS.Commands
                 }
 
                 foreach (var a in unanswered)
-                    builder.AppendLine($"{Constants.Spaceholder.Repeat(2)}0%   0  {a}");
+                    builder.AppendLine($"{Constants.Spaceholder.Repeat(2)}0%   0  {a.Color(ConsoleColor.Blue)}");
             }
 
             string text = builder.ToString();

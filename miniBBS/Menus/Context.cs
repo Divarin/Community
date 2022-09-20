@@ -35,7 +35,9 @@ namespace miniBBS.Menus
             "Optional parameters to pass to /re command:",
             "/re 0 : Recursively search for the first message in the thread.",
             "/re e : Recursively search for the last message in the thread.",
-            "/re > : Advance forward to the next message in the thread."
+            "/re > : Advance forward to the next message in the thread.",
+            "/ra   : Same as '/re >'.",
+            "NOTE  : With '/re >' (and '/ra') if there is more than one response then snippets of each response is shown and you're asked which branch you'd like to follow"
         };
 
         public static void Show(BbsSession session)

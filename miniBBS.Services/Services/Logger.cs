@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -28,17 +29,17 @@ namespace miniBBS.Services.Services
             }
         }
 
-        public void Log(BbsSession session, string message, bool consoleOnly = false)
+        public void Log(BbsSession session, string message, LoggingOptions loggingOptions = LoggingOptions.ToConsole | LoggingOptions.ToDatabase)
         {
             Log(sessionId: session?.Id,
                 ipAddress: session?.IpAddress,
                 userId: session?.User?.Id,
                 username: session?.User?.Name,
                 message: message,
-                consoleOnly: consoleOnly);
+                loggingOptions);
         }
 
-        private void Log(Guid? sessionId, string ipAddress, int? userId, string username, string message, bool consoleOnly = false)
+        private void Log(Guid? sessionId, string ipAddress, int? userId, string username, string message, LoggingOptions loggingOptions)
         {
             LogEntry entry = new LogEntry
             {
@@ -49,11 +50,13 @@ namespace miniBBS.Services.Services
                 Message = message
             };
 
-            if (!consoleOnly)
+            if (loggingOptions.HasFlag(LoggingOptions.ToDatabase))
                 _unwritten.Enqueue(entry);
 
-            SysopScreen.AddLogMessage($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
-            if (_unwritten.Count > Constants.NumberOfLogEntriesUntilWriteToDatabase)
+            if (loggingOptions.HasFlag(LoggingOptions.ToConsole))
+                SysopScreen.AddLogMessage($"{entry.TimestampUtc} : {ipAddress} : {sessionId} : {username}{Environment.NewLine}{message}{Environment.NewLine}-----");
+
+            if (loggingOptions.HasFlag(LoggingOptions.WriteImmedately) || _unwritten.Count > Constants.NumberOfLogEntriesUntilWriteToDatabase)
                 Flush();
         }
     }

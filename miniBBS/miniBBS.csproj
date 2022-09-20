@@ -102,6 +102,7 @@
     <Compile Include="Commands\ReadTextFile.cs" />
     <Compile Include="Commands\Roll.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
+    <Compile Include="Commands\SysopCommand.cs" />
     <Compile Include="Commands\TermSetup.cs" />
     <Compile Include="Commands\TimeZone.cs" />
     <Compile Include="Commands\ChannelVoice.cs" />

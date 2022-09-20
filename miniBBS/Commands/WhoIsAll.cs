@@ -11,7 +11,7 @@ namespace miniBBS.Commands
 {
     public static class WhoIsAll
     {
-        public static void Execute(BbsSession session)
+        public static void Execute(BbsSession session, params string[] args)
         {
             IEnumerable<User> users = session.UserRepo.Get().OrderByDescending(u => u.LastLogonUtc);
 
@@ -38,6 +38,9 @@ namespace miniBBS.Commands
             session.Io.OutputLine();
             if (key == 'Y' || key == 'y')
                 users = users.Where(u => u.LastLogonUtc >= DateTime.UtcNow.AddMonths(-1));
+
+            if (true == args?.Any() && int.TryParse(args[0], out int n))
+                users = users.Where(u => u.TotalLogons >= n);
 
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("* Community users *");

@@ -156,6 +156,7 @@ namespace miniBBS
                             finally
                             {
                                 SysopScreen.EndLogin(session);
+                                _logger.Log(session, $"{session.User?.Name} has logged out", LoggingOptions.ToDatabase | LoggingOptions.WriteImmedately);
                                 session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, false));
                             }
                         }
@@ -688,6 +689,7 @@ namespace miniBBS
                 }
             }
 
+            _logger.Log(session, $"{session.User?.Name} has logged in", LoggingOptions.ToDatabase | LoggingOptions.WriteImmedately);
             session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, true));
         }
 
@@ -886,7 +888,7 @@ namespace miniBBS
                     return;
                 case "/u":
                 case "/users":
-                    WhoIsAll.Execute(session);
+                    WhoIsAll.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/f":
                 case "/find":
@@ -912,6 +914,9 @@ namespace miniBBS
                 case "/ref":
                 case "/wat":
                     Commands.Context.Execute(session, parts.Length >= 2 ? parts[1] : null);
+                    return;
+                case "/ra":
+                    Commands.Context.Execute(session, ">");
                     return;
                 case "/new":
                     AddToChatLog.Execute(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
@@ -1047,6 +1052,10 @@ namespace miniBBS
                 case "/door":
                 case "/doors":
                     BrowseGames.Execute(session);
+                    return;
+                case "/sys":
+                case "/sysop":
+                    SysopCommand.Execute(session, ref _ipBans, parts.Skip(1).ToArray());
                     return;
                 case ",":
                 case "<":

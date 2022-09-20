@@ -1,9 +1,5 @@
 ﻿using miniBBS.TextFiles.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace miniBBS.TextFiles
 {
@@ -120,7 +116,7 @@ namespace miniBBS.TextFiles
             {
                 ActualFilename = "hamradio/index.html",
                 Description = "Ham Radio Operation Information, sort of",
-                DisplayedFilename = "Ham Radio"
+                DisplayedFilename = "HamRadio"
             };
 
             yield return new Link

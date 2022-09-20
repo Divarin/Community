@@ -67,6 +67,7 @@
     <Compile Include="Enums\AccessFlag.cs" />
     <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
+    <Compile Include="Enums\LoggingOptions.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
