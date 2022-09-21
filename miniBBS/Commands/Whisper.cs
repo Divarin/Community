@@ -48,6 +48,14 @@ namespace miniBBS.Commands
             if (true != DI.Get<ISessionsList>().Sessions?.Any(s => toUserId == s.User?.Id))
             {
                 session.Io.Error($"{toUserName} is not online at this time.");
+                if ('Y' == session.Io.Ask("Send this message as an E-Mail instead"))
+                {
+                    Mail.SendMail(session, toUserId, $"Whisper from {session.User.Name}", message);
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    {
+                        session.Io.OutputLine($"Mail sent to {toUserName}.");
+                    }
+                }
                 return;
             }
 

@@ -142,10 +142,8 @@ namespace miniBBS
                             int unreadMail = Commands.Mail.CountUnread(session);
                             if (unreadMail > 0)
                             {
-                                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                                {
-                                    session.Io.OutputLine($"You have {unreadMail} unread mails.  Use '/mail' to read your mail.");
-                                }
+                                session.Io.Error($"You have {unreadMail} unread mails.  Use '/mail' to read your mail.");
+                                Thread.Sleep(3000);
                             }
 
                             try
@@ -274,6 +272,7 @@ namespace miniBBS
                 Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
+                Thread.Sleep(1000);
             }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
