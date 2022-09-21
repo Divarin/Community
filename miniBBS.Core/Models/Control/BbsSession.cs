@@ -135,7 +135,9 @@ namespace miniBBS.Core.Models.Control
         }
 
         public string LastLine { get; set; }
-        
+
+        public IDictionary<SessionItem, object> Items { get; } = new Dictionary<SessionItem, object>();
+
         private static void PingPong(object o)
         {
             BbsSession session = (BbsSession)o;

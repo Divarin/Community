@@ -10,9 +10,15 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, string[] args)
         {
-            string emote = $"{session.User.Name} {GetEmoteString(args[0])}";
+            string emote = $"{GetEmoteString(session, args[0])}";
             int? targetUserId = null;
-            if (args.Length >= 2)
+            bool isOnlineMsg =
+                "/online".Equals(args[0], StringComparison.CurrentCultureIgnoreCase) ||
+                "/onl".Equals(args[0], StringComparison.CurrentCultureIgnoreCase) ||
+                "/on".Equals(args[0], StringComparison.CurrentCultureIgnoreCase) ||
+                "/me".Equals(args[0], StringComparison.CurrentCultureIgnoreCase);
+
+            if (!isOnlineMsg && args.Length >= 2)
             {
                 string targetUserName = args[1].Trim();
                 var targetUser = session.Usernames.FirstOrDefault(u => u.Value.Equals(targetUserName, StringComparison.CurrentCultureIgnoreCase));
@@ -26,7 +32,7 @@ namespace miniBBS.Commands
                         targetUserId = targetUser.Key;
                 }
 
-            if (!ValidateTargetUser(session.Channel.Id, targetUserId))
+                if (!ValidateTargetUser(session.Channel.Id, targetUserId))
                 {
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                     {
@@ -38,12 +44,14 @@ namespace miniBBS.Commands
 
             if (targetUserId.HasValue)
                 emote += $" {session.Usernames[targetUserId.Value]}";
+            else if (isOnlineMsg)
+                emote += " " + string.Join(" ", args.Skip(1));
             else
                 emote += " the channel";
 
             var emoteMessage = new EmoteMessage(session.Id, session.User.Id, session.Channel.Id, targetUserId, emote);
 
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
                 session.Io.OutputLine(emote);
             }
@@ -64,22 +72,27 @@ namespace miniBBS.Commands
             return true;
         }
 
-        private static string GetEmoteString(string command)
+        private static string GetEmoteString(BbsSession session, string command)
         {
             switch (command.ToLower())
             {
-                case "/wave": return "waves to";
-                case "/poke": return "pokes";
-                case "/smile": return "smiles at";
-                case "/frown": return "frowns at";
-                case "/wink": return "winks at";
-                case "/nod": return "nods to";
+                case "/wave": return $"* {session.User.Name} waves to";
+                case "/poke": return $"* {session.User.Name} pokes";
+                case "/smile": return $"* {session.User.Name} smiles at";
+                case "/frown": return $"* {session.User.Name} frowns at";
+                case "/wink": return $"* {session.User.Name} winks at";
+                case "/nod": return $"* {session.User.Name} nods to";
                 case "/fairwell":
                 case "/farewell":
                 case "/goodbye":
                 case "/bye":
-                    return "bids goodbye to";
-                default: return command.Substring(1);
+                    return $"* {session.User.Name} bids goodbye to";
+                case "/online":
+                case "/onl":
+                case "/on":
+                    return $"[{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}] <{session.User.Name}>";
+                case "/me": return $"* {session.User.Name}";
+                default: return $"* {session.User.Name} {command.Substring(1)}";
             }
         }
     }

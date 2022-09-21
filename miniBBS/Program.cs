@@ -157,7 +157,7 @@ namespace miniBBS
                             {
                                 SysopScreen.EndLogin(session);
                                 _logger.Log(session, $"{session.User?.Name} has logged out", LoggingOptions.ToDatabase | LoggingOptions.WriteImmedately);
-                                session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, false));
+                                session.Messager.Publish(session, new UserLoginOrOutMessage(session, false));
                             }
                         }
                         _logger.Flush();
@@ -257,10 +257,10 @@ namespace miniBBS
             DatabaseMaint.RemoveSuperfluousUserChannelFlags(session.UcFlagRepo, session.User.Id);
             
             session.ChannelPostSubscriber.OnMessageReceived = m => NotifyNewPost(m.Chat, session);
-            session.UserLoginOrOutSubscriber.OnMessageReceived = m => NotifyUserLoginOrOut(m.User, session, m.IsLogin);
+            session.UserLoginOrOutSubscriber.OnMessageReceived = m => NotifyUserLoginOrOut(session, m);
             session.ChannelMessageSubscriber.OnMessageReceived = m => NotifyChannelMessage(session, m);
             session.GlobalMessageSubscriber.OnMessageReceived = m => NotifyGlobalMessage(session, m);
-            session.UserMessageSubscriber.OnMessageReceived = m => NotifyUserMessage(session, m.Message);
+            session.UserMessageSubscriber.OnMessageReceived = m => NotifyUserMessage(session, m);
             session.EmoteSubscriber.OnMessageReceived = m => NotifyEmote(session, m);
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
@@ -490,13 +490,13 @@ namespace miniBBS
         /// <summary>
         /// a notification sent to a specific user such as "you have been invited to join some channel"
         /// </summary>
-        private static void NotifyUserMessage(BbsSession session, string message)
+        private static void NotifyUserMessage(BbsSession session, UserMessage message)
         {
             Action action = () =>
             {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                using (session.Io.WithColorspace(ConsoleColor.Black, message.TextColor))
                 {
-                    session.Io.OutputLine($"{Environment.NewLine}{message}");
+                    session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
                 }
             };
 
@@ -511,23 +511,25 @@ namespace miniBBS
             }
         }
 
-        private static void NotifyUserLoginOrOut(User user, BbsSession session, bool isLogin)
+        private static void NotifyUserLoginOrOut(BbsSession session, UserLoginOrOutMessage message)
         {
-            if (user == null)
+            if (message?.User == null)
                 return;
 
             Action action = () =>
             {
-                TryBell(session, user.Id);
+                TryBell(session, message.User.Id);
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 {
                     var sessionsForThisUser = DI.Get<ISessionsList>()?.Sessions
-                        ?.Where(s => user.Id == s.User?.Id)
+                        ?.Where(s => message.User.Id == s.User?.Id)
                         ?.Count();
 
-                    string message = $"{Environment.NewLine}{user.Name}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(isLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
+                    string msg = $"{Environment.NewLine}{message.User.Name}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(message.IsLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
+                    if (!string.IsNullOrWhiteSpace(message.LogoutMessage))
+                        msg += $" saying \"{message.LogoutMessage}\"";
 
-                    session.Io.OutputLine(message);
+                    session.Io.OutputLine(msg);
                 }
             };
 
@@ -555,7 +557,7 @@ namespace miniBBS
             Action action = () =>
             {
                 TryBell(session, message.FromUserId);
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                 {
                     session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
                 }
@@ -690,7 +692,7 @@ namespace miniBBS
             }
 
             _logger.Log(session, $"{session.User?.Name} has logged in", LoggingOptions.ToDatabase | LoggingOptions.WriteImmedately);
-            session.Messager.Publish(session, new UserLoginOrOutMessage(session.User, session.Id, true));
+            session.Messager.Publish(session, new UserLoginOrOutMessage(session, true));
         }
 
         private static User RegisterNewUser(BbsSession session, string username, IRepository<User> userRepo)
@@ -775,8 +777,13 @@ namespace miniBBS
                 case "/off":
                 case "/g":
                 case "/logoff":
-                    session.Io.OutputLine("Goodbye!");
-                    session.Stream.Close();
+                case "/quit":
+                case "/q":
+                    if (Logout.Execute(session, parts[0], string.Join(" ", parts.Skip(1))))
+                    {
+                        session.Io.OutputLine("Goodbye!");
+                        session.Stream.Close();
+                    }
                     return;
                 case "/cls":
                 case "/clr":
@@ -882,7 +889,6 @@ namespace miniBBS
                 case "/channel":
                     ExecuteChannelCommand(session, parts.Skip(1).ToArray());
                     return;
-                case "/w":
                 case "/who":
                     WhoIsOn.Execute(session, DI.Get<ISessionsList>());
                     return;
@@ -945,6 +951,11 @@ namespace miniBBS
                 case "/calendar":
                     Calendar.Execute(session);
                     return;
+                case "/calc":
+                case "/calculate":
+                case "/calculator":
+                    Calculate.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case "/index":
                 case "/i":
                     IndexBy.Execute(session, parts.Length >= 2 ? parts[1] : null);
@@ -975,7 +986,19 @@ namespace miniBBS
                 case "/farewell":
                 case "/goodbye":
                 case "/bye":
+                case "/me":
+                case "/online":
+                case "/onl":
+                case "/on":
                     Emote.Execute(session, parts);
+                    return;
+                case "/whisper":
+                case "/wh":
+                case "/w":
+                    if (parts.Length >= 3)
+                        Whisper.Execute(session, parts.Skip(1).ToArray());
+                    else
+                        WhoIsOn.Execute(session, DI.Get<ISessionsList>());
                     return;
                 case "/roll":
                 case "/random":

@@ -15,5 +15,6 @@ namespace miniBBS.Core.Models.Messages
         public Guid SessionId { get; private set; }
         public int UserId { get; set; }
         public string Message { get; set; }
+        public ConsoleColor TextColor { get; set; } = ConsoleColor.Blue;
     }
 }

@@ -20,7 +20,10 @@ namespace miniBBS.Menus
             $"{Constants.Spaceholder} example: '/wave' notifies everyone in the channel: 'Soandso waves to the channel'.",
             $"{Constants.Spaceholder} example: '/wave jimbob' notifies only jimbob (if he is online): 'Soandso waves to Jimbob'.",
             $"{Constants.Spaceholder}",
-            "The emotes available at this time are: /wave, /smile, /frown, /wink, /nod, /poke, /goodbye"
+            "The emotes available at this time are: /wave, /smile, /frown, /wink, /nod, /poke, /goodbye, /me, and /online",
+            $"{Constants.Spaceholder}",
+            "/me allows you to use an arbitrary emote like '/me dances in the moonlight'.",
+            "/online can be used to send a message similar to chat but is only shown to users who are online."
         };
         public static void Show(BbsSession session)
         {
