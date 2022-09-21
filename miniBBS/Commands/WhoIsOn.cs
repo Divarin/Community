@@ -21,7 +21,7 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine($"* Who is on Community right now *");
 
-                var online = sessionsList
+                var sessionGroups = sessionsList
                     .Sessions
                     ?.Where(s => s.User != null && s.Channel != null)
                     ?.Select(s =>
@@ -49,32 +49,34 @@ namespace miniBBS.Commands
                     .ToDictionary(k => k.Key, v => v.ToList());
 
                 List<string> list = new List<string>();
-                foreach (var s in online)
+                foreach (var userSessions in sessionGroups)
                 {
-                    string listItem = $"{s.Key} ";
-                    var usl = online[s.Key];
-                    var afk = usl.FirstOrDefault(x => x.Afk);
-                    if (afk != null)
+                    foreach (var s in userSessions.Value)
                     {
-                        if (!"away from keyboard".Equals(afk.AfkReason, StringComparison.CurrentCultureIgnoreCase))
-                            listItem += $"(AFK:{afk.AfkReason})";
-                        else
-                            listItem += "(AFK)";
-                    }
-                    listItem += $" in {string.Join(", ", usl.Select(x => x.ChannelName).Distinct())}";
-                    var idleTime = usl.Min(x => x.IdleTime.TotalMinutes);
-                    if (idleTime >= 5)
-                    {
-                        int h = (int)Math.Floor(idleTime / 60);
-                        int m = (int)Math.Round(idleTime % 60);
-                        if (h > 0)
-                            listItem += $" - {h}h {m}m idle";
-                        else
-                            listItem += $" - {m} min. idle";
-                    }
-                    list.Add(listItem);
-                }
+                        string listItem = $"{userSessions.Key} ";
+                        
+                        if (s.Afk)
+                        {
+                            if (!"away from keyboard".Equals(s.AfkReason, StringComparison.CurrentCultureIgnoreCase))
+                                listItem += $"(AFK:{s.AfkReason})";
+                            else
+                                listItem += "(AFK)";
+                        }
 
+                        listItem += $" in {s.ChannelName}";
+                        var idleTime = s.IdleTime.TotalMinutes;
+                        if (idleTime >= 5)
+                        {
+                            int h = (int)Math.Floor(idleTime / 60);
+                            int m = (int)Math.Round(idleTime % 60);
+                            if (h > 0)
+                                listItem += $" - {h}h {m}m idle";
+                            else
+                                listItem += $" - {m} min. idle";
+                        }
+                        list.Add(listItem);
+                    }
+                }
                 list.Add($"{Environment.NewLine}{UserIoExtensions.WrapInColor("Use '/users' to see full user list.", ConsoleColor.Magenta)}");
                 string result = string.Join(Environment.NewLine, list);
                 session.Io.OutputLine(result);

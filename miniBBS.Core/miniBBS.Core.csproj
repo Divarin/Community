@@ -67,12 +67,14 @@
     <Compile Include="Enums\AccessFlag.cs" />
     <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
+    <Compile Include="Enums\LoggingOptions.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
     <Compile Include="Enums\PingPongType.cs" />
     <Compile Include="Enums\SearchFrom.cs" />
     <Compile Include="Enums\SessionControlFlags.cs" />
+    <Compile Include="Enums\SessionItem.cs" />
     <Compile Include="Enums\SystemControlFlag.cs" />
     <Compile Include="Enums\TerminalEmulation.cs" />
     <Compile Include="Enums\TextFilesSessionFlags.cs" />

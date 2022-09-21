@@ -147,17 +147,20 @@ namespace miniBBS.Commands
                     .Get(v => v.QuestionId, question.Id)
                     .GroupBy(v => v.Answer)
                     .OrderByDescending(g => g.Count());
-                double totalVotes = votes.Count();
+                double totalVotes = votes.SelectMany(x => x.ToList()).Count();
                 foreach (var vote in votes)
                 {
                     if (unanswered.Contains(vote.Key))
                         unanswered.Remove(vote.Key);
-                    var percent = Math.Round(100.0 * (vote.Count() / totalVotes), 1);
-                    builder.AppendLine($"{percent,3}% {vote.Key}");
+                    var percent = Math.Round(100.0 * (vote.Count() / totalVotes), 0);
+                    builder.Append(percent.ToString().PadLeft(3, Constants.Spaceholder));
+                    builder.Append("% ");
+                    builder.Append(vote.Count().ToString().PadLeft(3, Constants.Spaceholder));
+                    builder.AppendLine($"  {vote.Key.Color(ConsoleColor.Blue)}");
                 }
 
                 foreach (var a in unanswered)
-                    builder.AppendLine($"  0% {a}");
+                    builder.AppendLine($"{Constants.Spaceholder.Repeat(2)}0%   0  {a.Color(ConsoleColor.Blue)}");
             }
 
             string text = builder.ToString();

@@ -5,6 +5,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
+using miniBBS.Services.GlobalCommands;
 using System;
 using System.Linq;
 
@@ -21,7 +22,7 @@ namespace miniBBS.Commands
                 if (!string.IsNullOrWhiteSpace(msgNum) && int.TryParse(msgNum, out n))
                 {
                     var nn = session.Chats.ItemKey(n);
-                    if (nn.HasValue)
+                    if (nn.HasValue && session.Chats.ContainsKey(nn.Value))
                         toBeDeleted = session.Chats[nn.Value];
                 }
                 else if (n <= 0)
@@ -60,6 +61,8 @@ namespace miniBBS.Commands
                             OnReceive = (s) => s.Chats.Remove(toBeDeleted.Id)
                         });
                         DI.Get<ILogger>().Log(session, message);
+                        if (session.MsgPointer > session.Chats.Keys.Max())
+                            SetMessagePointer.Execute(session, session.Chats.Keys.Max());
                     }
                 }
             }

@@ -20,7 +20,10 @@ namespace miniBBS.Extensions
             }
 
             var line = chat.GetWriteString(session, monochrome);
-            session.Io.OutputLine(line);
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
+            {
+                session.Io.OutputLine(line);
+            }
 
             if (updateLastReadMessageNumber)
                 session.LastReadMessageNumber = chat.Id;

@@ -490,6 +490,7 @@ namespace miniBBS.UserIo
                     bytes = InterpretInput(bytes);
 
                     if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine) && 
+                        bytes.Length >= 3 &&
                         bytes[0] == 27 && bytes[1] == 91 && bytes[2] == 65 && 
                         !string.IsNullOrWhiteSpace(session.LastLine))
                     {

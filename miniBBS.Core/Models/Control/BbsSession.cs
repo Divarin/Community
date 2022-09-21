@@ -80,6 +80,7 @@ namespace miniBBS.Core.Models.Control
         public IDictionary<int, string> Usernames { get; set; } 
         public SortedList<int, Chat> Chats { get; set; }
         public int MsgPointer => UcFlag?.LastReadMessageNumber ?? 0;
+
         public int? ContextPointer { get; set; }
         public UserChannelFlag UcFlag { get; set; }
         public Channel Channel { get; set; }
@@ -134,6 +135,8 @@ namespace miniBBS.Core.Models.Control
         }
 
         public string LastLine { get; set; }
+
+        public IDictionary<SessionItem, object> Items { get; } = new Dictionary<SessionItem, object>();
 
         private static void PingPong(object o)
         {

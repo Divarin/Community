@@ -19,7 +19,7 @@ namespace miniBBS.Commands
 
             bool remove = true == args?.FirstOrDefault()?.StartsWith("r", StringComparison.CurrentCultureIgnoreCase);
 
-            var mask = remove ? string.Join(" ", args) : string.Join(" ", args.Skip(1));
+            var mask = remove ? string.Join(" ", args.Skip(1)) : string.Join(" ", args);
 
             if (!string.IsNullOrWhiteSpace(mask))
             {

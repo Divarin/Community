@@ -23,59 +23,109 @@ namespace miniBBS.Commands
 
             try
             {
-                if (true != args?.Any())
-                {
-                    PrintUsage(session);
-                    return;
-                }
-
                 IList<Core.Models.Data.Mail> mails = GetMails(session);
 
-                switch (args[0].ToLower())
+                string command = args?.Length >= 1 ? args[0] : null;
+                string arg = args?.Length >= 2 ? args[1] : null;
+
+                do
                 {
-                    case "list":
-                        if (args.Length >= 2 && "sent".Equals(args[1], StringComparison.CurrentCultureIgnoreCase))
-                            ListSentMails(session);
-                        else
-                            ListMails(session, mails);
-                        break;
-                    case "read":
-                        {
-                            if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
-                                ReadMail(session, mails[n - 1]);
+                    switch (command?.ToLower())
+                    {
+                        case "list":
+                            if ("sent".Equals(arg, StringComparison.CurrentCultureIgnoreCase))
+                                ListSentMails(session);
                             else
-                                Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
-                        }
-                        break;
-                    case "del":
-                        {
-                            if (args.Length >= 2 && int.TryParse(args[1], out int n) && n >= 1 && n <= mails.Count)
-                                DeleteMail(mails[n - 1]);
-                            else if (args.Length >= 2 && "all".Equals(args[1], StringComparison.CurrentCultureIgnoreCase) && true == mails?.Any())
-                                DeleteAllMail(mails);
+                                ListMails(session, mails);
+                            command = null;
+                            break;
+                        case "read":
+                            {
+                                if (int.TryParse(arg, out int n) && n >= 1 && n <= mails.Count)
+                                    ReadMail(session, mails[n - 1]);
+                                else
+                                    Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
+                            }
+                            command = null;
+                            break;
+                        case "del":
+                            {
+                                if (int.TryParse(arg, out int n) && n >= 1 && n <= mails.Count)
+                                    DeleteMail(mails[n - 1]);
+                                else if ("all".Equals(arg, StringComparison.CurrentCultureIgnoreCase))
+                                {
+                                    if (true == mails?.Any())
+                                        DeleteAllMail(mails);
+                                    else
+                                        session.Io.Error("You have no e-mail to delete.");
+                                }
+                                else
+                                    Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
+                            }
+                            command = null;
+                            break;
+                        case "send":
+                            if (!string.IsNullOrWhiteSpace(arg))
+                                SendMail(session, arg.Trim());
                             else
-                                Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
-                        }
-                        break;
-                    case "send":
-                        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
-                            SendMail(session, args[1].Trim());
-                        else
-                            Error(session, "Please provide who the send the mail to: /mail send jimbob");
-                        break;
-                    case "feedback":
-                        SendMail(session, Constants.SysopName);
-                        break;
-                    default:
-                        PrintUsage(session);
-                        break;
-                }
+                                Error(session, "Please provide who the send the mail to: /mail send jimbob");
+                            command = null;
+                            break;
+                        case "feedback":
+                            SendMail(session, Constants.SysopName);
+                            command = null;
+                            break;
+                        default:
+                            {
+                                var tuple = Menu(session);
+                                command = tuple.Item1;
+                                arg = tuple.Item2;
+                            }
+                            break;
+                    }
+                } while (command != "quit");
+
             }
             finally
             {
                 session.CurrentLocation = originalLocation;
                 session.DoNotDisturb = originalDnd;
             }
+        }
+
+        private static Tuple<string, string> Menu(BbsSession session)
+        {
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                session.Io.OutputLine(" *** E-Mail ***");
+                session.Io.SetForeground(ConsoleColor.Yellow);
+                session.Io.OutputLine("L".Color(ConsoleColor.Green) + $") List your mail (+read & delete)");
+                session.Io.OutputLine("O".Color(ConsoleColor.Green) + $") List outgoing (sent) mails");
+                session.Io.OutputLine("D".Color(ConsoleColor.Green) + $") Delete all of your mail");
+                session.Io.OutputLine("S".Color(ConsoleColor.Green) + $") Send mail");
+                session.Io.OutputLine("F".Color(ConsoleColor.Green) + $") Feedback to Sysop");
+                session.Io.OutputLine("Q".Color(ConsoleColor.Green) + $") Quit E-Mail");
+
+                var k = session.Io.Ask("[Mail]");
+                switch (k)
+                {
+                    case 'L': return new Tuple<string, string>("list", null);
+                    case 'O': return new Tuple<string, string>("list", "sent");
+                    case 'D': return new Tuple<string, string>("del", "all");
+                    case 'S':
+                        {
+                            session.Io.Output("Send to whom?: ");
+                            string toUsername = session.Io.InputLine();
+                            session.Io.OutputLine();
+                            if (!string.IsNullOrWhiteSpace(toUsername))
+                                return new Tuple<string, string>("send", toUsername);
+                        }
+                        return null;
+                    case 'F': return new Tuple<string, string>("feedback", null);
+                    case 'Q': return new Tuple<string, string>("quit", null);
+                }
+            }
+            return new Tuple<string, string>(null, null);
         }
 
         public static int CountUnread(BbsSession session)
@@ -88,7 +138,7 @@ namespace miniBBS.Commands
         private static void SendMail(BbsSession session, string to)
         {
             var toId = session.Usernames.FirstOrDefault(x => to.Equals(x.Value, StringComparison.CurrentCultureIgnoreCase)).Key;
-            if (toId < 0)
+            if (toId <= 0)
             {
                 Error(session, $"Unknown user '{to}'");
                 return;

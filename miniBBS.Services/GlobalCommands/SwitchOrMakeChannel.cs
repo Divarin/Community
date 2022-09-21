@@ -4,7 +4,6 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +19,13 @@ namespace miniBBS.Services.GlobalCommands
 
         public static bool Execute(BbsSession session, string channelNameOrNumber, bool allowMakeNewChannel)
         {
-            if (channelNameOrNumber == null || channelNameOrNumber.Any(c => char.IsWhiteSpace(c)) || channelNameOrNumber.Length > Constants.MaxChannelNameLength || _invalidChannelNames.Contains(channelNameOrNumber, StringComparer.CurrentCultureIgnoreCase))
+            bool invalidChannelName = 
+                channelNameOrNumber == null || 
+                channelNameOrNumber.Any(c => char.IsWhiteSpace(c)) || 
+                channelNameOrNumber.Length > Constants.MaxChannelNameLength || 
+                _invalidChannelNames.Contains(channelNameOrNumber, StringComparer.CurrentCultureIgnoreCase);
+            
+            if (invalidChannelName)
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 {
@@ -32,25 +37,6 @@ namespace miniBBS.Services.GlobalCommands
             var logger = GlobalDependencyResolver.Get<ILogger>();
             var channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
             var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
-
-            //int chanNum = -1;
-            //int channelId = -1;
-            //if (int.TryParse(channelName, out chanNum))
-            //{
-            //    var chans = channelRepo
-            //        .Get()
-            //        .Where(c => c.CanJoin(session))
-            //        .OrderBy(c => c.Id)
-            //        .ToArray();
-            //    if (chanNum >= 1 && chanNum <= chans.Length)
-            //        channelId = chans[chanNum - 1].Id;
-            //}
-
-            //Channel channel;
-            //if (channelId > 0)
-            //    channel = channelRepo.Get(channelId);
-            //else
-            //    channel = channelRepo.Get(c => c.Name, channelName).FirstOrDefault();
 
             Channel channel = GetChannel.Execute(session, channelNameOrNumber);
 
@@ -88,7 +74,7 @@ namespace miniBBS.Services.GlobalCommands
 
             var messager = GlobalDependencyResolver.Get<IMessager>();
             if (session.Channel != null) // will be null during logon while here to join default channel
-                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{UserIoExtensions.WrapInColor(session.User.Name, ConsoleColor.Yellow)} has {UserIoExtensions.WrapInColor("left", ConsoleColor.Red)} {session.Channel.Name}"));
+                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
 
             session.Channel = channel;
             session.Chats = new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id)
@@ -107,12 +93,23 @@ namespace miniBBS.Services.GlobalCommands
                     .Where(s => s.Channel?.Id == channel.Id)
                     ?.OrderBy(s => s.SessionStartUtc)
                     ?.Where(s => s.User != null)
-                    ?.Select(s => $"{s.User.Name}{(s.IdleTime.TotalMinutes >= Constants.DefaultPingPongDelayMin ? " (idle)" : "")}");
+                    ?.GroupBy(s => s.User.Name)
+                    ?.Select(s =>
+                    {
+                        string _username = s.Key;
+                        var flags = new List<string>();
+                        if (s.All(x => x.Afk)) flags.Add("AFK");
+                        if (s.All(x => x.DoNotDisturb)) flags.Add("DND");
+                        if (s.All(x => x.IdleTime.TotalMinutes >= Constants.DefaultPingPongDelayMin)) flags.Add("IDLE");
+                        if (flags.Any())
+                            _username += $" ({string.Join(",", flags)})";
+                        return _username;
+                    });
 
                 session.Io.OutputLine($"Users currently online in {channel.Name} : {string.Join(", ", channelUsers)}");
             }
 
-            messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{UserIoExtensions.WrapInColor(session.User.Name, ConsoleColor.Yellow)} has {UserIoExtensions.WrapInColor("joined", ConsoleColor.Green)} {channel.Name}"));
+            messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
