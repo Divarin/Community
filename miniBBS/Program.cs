@@ -498,6 +498,7 @@ namespace miniBBS
                 {
                     session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
                 }
+                message.AdditionalAction?.Invoke(session);
             };
 
             if (session.DoNotDisturb)
@@ -999,6 +1000,10 @@ namespace miniBBS
                         Whisper.Execute(session, parts.Skip(1).ToArray());
                     else
                         WhoIsOn.Execute(session, DI.Get<ISessionsList>());
+                    return;
+                case "/r":
+                case "/reply":
+                    Whisper.Reply(session, parts.Skip(1).ToArray());
                     return;
                 case "/roll":
                 case "/random":
