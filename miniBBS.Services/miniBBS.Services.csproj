@@ -60,6 +60,7 @@
     <Compile Include="GlobalCommands\SwitchOrMakeChannel.cs" />
     <Compile Include="GlobalCommands\SysopScreen.cs" />
     <Compile Include="GlobalDependencyResolver.cs" />
+    <Compile Include="Persistence\ChatCache.cs" />
     <Compile Include="Persistence\SqliteRepository.cs" />
     <Compile Include="Persistence\StructuredQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

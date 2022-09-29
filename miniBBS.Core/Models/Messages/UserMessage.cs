@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models.Control;
 using System;
 
 namespace miniBBS.Core.Models.Messages
@@ -16,5 +17,6 @@ namespace miniBBS.Core.Models.Messages
         public int UserId { get; set; }
         public string Message { get; set; }
         public ConsoleColor TextColor { get; set; } = ConsoleColor.Blue;
+        public Action<BbsSession> AdditionalAction { get; set; }
     }
 }

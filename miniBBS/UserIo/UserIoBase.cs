@@ -322,7 +322,7 @@ namespace miniBBS.UserIo
                                 {
                                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                                     {
-                                        StreamOutputLine(session, $"No more occurances of '{keywordSearch.Keyword}' found.");
+                                        StreamOutputLine(session, TransformText($"No more occurances of '{keywordSearch.Keyword}' found."));
                                     }
                                     l = DoPageUp(l);
                                     continue;

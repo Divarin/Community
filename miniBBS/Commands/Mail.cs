@@ -198,7 +198,7 @@ namespace miniBBS.Commands
             }
         }
 
-        private static void SendMail(BbsSession session, int toId, string subject, string message)
+        public static void SendMail(BbsSession session, int toId, string subject, string message)
         {
             DI.GetRepository<Core.Models.Data.Mail>().Insert(new Core.Models.Data.Mail
             {

@@ -4,6 +4,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,8 +78,8 @@ namespace miniBBS.Services.GlobalCommands
                 messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
 
             session.Channel = channel;
-            session.Chats = new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id)
-                .ToDictionary(k => k.Id));
+            session.Chats = GlobalDependencyResolver.Get<IChatCache>().GetChannelChats(session.Channel.Id);
+            //new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id).ToDictionary(k => k.Id));
             session.UcFlag = ucFlag;
             SetMessagePointer.Execute(session, session.UcFlag.LastReadMessageNumber);
             session.ContextPointer = null;

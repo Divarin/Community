@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Extensions;
 using System;
 using System.Data;
 
@@ -14,8 +15,17 @@ namespace miniBBS.Commands
             var expression = string.Join(" ", args);
             if (string.IsNullOrWhiteSpace(expression))
                 return;
-            
-            var result = _computer.Compute(expression, string.Empty)?.ToString();
+
+            string result;
+            try
+            {
+                result = _computer.Compute(expression, string.Empty)?.ToString();
+            } catch (Exception ex)
+            {
+                session.Io.Error($"Error evaluating expression: {ex.Message}");
+                return;
+            }
+
             var message = $"{session.User.Name} calculates {expression} = {result}";
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))

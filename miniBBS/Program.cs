@@ -142,10 +142,8 @@ namespace miniBBS
                             int unreadMail = Commands.Mail.CountUnread(session);
                             if (unreadMail > 0)
                             {
-                                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                                {
-                                    session.Io.OutputLine($"You have {unreadMail} unread mails.  Use '/mail' to read your mail.");
-                                }
+                                session.Io.Error($"You have {unreadMail} unread mails.  Use '/mail' to read your mail.");
+                                Thread.Sleep(3000);
                             }
 
                             try
@@ -274,6 +272,7 @@ namespace miniBBS
                 Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
+                Thread.Sleep(1000);
             }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
@@ -498,6 +497,7 @@ namespace miniBBS
                 {
                     session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
                 }
+                message.AdditionalAction?.Invoke(session);
             };
 
             if (session.DoNotDisturb)
@@ -1000,6 +1000,10 @@ namespace miniBBS
                     else
                         WhoIsOn.Execute(session, DI.Get<ISessionsList>());
                     return;
+                case "/r":
+                case "/reply":
+                    Whisper.Reply(session, parts.Skip(1).ToArray());
+                    return;
                 case "/roll":
                 case "/random":
                 case "/rnd":
@@ -1058,8 +1062,8 @@ namespace miniBBS
                 case "/uptime":
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                     {
-                        var uptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
-                        session.Io.OutputLine($"Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
+                        var communityUptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
+                        session.Io.OutputLine($"Community Uptime: {communityUptime.Days}d {communityUptime.Hours}h {communityUptime.Minutes}m");
                     }
                     return;
                 case "/vote":
