@@ -229,5 +229,24 @@ namespace miniBBS.Extensions
         {
             return UserIoExtensions.WrapInColor(str, color);
         }
+
+        /// <summary>
+        /// Returns the number of times the <paramref name="substring"/> occures within <paramref name="str"/>
+        /// </summary>
+        public static int Count(this string str, string substring)
+        {
+            if (string.IsNullOrWhiteSpace(str) || string.IsNullOrWhiteSpace(substring))
+                return 0;
+
+            int pos = -1;
+            int count = 0;
+            do
+            {
+                pos = str.IndexOf(substring, pos+1, StringComparison.CurrentCultureIgnoreCase);
+                if (pos >= 0)
+                    count++;
+            } while (pos >= 0);
+            return count;
+        }
     }
 }

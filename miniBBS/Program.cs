@@ -1062,8 +1062,8 @@ namespace miniBBS
                 case "/uptime":
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                     {
-                        var uptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
-                        session.Io.OutputLine($"Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
+                        var communityUptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
+                        session.Io.OutputLine($"Community Uptime: {communityUptime.Days}d {communityUptime.Hours}h {communityUptime.Minutes}m");
                     }
                     return;
                 case "/vote":

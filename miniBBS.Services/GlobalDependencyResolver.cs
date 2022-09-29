@@ -19,6 +19,7 @@ namespace miniBBS.Services
             {typeof(ISessionsList), () => GetOrSetSingleton(() => new SessionsList())},
             {typeof(IMessager), () => GetOrSetSingleton(() => new Messager())},
             {typeof(ILogger), () => GetOrSetSingleton(() => new Logger())},
+            {typeof(IChatCache), () => GetOrSetSingleton(() => new ChatCache())}
         };
 
         public static IRepository<T> GetRepository<T>()

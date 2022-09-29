@@ -20,6 +20,7 @@ namespace miniBBS.Basic.Executors
         { 
             "RND", "SIN", "COS", "TAN", "ATAN", "ASIN", "ACOS", "SQR", "VAL", "STR$", "INT", "POW", 
             "CHR$", "ASC", "LEFT$", "RIGHT$", "MID$", "REPLACE$", "INSTR", "LEN", "TAB", "ABS", "UC$", "LC$",
+            "COUNT",
             "ISWORD", "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS"
         };
 
@@ -504,6 +505,19 @@ namespace miniBBS.Basic.Executors
                                 search = search.Detokenize(pkg.StringValues);
                                 replacement = replacement.Detokenize(pkg.StringValues);
                                 value = "\"" + source.Replace(search, replacement) + "\"";
+                            }
+                            break;
+                        case "count":
+                            {
+                                string[] parts = value.Split(new char[] { ',', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length != 2)
+                                {
+                                    throw new RuntimeException("Invalid number of parameters for count(), must pass two strings.");
+                                }
+                                var haystack = Execute(parts[0], variables, pkg).Detokenize(pkg.StringValues);
+                                var needle = Execute(parts[1], variables, pkg).Detokenize(pkg.StringValues);                                
+                                var count = haystack.Count(needle);
+                                value = $"{count}";
                             }
                             break;
                         case "uc$":
