@@ -1,8 +1,11 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
+using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using miniBBS.UserIo;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -70,6 +73,8 @@ namespace miniBBS.Commands
 
                 ApplySettings();
 
+                var userPresets = LoadUserPresets(session.User.Id);
+
                 while (true)
                 {
                     session.Io.OutputLine($"{Environment.NewLine} -- Terminal Settings --");
@@ -77,11 +82,20 @@ namespace miniBBS.Commands
                     session.Io.OutputLine($"(R)ows (height) : {rows}");
                     session.Io.OutputLine($"(E)mulation     : {emulation}");
                     session.Io.OutputLine(" --- Presets --- ");
-                    session.Io.OutputLine("1) Try Auto-Detect");
-                    session.Io.OutputLine($"2) Last    : {lastCols}c, {lastRows}r, {lastEmu}");
-                    session.Io.OutputLine("3) 80c std : 80c, 24r");
-                    session.Io.OutputLine("4) 40c std : 40c, 24r");
-                    session.Io.OutputLine("5) Experiment");
+                    session.Io.OutputLine("A) Try Auto-Detect");
+                    session.Io.OutputLine($"L) Last    : {lastCols}c, {lastRows}r, {lastEmu}");
+                    session.Io.OutputLine("S) 80c std : 80c, 24r");
+                    session.Io.OutputLine("T) 40c std : 40c, 24r");
+                    session.Io.OutputLine("X) Experiment");
+                    if (userPresets?.Count < 9)
+                        session.Io.OutputLine("V) Save Preset");
+                    if (true == userPresets?.Any())
+                        session.Io.OutputLine("D) Delete Preset");
+                    for (int i=0; i < userPresets.Count; i++)
+                    {
+                        var up = userPresets[i];
+                        session.Io.OutputLine($"{i + 1}) {up.Name} : {up.Cols}c, {up.Rows}r, {up.Emulation}");
+                    }
                     session.Io.Output("Enter = Continue > ");
                     var chr = session.Io.InputKey();
                     session.Io.OutputLine();
@@ -121,7 +135,8 @@ namespace miniBBS.Commands
                             }
                             ApplySettings();
                             break;
-                        case '1':
+                        case 'a':
+                        case 'A':
                             {
                                 var detected = TryAutoDetectRowsAndCols(session);
                                 if (detected.WasDetected)
@@ -132,23 +147,27 @@ namespace miniBBS.Commands
                                 }
                             }
                             break;
-                        case '2':
+                        case 'l':
+                        case 'L':
                             cols = lastCols;
                             rows = lastRows;
                             emulation = lastEmu;
                             ApplySettings();
                             break;
-                        case '3':
+                        case 's':
+                        case 'S':
                             cols = 80;
                             rows = 24;
                             ApplySettings();
                             break;
-                        case '4':
+                        case 't':
+                        case 'T':
                             cols = 40;
                             rows = 24;
                             ApplySettings();
                             break;
-                        case '5':
+                        case 'x':
+                        case 'X':
                             {
                                 var _exp = Experiment(session);
                                 if (_exp.WasDetected)
@@ -159,11 +178,31 @@ namespace miniBBS.Commands
                                 }
                             }
                             break;
+                        case 'v':
+                        case 'V':
+                            SavePreset(session, ref userPresets);
+                            break;
+                        case 'd':
+                        case 'D':
+                            DeletePreset(session, ref userPresets);
+                            break;
                         default:
-                            session.Io.OutputLine();
-                            ApplySettings();
-                            session.UserRepo.Update(session.User);
-                            return;
+                            if (chr != null && int.TryParse(chr.Value.ToString(), out int n) && true == userPresets?.Any() && n >= 1 && n <= userPresets.Count)
+                            {
+                                var settings = userPresets[n - 1];
+                                cols = settings.Cols;
+                                rows = settings.Rows;
+                                emulation = settings.Emulation;
+                                ApplySettings();
+                                break;
+                            }
+                            else
+                            {
+                                session.Io.OutputLine();
+                                ApplySettings();
+                                session.UserRepo.Update(session.User);
+                                return;
+                            }
                     }
                 }
             }
@@ -171,6 +210,84 @@ namespace miniBBS.Commands
             {
                 session.CurrentLocation = originalLocation;
             }
+        }
+
+        private static void DeletePreset(BbsSession session, ref List<TerminalSettings> userPresets)
+        {
+            var k = session.Io.Ask("Delete which preset #");
+            if (int.TryParse(k.ToString(), out int n))
+            {
+                if (n >= 1 && n <= userPresets.Count)
+                {
+                    var toBeDeleted = userPresets[n - 1];
+                    userPresets.RemoveAt(n - 1);
+                    var repo = DI.GetRepository<Metadata>();
+                    if (toBeDeleted.Id.HasValue)
+                    {
+                        var meta = repo.Get(toBeDeleted.Id.Value);
+                        if (meta != null)
+                            repo.Delete(meta);
+                    }
+                }
+            }
+        }
+
+        private static void SavePreset(BbsSession session, ref List<TerminalSettings> userPresets)
+        {
+            if (userPresets.Count >= 9)
+            {
+                session.Io.Error("You already have too many presets, try (D)eleting one.");
+                return;
+            }
+
+            session.Io.OutputLine("Current settings:");
+            session.Io.OutputLine($"Columns: {session.User.Cols}");
+            session.Io.OutputLine($"Rows: {session.User.Rows}");
+            session.Io.OutputLine($"Emulation: {session.User.Emulation}");
+            session.Io.Output("Enter new preset name: ");
+            var name = session.Io.InputLine();
+            session.Io.OutputLine();
+            if (string.IsNullOrWhiteSpace(name))
+                return;
+            if (userPresets.Any(x => x.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
+                session.Io.Error("You already have a preset by that name");
+            else
+            {
+                var settings = new TerminalSettings
+                {
+                    Name = name,
+                    Rows = session.User.Rows,
+                    Cols = session.User.Cols,
+                    Emulation = session.User.Emulation
+                };
+                var meta = DI.GetRepository<Metadata>().Insert(new Metadata
+                {
+                    Type = MetadataType.UserTermPreset,
+                    UserId = session.User.Id,
+                    Data = JsonConvert.SerializeObject(settings)
+                });
+                settings.Id = meta.Id;
+                userPresets.Add(settings);
+            }
+        }
+
+        private static List<TerminalSettings> LoadUserPresets(int userId)
+        {
+            var repo = DI.GetRepository<Metadata>();
+            var meta = repo.Get(new Dictionary<string, object>
+            {
+                {nameof(Metadata.Type), MetadataType.UserTermPreset},
+                {nameof(Metadata.UserId), userId}
+            });
+            var result = meta
+                .Select(x =>
+                { 
+                    var r = JsonConvert.DeserializeObject<TerminalSettings>(x.Data);
+                    r.Id = x.Id;
+                    return r;
+                })
+                .ToList();
+            return result;
         }
 
         private static bool AskAnsi(BbsSession session)

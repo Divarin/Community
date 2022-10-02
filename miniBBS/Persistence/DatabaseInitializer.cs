@@ -28,6 +28,7 @@ namespace miniBBS.Persistence
                 CreateBlurbsTable(db);
                 CreatePinnedMessagesTable(db);
                 CreatePollTables(db);
+                CreateMetadataTable(db);
 
                 db.Close();
             }
@@ -171,5 +172,13 @@ namespace miniBBS.Persistence
             }
         }
 
+        private void CreateMetadataTable(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE Metadata (Id integer primary key autoincrement, Type TEXT not null, UserId integer null, ChannelId integer null, Data TEXT not null)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
     }
 }

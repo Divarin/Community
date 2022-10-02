@@ -68,6 +68,7 @@
     <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\LoggingOptions.cs" />
+    <Compile Include="Enums\MetadataType.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
@@ -99,6 +100,7 @@
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />
     <Compile Include="Models\Control\LoginRecord.cs" />
+    <Compile Include="Models\Control\TerminalSettings.cs" />
     <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Data\Blurb.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
@@ -108,6 +110,7 @@
     <Compile Include="Models\Data\Channel.cs" />
     <Compile Include="Models\Data\Chat.cs" />
     <Compile Include="Models\Data\Mail.cs" />
+    <Compile Include="Models\Data\Metadata.cs" />
     <Compile Include="Models\Data\Notification.cs" />
     <Compile Include="Models\Data\PinnedMessage.cs" />
     <Compile Include="Models\Data\PollQuestion.cs" />
