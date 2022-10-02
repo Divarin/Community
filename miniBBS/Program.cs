@@ -326,7 +326,7 @@ namespace miniBBS
                     // in other words, filter out control characters only such as backspaces.  You would think 
                     // IsNullOrWhitespace would do this but it doesn't
 
-                    Chat chat = AddToChatLog.Execute(session, chatRepo, line);
+                    Chat chat = AddToChatLog.Execute(session, line);
                     if (chat != null)
                     {
                         if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
@@ -925,7 +925,27 @@ namespace miniBBS
                     Commands.Context.Execute(session, ">");
                     return;
                 case "/new":
-                    AddToChatLog.Execute(session, DI.GetRepository<Chat>(), string.Join(" ", parts.Skip(1)), isNewTopic: true);
+                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsNewTopic);
+                    return;
+                case "/web":
+                    if (parts.Length == 1)
+                        WebFlags.SetUserChatWebVisibility(session, true);
+                    else
+                        AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible);
+                    return;
+                case "/newweb":
+                case "/webnew":
+                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible | PostChatFlags.IsNewTopic);
+                    return;
+                case "/noweb":
+                    if (parts.Length == 1)
+                        WebFlags.SetUserChatWebVisibility(session, false);
+                    else
+                        AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible);
+                    return;
+                case "/newnoweb":
+                case "/nowebnew":
+                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible | PostChatFlags.IsNewTopic);
                     return;
                 case "/tz":
                 case "/timezone":
@@ -1031,7 +1051,7 @@ namespace miniBBS
                         var browser = DI.Get<ITextFilesBrowser>();
                         browser.OnChat = line =>
                         {
-                            AddToChatLog.Execute(session, DI.GetRepository<Chat>(), line);
+                            AddToChatLog.Execute(session, line);
                         };
                         FilesLaunchFlags flags = 
                             "/myfiles".Equals(command, StringComparison.CurrentCultureIgnoreCase) ? 
@@ -1162,6 +1182,12 @@ namespace miniBBS
                         break;
                     case "del": 
                         DeleteChannel.Execute(session); 
+                        break;
+                    case "+w":
+                        WebFlags.SetChannelWebVisibility(session, true);
+                        break;
+                    case "-w":
+                        WebFlags.SetChannelWebVisibility(session, false);
                         break;
                     default: 
                         SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); 

@@ -16,7 +16,7 @@ namespace miniBBS.Basic.Executors
             if (string.IsNullOrWhiteSpace(data))
                 return new SortedList<int, string>();
 
-            var json = GlobalDependencyResolver.Get<ICompressor>().Decompress(data);
+            var json = GlobalDependencyResolver.Default.Get<ICompressor>().Decompress(data);
             SortedList<int, string> result = JsonConvert.DeserializeObject<SortedList<int, string>>(json);
             return result;
         }
@@ -27,7 +27,7 @@ namespace miniBBS.Basic.Executors
                 return string.Empty;
 
             string json = JsonConvert.SerializeObject(lines);
-            string compressed = GlobalDependencyResolver.Get<ICompressor>().Compress(json);
+            string compressed = GlobalDependencyResolver.Default.Get<ICompressor>().Compress(json);
             return compressed;
         }
     }

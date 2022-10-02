@@ -3,6 +3,7 @@
     public enum SessionItem
     {
         LogoutMessage,
-        LastWhisperFromUserId
+        LastWhisperFromUserId,
+        UserChatWebVisibility
     }
 }

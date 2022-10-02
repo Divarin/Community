@@ -73,6 +73,7 @@
     <Compile Include="Enums\OutputHandlingFlag.cs" />
     <Compile Include="Enums\PauseResult.cs" />
     <Compile Include="Enums\PingPongType.cs" />
+    <Compile Include="Enums\PostChatFlags.cs" />
     <Compile Include="Enums\SearchFrom.cs" />
     <Compile Include="Enums\SessionControlFlags.cs" />
     <Compile Include="Enums\SessionItem.cs" />
@@ -84,6 +85,7 @@
     <Compile Include="Interfaces\IChatCache.cs" />
     <Compile Include="Interfaces\ICompressor.cs" />
     <Compile Include="Interfaces\IDataModel.cs" />
+    <Compile Include="Interfaces\IDependencyResolver.cs" />
     <Compile Include="Interfaces\IFileTransferProtocol.cs" />
     <Compile Include="Interfaces\IHasher.cs" />
     <Compile Include="Interfaces\ILogger.cs" />

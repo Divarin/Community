@@ -114,6 +114,7 @@
     <Compile Include="Commands\ToggleInviteOnly.cs" />
     <Compile Include="Commands\UpdatePassword.cs" />
     <Compile Include="Commands\UserInfo.cs" />
+    <Compile Include="Commands\WebFlags.cs" />
     <Compile Include="Commands\Whisper.cs" />
     <Compile Include="Commands\WhoIsAll.cs" />
     <Compile Include="Commands\WhoIsOn.cs" />

@@ -132,7 +132,7 @@ namespace miniBBS.Commands
             if (!includeResults)
                 post += $"{Environment.NewLine}Use '{UserIoExtensions.WrapInColor("/polls", ConsoleColor.Green)}' to vote on this and other topics.";
 
-            AddToChatLog.Execute(session, DI.GetRepository<Chat>(), post, isNewTopic: true);
+            AddToChatLog.Execute(session, post, PostChatFlags.IsNewTopic);
         }
 
         private static string GetQuestionText(PollQuestion question, bool includeResults)

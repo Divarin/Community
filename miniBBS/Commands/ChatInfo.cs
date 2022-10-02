@@ -40,6 +40,7 @@ namespace miniBBS.Commands
                 builder.AppendLine($"Date   : {chat.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm:ss}");
                 builder.AppendLine($"Re     : #{session.Chats.ItemNumber(chat.ResponseToId)} (ID: {chat.ResponseToId})");
                 builder.AppendLine($"Chan   : {channel} (ID: {chat.ChannelId})");
+                builder.AppendLine($"Web    : {chat.WebVisible}");
                 builder.AppendLine($"Message: {chat.Message}");
 
                 session.Io.OutputLine(builder.ToString());

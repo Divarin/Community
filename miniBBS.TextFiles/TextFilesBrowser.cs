@@ -203,12 +203,12 @@ namespace miniBBS.TextFiles
             _session.Io.OutputLine($"Something went wrong: {ex.Message}");
             _session.Io.OutputLine("Attempting to notify sysop...");
 
-            int toId = GlobalDependencyResolver.GetRepository<Core.Models.Data.User>()
+            int toId = GlobalDependencyResolver.Default.GetRepository<Core.Models.Data.User>()
                 .Get(u => u.Name, Constants.SysopName)
                 .First()
                 .Id;
 
-            GlobalDependencyResolver.GetRepository<Core.Models.Data.Mail>()
+            GlobalDependencyResolver.Default.GetRepository<Core.Models.Data.Mail>()
                 .Insert(new Core.Models.Data.Mail
                 {
                     ToUserId = toId,
@@ -716,7 +716,7 @@ namespace miniBBS.TextFiles
 
             _session.Io.OutputLine($"Sending {link.DisplayedFilename} via X-Modem protocol, begin receiving now.");
 
-            var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
+            var xfer = GlobalDependencyResolver.Default.Get<IFileTransferProtocol>();
             var str = FileReader.LoadFileContents(_currentLocation, link);
             var data = Encoding.ASCII.GetBytes(str);
             xfer.Data = data;
@@ -737,7 +737,7 @@ namespace miniBBS.TextFiles
             Func<byte[]> getData = () =>
             {
                 byte[] data = null;
-                var xfer = GlobalDependencyResolver.Get<IFileTransferProtocol>();
+                var xfer = GlobalDependencyResolver.Default.Get<IFileTransferProtocol>();
                 var options = FileTransferProtocolOptions.None;// FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
                 if (xfer.Receive(_session, options))
                     data = xfer.Data;

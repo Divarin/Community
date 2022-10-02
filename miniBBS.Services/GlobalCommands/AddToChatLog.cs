@@ -14,7 +14,7 @@ namespace miniBBS.Services.GlobalCommands
         /// <summary>
         /// Creates a new chat message and adds to the channel.  Returns null if the chat could not be added.
         /// </summary>
-        public static Chat Execute(BbsSession session, IRepository<Chat> chatRepo, string line, bool isNewTopic = false)
+        public static Chat Execute(BbsSession session, string line, PostChatFlags postFlags = PostChatFlags.None)
         {
             var canPost =
                 true == session.User?.Access.HasFlag(AccessFlag.Administrator) ||
@@ -29,13 +29,21 @@ namespace miniBBS.Services.GlobalCommands
                 return null;
             }
 
+            bool webVisible = 
+                postFlags.HasFlag(PostChatFlags.IsWebVisible) ||
+                session.WebVisiblePosts(GlobalDependencyResolver.Default);
+
+            if (postFlags.HasFlag(PostChatFlags.IsWebInvisible))
+                webVisible = false;
+
             Chat chat = new Chat
             {
                 DateUtc = DateTime.UtcNow,
                 ChannelId = session.Channel.Id,
                 FromUserId = session.User.Id,
                 Message = line,
-                ResponseToId = isNewTopic ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber
+                ResponseToId = postFlags.HasFlag(PostChatFlags.IsNewTopic) ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber,
+                WebVisible = webVisible
             };
 
             int lastRead =
@@ -44,6 +52,8 @@ namespace miniBBS.Services.GlobalCommands
                 session.MsgPointer;
 
             bool isAtEndOfMessages = true != session.Chats?.Any() || lastRead == session.Chats.Keys.Max();
+
+            var chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
             chat = chatRepo.Insert(chat);
             session.Chats[chat.Id] = chat;
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))

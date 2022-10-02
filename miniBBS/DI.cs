@@ -1,6 +1,5 @@
 ﻿using miniBBS.Core.Interfaces;
 using miniBBS.Helpers;
-using miniBBS.Persistence;
 using miniBBS.Services;
 using System;
 using System.Collections.Generic;
@@ -21,7 +20,7 @@ namespace miniBBS
         public static IRepository<T> GetRepository<T>()
             where T : class, IDataModel
         {
-            return GlobalDependencyResolver.GetRepository<T>();
+            return GlobalDependencyResolver.Default.GetRepository<T>();
         }
 
         public static T Get<T>()
@@ -31,7 +30,7 @@ namespace miniBBS
             if (_dictionary.ContainsKey(type))
                 return (T)_dictionary[type]();
             else
-                return GlobalDependencyResolver.Get<T>();
+                return GlobalDependencyResolver.Default.Get<T>();
         }
 
         private static object GetOrSetSingleton<T>(Func<T> instantiator)

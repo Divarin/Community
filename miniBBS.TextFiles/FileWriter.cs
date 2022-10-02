@@ -164,17 +164,16 @@ namespace miniBBS.TextFiles
         {
             ITextEditor result;
 
-            // GlobalDependencyResolver.Get<ISqlUi>().Execute(_session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, _currentLocation.Path, parts[1]));
             switch (file.ActualFilename.FileExtension().ToLower())
             {
                 case "bas":
                     result = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Path) + "/", autoStart: false);
                     break;
                 case "db":
-                    result = GlobalDependencyResolver.Get<ISqlUi>() as ITextEditor;
+                    result = GlobalDependencyResolver.Default.Get<ISqlUi>() as ITextEditor;
                     break;
                 default:
-                    result = GlobalDependencyResolver.Get<ITextEditor>();
+                    result = GlobalDependencyResolver.Default.Get<ITextEditor>();
                     break;
             }
 

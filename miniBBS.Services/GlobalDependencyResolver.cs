@@ -6,12 +6,26 @@ using System.Collections.Generic;
 
 namespace miniBBS.Services
 {
-    public static class GlobalDependencyResolver
+    public class GlobalDependencyResolver : IDependencyResolver
     {
+        private static IDependencyResolver _default;
+        public static IDependencyResolver Default
+        {
+            get
+            {
+                if (_default == null)
+                    _default = new GlobalDependencyResolver();
+                return _default;
+            }
+        }
+
+        public GlobalDependencyResolver() { }
+
         private static readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
 
         private static readonly Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
+            {typeof(IDependencyResolver), () => Default},
             {typeof(ITextEditor), () => new LineEditor()},
             {typeof(ISqlUi), () => new SqlUi()},
             {typeof(IFileTransferProtocol), () => new Xmodem()},
@@ -22,13 +36,13 @@ namespace miniBBS.Services
             {typeof(IChatCache), () => GetOrSetSingleton(() => new ChatCache())}
         };
 
-        public static IRepository<T> GetRepository<T>()
+        public IRepository<T> GetRepository<T>()
             where T : class, IDataModel
         {
             return new SqliteRepository<T>();
         }
 
-        public static T Get<T>()
+        public T Get<T>()
         {
             Type type = typeof(T);
 
