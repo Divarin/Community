@@ -14,14 +14,14 @@ namespace miniBBS.Services.GlobalCommands
         public static void Execute(BbsSession session, IRepository<Channel> channelRepo = null)
         {
             if (channelRepo == null)
-                channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
+                channelRepo = GlobalDependencyResolver.Default.GetRepository<Channel>();
 
             var userFlags = session.UcFlagRepo.Get(f => f.UserId, session.User.Id)
                 .ToDictionary(k => k.ChannelId);
             
             Channel[] chans = GetChannelList(session, channelRepo);
 
-            var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
+            var chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
 
             int longestChannelName = chans.Max(c => c.Name.Length) + 1;
 
@@ -61,7 +61,7 @@ namespace miniBBS.Services.GlobalCommands
 
         public static Channel[] GetChannelList(BbsSession session)
         {
-            var repo = GlobalDependencyResolver.GetRepository<Channel>();
+            var repo = GlobalDependencyResolver.Default.GetRepository<Channel>();
             return GetChannelList(session, repo);
         }
 

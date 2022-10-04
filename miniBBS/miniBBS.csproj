@@ -98,6 +98,7 @@
     <Compile Include="Commands\Logout.cs" />
     <Compile Include="Commands\Mail.cs" />
     <Compile Include="Commands\MoveMsg.cs" />
+    <Compile Include="Commands\OneTimeQuestions.cs" />
     <Compile Include="Commands\Pin.cs" />
     <Compile Include="Commands\Polls.cs" />
     <Compile Include="Commands\ReadFile.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="Commands\ToggleInviteOnly.cs" />
     <Compile Include="Commands\UpdatePassword.cs" />
     <Compile Include="Commands\UserInfo.cs" />
+    <Compile Include="Commands\WebFlags.cs" />
     <Compile Include="Commands\Whisper.cs" />
     <Compile Include="Commands\WhoIsAll.cs" />
     <Compile Include="Commands\WhoIsOn.cs" />
@@ -132,6 +134,7 @@
     <Compile Include="Menus\Moderator.cs" />
     <Compile Include="Menus\Users.cs" />
     <Compile Include="Menus\Voice.cs" />
+    <Compile Include="Menus\Web.cs" />
     <Compile Include="Persistence\DatabaseMaint.cs" />
     <Compile Include="Subscribers\ChannelMessageSubscriber.cs" />
     <Compile Include="Subscribers\ChannelPostSubscriber.cs" />

@@ -2,6 +2,8 @@
 {
     public enum MetadataType
     {
-        UserTermPreset
+        UserTermPreset,
+        UserChatWebVisibility,
+        OneTimeQuestionAnswered
     }
 }

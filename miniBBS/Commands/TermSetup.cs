@@ -78,9 +78,9 @@ namespace miniBBS.Commands
                 while (true)
                 {
                     session.Io.OutputLine($"{Environment.NewLine} -- Terminal Settings --");
-                    session.Io.OutputLine($"(C)ols (width)  : {cols}");
-                    session.Io.OutputLine($"(R)ows (height) : {rows}");
-                    session.Io.OutputLine($"(E)mulation     : {emulation}");
+                    session.Io.OutputLine($"C)ols (width)  : {cols}");
+                    session.Io.OutputLine($"R)ows (height) : {rows}");
+                    session.Io.OutputLine($"E)mulation     : {emulation}");
                     session.Io.OutputLine(" --- Presets --- ");
                     session.Io.OutputLine("A) Try Auto-Detect");
                     session.Io.OutputLine($"L) Last    : {lastCols}c, {lastRows}r, {lastEmu}");

@@ -78,8 +78,11 @@ namespace miniBBS.Commands
                         default:
                             {
                                 var tuple = Menu(session);
-                                command = tuple.Item1;
-                                arg = tuple.Item2;
+                                if (tuple?.Item1 != null)
+                                {
+                                    command = tuple.Item1;
+                                    arg = tuple.Item2;
+                                }
                             }
                             break;
                     }

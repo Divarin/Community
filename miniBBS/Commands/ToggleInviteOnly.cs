@@ -10,7 +10,12 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, bool inviteOnly)
         {
-            if (session.Channel.RequiresInvite == inviteOnly || !session.UcFlag.Flags.HasFlag(UCFlag.Moderator))
+            bool isModerator =
+                session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
+                session.UcFlag.Flags.HasFlag(UCFlag.Moderator);
+
+            if (session.Channel.RequiresInvite == inviteOnly || !isModerator)
                 return;
 
             var channelRepo = DI.GetRepository<Channel>();

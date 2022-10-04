@@ -70,6 +70,7 @@
     <Compile Include="Services\Messager.cs" />
     <Compile Include="Services\SessionsList.cs" />
     <Compile Include="Services\SqlUi.cs" />
+    <Compile Include="Services\WebLogger.cs" />
     <Compile Include="Services\Xmodem.cs" />
   </ItemGroup>
   <ItemGroup>

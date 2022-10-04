@@ -13,7 +13,7 @@ namespace miniBBS.Services.Persistence
 
         public ChatCache()
         {
-            _chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
+            _chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
         }
 
         public SortedList<int, Chat> GetChannelChats(int channelId)

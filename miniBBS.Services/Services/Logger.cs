@@ -17,7 +17,7 @@ namespace miniBBS.Services.Services
 
         public Logger()
         {
-            _repo = GlobalDependencyResolver.GetRepository<LogEntry>();
+            _repo = GlobalDependencyResolver.Default.GetRepository<LogEntry>();
         }
 
         public void Flush()
