@@ -248,5 +248,13 @@ namespace miniBBS.Extensions
             } while (pos >= 0);
             return count;
         }
+
+        public static string HtmlSafe(this string str)
+        {
+            return str
+                .Replace("'", "&apos;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;");
+        }
     }
 }

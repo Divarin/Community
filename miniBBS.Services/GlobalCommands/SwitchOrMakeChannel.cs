@@ -35,9 +35,9 @@ namespace miniBBS.Services.GlobalCommands
                 return false;
             }
 
-            var logger = GlobalDependencyResolver.Get<ILogger>();
-            var channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
-            var chatRepo = GlobalDependencyResolver.GetRepository<Chat>();
+            var logger = GlobalDependencyResolver.Default.Get<ILogger>();
+            var channelRepo = GlobalDependencyResolver.Default.GetRepository<Channel>();
+            var chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
 
             Channel channel = GetChannel.Execute(session, channelNameOrNumber);
 
@@ -73,12 +73,12 @@ namespace miniBBS.Services.GlobalCommands
                 return false;
             }
 
-            var messager = GlobalDependencyResolver.Get<IMessager>();
+            var messager = GlobalDependencyResolver.Default.Get<IMessager>();
             if (session.Channel != null) // will be null during logon while here to join default channel
                 messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
 
             session.Channel = channel;
-            session.Chats = GlobalDependencyResolver.Get<IChatCache>().GetChannelChats(session.Channel.Id);
+            session.Chats = GlobalDependencyResolver.Default.Get<IChatCache>().GetChannelChats(session.Channel.Id);
             //new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id).ToDictionary(k => k.Id));
             session.UcFlag = ucFlag;
             SetMessagePointer.Execute(session, session.UcFlag.LastReadMessageNumber);
@@ -89,7 +89,7 @@ namespace miniBBS.Services.GlobalCommands
             {
                 session.Io.OutputLine($"Changed to channel {channel.Name}");
 
-                var channelUsers = GlobalDependencyResolver.Get<ISessionsList>()
+                var channelUsers = GlobalDependencyResolver.Default.Get<ISessionsList>()
                     .Sessions
                     .Where(s => s.Channel?.Id == channel.Id)
                     ?.OrderBy(s => s.SessionStartUtc)
@@ -133,7 +133,7 @@ namespace miniBBS.Services.GlobalCommands
                 return null;
             }
 
-            var logger = GlobalDependencyResolver.Get<ILogger>();
+            var logger = GlobalDependencyResolver.Default.Get<ILogger>();
             var channel = channelRepo.Insert(new Channel
             {
                 Name = channelName,

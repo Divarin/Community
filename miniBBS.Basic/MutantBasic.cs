@@ -773,7 +773,7 @@ namespace miniBBS.Basic
         {
             try
             {
-                var json = GlobalDependencyResolver.Get<ICompressor>().Decompress(body);
+                var json = GlobalDependencyResolver.Default.Get<ICompressor>().Decompress(body);
                 var dict = JsonConvert.DeserializeObject<Dictionary<int, string>>(json);
                 var result = string.Join(Environment.NewLine, dict.Select(x => $"{x.Key} {x.Value}"));
                 return result;

@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "3.8 - 2022.09.29";
+        public const string Version = "4.0 - 2022.10.04";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -32,6 +32,14 @@ namespace miniBBS.Core
             }
         }
 
+        public static string WebLogOutputFile
+        {
+            get
+            {
+                return IsLocal ? local_WebLogOutputFile : @"c:\sbbs\web\root\chatlog.html";
+            }
+        }
+
         public const int MaxVoteQuestionsPerUser = 5;
         public const int MaxVoteQuestionsPerDay = 1;
 
@@ -46,6 +54,7 @@ namespace miniBBS.Core
 
         public const string local_TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
         public const string local_UploadDirectory = @"c:\work\";
+        public const string local_WebLogOutputFile = @"C:\code\miniBBS\chatlog.html";
 
         public static readonly string[] IllegalUsernames = new[]
         {
@@ -106,6 +115,7 @@ namespace miniBBS.Core
         // used for search results when searching chat history
         public const int MaxSnippetLength = 25;
 
+        public static readonly TimeSpan WebLogRefreshDelay = TimeSpan.FromHours(2);
         public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
         public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 5;

@@ -210,6 +210,16 @@ namespace miniBBS.Services.Persistence
             return new T[] { };
         }
 
+        public int GetCount()
+        {
+            var sql = new StructuredQuery()
+                .Select("COUNT() ")
+                .From<T>()
+                .Query;
+
+            return GetCount(sql);
+        }
+
         public int GetCount<TProp>(Expression<Func<T, TProp>> propFunc, object value)
         {
             string propName = (propFunc.Body as MemberExpression).Member.Name;

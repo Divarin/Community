@@ -19,7 +19,7 @@ namespace miniBBS.Services.GlobalCommands
         /// </summary>
         public static Channel Execute(BbsSession session, string channelNameOrNumber)
         {
-            var channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
+            var channelRepo = GlobalDependencyResolver.Default.GetRepository<Channel>();
 
             int chanNum = -1;
             int channelId = -1;
@@ -44,7 +44,7 @@ namespace miniBBS.Services.GlobalCommands
         /// </summary>
         public static List<Channel> GetChannels(BbsSession session)
         {
-            var channelRepo = GlobalDependencyResolver.GetRepository<Channel>();
+            var channelRepo = GlobalDependencyResolver.Default.GetRepository<Channel>();
             return GetChannels(session, channelRepo);
         }
 
