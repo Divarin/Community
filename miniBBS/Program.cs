@@ -9,6 +9,7 @@ using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
+using miniBBS.Services;
 using miniBBS.Services.GlobalCommands;
 using miniBBS.Subscribers;
 using miniBBS.UserIo;
@@ -50,6 +51,7 @@ namespace miniBBS
                 .ToList();
 
             SysopScreen.Initialize(sessionsList);
+            DI.Get<IWebLogger>().StartContinuousRefresh(GlobalDependencyResolver.Default);
 
             while (!SysControl.HasFlag(SystemControlFlag.Shutdown))
             {
@@ -225,7 +227,7 @@ namespace miniBBS
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
                 {
-                    session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /fauxmain if you want to see it again.");
+                    session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /main if you want to see it again.");
                 }
             }
 
@@ -288,6 +290,8 @@ namespace miniBBS
                     session.Io.SetForeground(ConsoleColor.Red);
                     session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
                 }
+
+                OneTimeQuestions.Execute(session);
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
@@ -930,6 +934,8 @@ namespace miniBBS
                 case "/web":
                     if (parts.Length == 1)
                         WebFlags.SetUserChatWebVisibility(session, true);
+                    else if (parts.Length == 2 && int.TryParse(parts[1], out int n))
+                        WebFlags.SetChatWebVisibility(session, true, n);
                     else
                         AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible);
                     return;
@@ -940,12 +946,17 @@ namespace miniBBS
                 case "/noweb":
                     if (parts.Length == 1)
                         WebFlags.SetUserChatWebVisibility(session, false);
+                    else if (parts.Length == 2 && int.TryParse(parts[1], out int n))
+                        WebFlags.SetChatWebVisibility(session, false, n);
                     else
                         AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible);
                     return;
                 case "/newnoweb":
                 case "/nowebnew":
                     AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible | PostChatFlags.IsNewTopic);
+                    return;
+                case "/webpref":
+                    WebFlags.UserPreferenceDialog(session);
                     return;
                 case "/tz":
                 case "/timezone":
@@ -1249,6 +1260,9 @@ namespace miniBBS
                     break;
                 case "voice":
                     Menus.Voice.Show(session);
+                    break;
+                case "web":
+                    Menus.Web.Show(session);
                     break;
                 default:
                     MainMenu.Show(session);

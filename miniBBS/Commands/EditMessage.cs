@@ -1,6 +1,5 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
-using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -51,46 +50,11 @@ namespace miniBBS.Commands
                 string search = args.Length > searchArgIndex ? args[searchArgIndex] : null;
                 string replace = args.Length > replaceArgIndex ? args[replaceArgIndex] : null;
 
-                //string line = string.Join(" ", args);
-                //bool parsedWithSpaceDelim = true;
-                //if (line.Count(c => c == '"') == 4)
-                //{
-                //    var parts = line
-                //        .Split(new[] { '"' }, StringSplitOptions.RemoveEmptyEntries)
-                //        .Where(x => !string.IsNullOrWhiteSpace(x))
-                //        .ToArray();
-                //    if (parts?.Length >= 2)
-                //    {
-                //        search = parts[searchArgIndex];
-                //        replace = parts[replaceArgIndex];
-                //        parsedWithSpaceDelim = false;
-                //    }
-                //}
-                //else if (line.Count(c => c == '/') == 1)
-                //{
-                //    var parts = line
-                //        .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
-                //        .Select(x => x.Trim())
-                //        .ToArray();
-                //    if (parts?.Length == 2)
-                //    {
-                //        search = parts[0];
-                //        replace = parts[1];
-                //        parsedWithSpaceDelim = false;
-                //    }
-                //}
-
                 if (string.IsNullOrWhiteSpace(search) || string.IsNullOrWhiteSpace(replace))
                 {
                     ShowUsage(session);
                     return;
                 }
-
-                //if (parsedWithSpaceDelim)
-                //{
-                //    search = search.Replace('-', ' ');
-                //    replace = replace.Replace('-', ' ');
-                //}
 
                 string oldMessage = toBeEdited.Message;
                 string newMessage = toBeEdited.Message.Replace(search, replace);
@@ -117,7 +81,6 @@ namespace miniBBS.Commands
                     {
                         OnReceive = (s) => s.Chats[toBeEdited.Id].Message = newMessage
                     });
-                    DI.Get<ILogger>().Log(session, message);
                 }
             }
         }
