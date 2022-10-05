@@ -20,7 +20,13 @@ namespace miniBBS.Services.Services
         private Thread _refreshThread = null;
         public bool ContinuousRefresh { get; private set; }
         private int? _lastCount = null;
-        
+        private bool _forceCompile = false;
+
+        public void SetForceCompile()
+        {
+            _forceCompile = true;
+        }
+
         public void StartContinuousRefresh(IDependencyResolver di)
         {
             ContinuousRefresh = true;
@@ -38,9 +44,10 @@ namespace miniBBS.Services.Services
         {
             var repo = di.GetRepository<Chat>();
             var count = repo.GetCount();
-            if (_lastCount.HasValue && count == _lastCount.Value)
+            if (!_forceCompile && _lastCount.HasValue && count == _lastCount.Value)
                 return;
             _lastCount = count;
+            _forceCompile = false;
             var dbSet = GetDbSet(di, repo);
             var html = LoadHtml();
             var splits = html.Split(separator: new[] { "<div id=\"mainContent\">" }, options: StringSplitOptions.RemoveEmptyEntries);

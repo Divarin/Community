@@ -91,6 +91,7 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine($"Message {chatNum} is {(visible ? "now" : "not")} web-visible.");
                 session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has flagged message {chatNum} to be {(visible ? "now" : "not")} web-visible."));
+                DI.Get<IWebLogger>().SetForceCompile();
             }
         }
 
