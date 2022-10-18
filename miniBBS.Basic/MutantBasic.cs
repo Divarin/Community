@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace miniBBS.Basic
 {
@@ -245,18 +244,21 @@ namespace miniBBS.Basic
                     foreach (var key in variables.Keys)
                         _session.Io.OutputLine($"{key} = {variables[key]}");
                 }
-                //else if (line.StartsWith("load", StringComparison.CurrentCultureIgnoreCase))
-                //{
-                //    TryLoad(ref progLines, ref variables);
-                //}
-                else if (line.StartsWith("save", StringComparison.CurrentCultureIgnoreCase))
+                else if (line.StartsWith("save", StringComparison.CurrentCultureIgnoreCase) || line.Equals("/s", StringComparison.CurrentCultureIgnoreCase))
                 {
                     _loadedData = ProgramData.Serialize(progLines);
                     OnSave(_loadedData);
                     _session.Io.OutputLine("program saved");
                 }                
-                else if (line.Equals("quit", StringComparison.CurrentCultureIgnoreCase))
+                else if (line.Equals("quit", StringComparison.CurrentCultureIgnoreCase) || line.Equals("/q", StringComparison.CurrentCultureIgnoreCase))
                 {
+                    quit = true;
+                }
+                else if (line.Equals("/sq", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _loadedData = ProgramData.Serialize(progLines);
+                    OnSave(_loadedData);
+                    _session.Io.OutputLine("program saved");
                     quit = true;
                 }
                 else if (line.StartsWith("help", StringComparison.CurrentCultureIgnoreCase))

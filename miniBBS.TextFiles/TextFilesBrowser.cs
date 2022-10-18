@@ -379,16 +379,11 @@ namespace miniBBS.TextFiles
                         break;
                     case "mkdir":
                     case "md":
-                        if (parts.Length < 2)
-                            _session.Io.OutputLine("Please supply a directory name.");
-                        else if (_currentLocation.IsOwnedByUser(_session.User) ||
-                            (_session.User.Access.HasFlag(AccessFlag.Administrator) && _currentLocation.IsUserGeneratedContent()))
                         {
+                            var dirName = parts.Length >= 2 ? parts[1] : null;
                             FileWriter.MakeDirectory(_session, _currentLocation, parts[1]);
                             result = CommandResult.ReadDirectory;
                         }
-                        else
-                            _session.Io.OutputLine("Unable to create directory.");
                         break;
                     case "del":
                     case "rd":

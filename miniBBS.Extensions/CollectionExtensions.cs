@@ -9,7 +9,7 @@ namespace miniBBS.Extensions
         {
             if (!key.HasValue)
                 return null;
-            if (list.ContainsKey(key.Value))
+            if (true == list?.ContainsKey(key.Value))
                 return list.IndexOfKey(key.Value);
             return null;
         }

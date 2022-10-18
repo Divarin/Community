@@ -18,11 +18,12 @@ namespace miniBBS.Menus
             new Cmd("/fauxmain", 4), new Cmd("/main", 4), new Cmd("/menu", 4), new Cmd("/fauxmenu", 4), 
             new Cmd("/fakemain", 4), new Cmd("/fakemenu", 4),
             new Cmd("/term",5), new Cmd("/setup",5), new Cmd("/emu",5), new Cmd("/bell",6), 
-            new Cmd("/sound",6), 
+            new Cmd("/sound",6), new Cmd("/m", 7),
             new Cmd("/announce",8), new Cmd("/help",9), new Cmd("/?",9), 
             new Cmd("?",9), new Cmd("/??",9), new Cmd("/about",10), new Cmd("/a",10), new Cmd("/del",11), new Cmd("/delete",11), 
             new Cmd("/d",11), new Cmd("/typo",12), new Cmd("/edit",12), new Cmd("/s",12), new Cmd("/rere",13), new Cmd("/pin",14), 
-            new Cmd("/pins",14), new Cmd("/e",15), new Cmd("/end",15), new Cmd("/chl",16), new Cmd("/chanlist",16), 
+            new Cmd("/pins",14), new Cmd("/pin", 14), new Cmd("/unpin", 14), new Cmd("/e",15), new Cmd("/end",15), new Cmd("/chl",16), 
+            new Cmd("/chanlist",16), 
             new Cmd("/channellist",16), new Cmd("/channelist",16), new Cmd("/ch",17), new Cmd("/chan",17), new Cmd("/channel",17), 
             new Cmd("/w",18), new Cmd("/who",18), new Cmd("/u",19), new Cmd("/users",19), new Cmd("/f",20), new Cmd("/find",20), 
             new Cmd("/search",20), new Cmd("/fu",20), new Cmd("/fs",20), new Cmd("/afk",21), new Cmd("/read",22), new Cmd("/nonstop",22), 
@@ -43,7 +44,9 @@ namespace miniBBS.Menus
             new Cmd("/vote", 45), new Cmd("/votes", 45), new Cmd("/poll", 45), new Cmd("/polls", 45),
             new Cmd("/game", 46), new Cmd("/games", 46),new Cmd("/prog", 46),new Cmd("/progs", 46),new Cmd("/door", 46),new Cmd("/doors", 46),
             new Cmd("/calc", 47), new Cmd("/calculate", 47), new Cmd("/calculator", 47), new Cmd("/whisper", 48), new Cmd("/wh", 48), 
-            new Cmd("/r", 48), new Cmd("/reply", 48)
+            new Cmd("/r", 48), new Cmd("/reply", 48), new Cmd("/web", 49), new Cmd("/noweb", 49), new Cmd("/newweb", 49), new Cmd("/webnew", 49),
+            new Cmd("/newnoweb", 49), new Cmd("/nowebnew", 49), new Cmd("/newpref", 49), new Cmd("/dnd", 50), new Cmd("/uptime", 51), 
+            new Cmd("/times", 52), new Cmd("/dates", 52), new Cmd("/date", 52), new Cmd("/when", 52)
         };
 
         public static void Execute(BbsSession session)

@@ -61,8 +61,8 @@ namespace miniBBS.Commands
                 var flagsRepo = DI.GetRepository<UserChannelFlag>();
                 var flags = flagsRepo.Get(f => f.ChannelId, session.Channel.Id);
 
-                foreach (var flag in flags)
-                    flagsRepo.Delete(flag);
+                if (true == flags?.Any())
+                    flagsRepo.DeleteRange(flags);
 
                 DI.GetRepository<Channel>().Delete(session.Channel);
 

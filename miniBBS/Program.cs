@@ -370,7 +370,7 @@ namespace miniBBS
         {
             session.Io.SetForeground(ConsoleColor.Cyan);
             var lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
-            var count = session.Chats.Count-1;
+            var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
             
             var chanNum = chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
@@ -402,8 +402,7 @@ namespace miniBBS
                 session.LastReadMessageNumber ??
                 session.MsgPointer;
 
-            bool isAtEndOfMessages = lastRead == session.Chats.Keys.Max();
-            session.Chats[chat.Id] = chat;
+            bool isAtEndOfMessages = true == session.Chats?.Any() && lastRead == session.Chats.Keys[session.Chats.Keys.Count - 2];
 
             Action action = () =>
             {
@@ -967,6 +966,12 @@ namespace miniBBS
                 case "/session":
                 case "/sessioninfo":
                     SessionInfo.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/times":
+                case "/dates":
+                case "/date":
+                case "/when":
+                    SessionInfo.Execute(session, "times");
                     return;
                 case "/ui":
                 case "/user":

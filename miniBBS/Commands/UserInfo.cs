@@ -29,7 +29,11 @@ namespace miniBBS.Commands
 
                 string moderatorOf = string.Empty;
                 if (true == chanFlags?.Any())
-                    moderatorOf = string.Join(", ", chanFlags.Select(f => channels[f.ChannelId].Name).Distinct());
+                {
+                    moderatorOf = string.Join(", ", chanFlags
+                        .Select(f => channels.ContainsKey(f.ChannelId) ? channels[f.ChannelId].Name : "Deleted Channel")                        
+                        .Distinct());
+                }
 
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("*** User Info ***");
