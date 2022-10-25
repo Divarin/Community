@@ -51,7 +51,7 @@ namespace miniBBS.Basic.Executors
 
                     value = Evaluate.Execute(value, variables);
 
-                    if (value.StartsWith("@") && value.Length > 1)
+                    if (!string.IsNullOrWhiteSpace(rootDirectory) && value.StartsWith("@") && value.Length > 1)
                     {
                         new Sql(rootDirectory).Execute(session, '"' + value.Substring(1) + '"', variables, variableName);
                         return;

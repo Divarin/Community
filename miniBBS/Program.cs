@@ -394,7 +394,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyNewPost(Chat chat, BbsSession session)
         {
-            if (chat == null || chat.ChannelId != session.Channel.Id)
+            if (chat == null || chat.ChannelId != session.Channel.Id || session.IsIgnoring(chat.FromUserId))
                 return;
 
             int lastRead =
@@ -429,7 +429,7 @@ namespace miniBBS
 
         private static void TryBell(BbsSession session, int userId)
         {
-            if (string.IsNullOrWhiteSpace(session.BellAlerts))
+            if (string.IsNullOrWhiteSpace(session.BellAlerts) || session.IsIgnoring(userId))
                 return;
             if ("on".Equals(session.BellAlerts, StringComparison.CurrentCultureIgnoreCase) || 
                (session.Usernames.ContainsKey(userId) && session.Usernames[userId].Equals(session.BellAlerts, StringComparison.CurrentCultureIgnoreCase)))
@@ -494,6 +494,11 @@ namespace miniBBS
         /// </summary>
         private static void NotifyUserMessage(BbsSession session, UserMessage message)
         {
+            var fromSession = DI.Get<ISessionsList>().Sessions.FirstOrDefault(s => s.Id == message.SessionId);
+            var fromUserId = fromSession?.User?.Id;
+            if (fromUserId.HasValue && session.IsIgnoring(fromUserId.Value))
+                return;
+
             Action action = () =>
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, message.TextColor))
@@ -552,7 +557,8 @@ namespace miniBBS
             if (session.User == null ||
                 message.ChannelId != session.Channel?.Id ||
                 message.FromUserId == session.User.Id ||
-                (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id))
+                (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id) ||
+                session.IsIgnoring(message.FromUserId))
             {
                 return;
             }
@@ -812,6 +818,9 @@ namespace miniBBS
                         session.Io.OutputLine("Goodbye!");
                         session.Stream.Close();
                     }
+                    return;
+                case "/ignore":
+                    Ignore.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/term":
                 case "/setup":
@@ -1119,6 +1128,10 @@ namespace miniBBS
                 case "/sys":
                 case "/sysop":
                     SysopCommand.Execute(session, ref _ipBans, parts.Skip(1).ToArray());
+                    return;
+                case "/basic":
+                case "/bas":
+                    Commands.Basic.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case ",":
                 case "<":

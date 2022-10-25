@@ -1,6 +1,7 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Models;
+using miniBBS.Core;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,6 @@ namespace miniBBS.Basic.Executors
         { '=', '<', '>', '≤', '≥', '±' };
         private static readonly char[] _arithmeticOperators = new char[]
         { '+', '-', '*', '/', '%' };
-        private const char _quote = '"';
         private static readonly char[] _charsInVariableNamesAfterFirst = new char[]
         { '$', '(', '\'', ',', '\t', ')', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
@@ -53,6 +53,7 @@ namespace miniBBS.Basic.Executors
                 statement = statement.Replace(key, value);
             }
 
+            statement = statement.Replace(Constants.Basic.QuoteSubstitute, Constants.Basic.Quote);
             return statement;
         }
 
@@ -414,8 +415,14 @@ namespace miniBBS.Basic.Executors
                             }
                             break;
                         case "int": value = Int.Execute(value).ToString(); break;
-                        case "chr$": value = $"{_quote}{(char)byte.Parse(value)}{_quote}"; break;
-                        case "str$": value = $"{_quote}{value}{_quote}"; break;
+                        case "chr$":
+                            {
+                                var c = (char)byte.Parse(value);
+                                if (c == Constants.Basic.Quote) c = Constants.Basic.QuoteSubstitute;
+                                value = $"{Constants.Basic.Quote}{c}{Constants.Basic.Quote}";
+                            }
+                            break;
+                        case "str$": value = $"{Constants.Basic.Quote}{value}{Constants.Basic.Quote}"; break;
                         case "left$":
                             {
                                 var parts = value.Split('\t')?.Select(x => x.Trim())?.ToArray();
@@ -523,13 +530,13 @@ namespace miniBBS.Basic.Executors
                         case "uc$":
                             {
                                 value = value.Detokenize(pkg.StringValues);
-                                value = _quote + value.ToUpper() + _quote;
+                                value = Constants.Basic.Quote + value.ToUpper() + Constants.Basic.Quote;
                             }
                             break;
                         case "lc$":
                             {
                                 value = value.Detokenize(pkg.StringValues);
-                                value = _quote + value.ToLower() + _quote;
+                                value = Constants.Basic.Quote + value.ToLower() + Constants.Basic.Quote;
                             }
                             break;
                         case "instr":

@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "4.2 - 2022.10.18";
+        public const string Version = "4.2c - 2022.10.25";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -49,7 +49,7 @@ namespace miniBBS.Core
         public const int MaxPublicPinsPerUser = 25;
 
         public const string BasicSourceProtectedFlag = "(protect)";
-
+        
         public const int MaxFileBackups = 9;
 
         public const string local_TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
@@ -130,6 +130,12 @@ namespace miniBBS.Core
         public static class Files
         {
             public const string NewUser = "newuser.txt";
+        }
+
+        public static class Basic
+        {
+            public const char QuoteSubstitute = (char)159;
+            public const char Quote = '"';
         }
     }
 }

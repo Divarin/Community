@@ -76,6 +76,7 @@
   <ItemGroup>
     <Compile Include="Commands\Afk.cs" />
     <Compile Include="Commands\Announce.cs" />
+    <Compile Include="Commands\Basic.cs" />
     <Compile Include="Commands\Bell.cs" />
     <Compile Include="Commands\Blurbs.cs" />
     <Compile Include="Commands\BrowseGames.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="Commands\Emote.cs" />
     <Compile Include="Commands\FauxMain.cs" />
     <Compile Include="Commands\FindMessages.cs" />
+    <Compile Include="Commands\Ignore.cs" />
     <Compile Include="Commands\IndexBy.cs" />
     <Compile Include="Commands\IpBan.cs" />
     <Compile Include="Commands\KickUser.cs" />
@@ -157,6 +159,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\miniBBS.Basic\miniBBS.Basic.csproj">
+      <Project>{596B7354-9EA5-4E40-A2DC-854E8EC32846}</Project>
+      <Name>miniBBS.Basic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\miniBBS.Core\miniBBS.Core.csproj">
       <Project>{36b12940-0f2c-4b2a-8f69-3bc4fe872390}</Project>
       <Name>miniBBS.Core</Name>

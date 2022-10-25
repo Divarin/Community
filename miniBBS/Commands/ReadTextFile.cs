@@ -18,6 +18,12 @@ namespace miniBBS.Commands
             
             if (!linkFound)
             {
+                if (true != args?.Any())
+                {
+                    session.Io.Error("No text file or basic program link.");
+                    return;
+                }
+
                 var basicPrograms = browser.FindBasicPrograms(session)
                     .Select(x => x.Split('|').FirstOrDefault()) // just the path part, not the description
                     .ToList();
@@ -48,7 +54,7 @@ namespace miniBBS.Commands
             if (!linkFound && session.ContextPointer.HasValue && session.Chats.ContainsKey(session.ContextPointer.Value))
             {
                 msg = session.Chats[session.ContextPointer.Value];
-                browser.ReadLink(session, msg.Message);
+                linkFound = browser.ReadLink(session, msg.Message);
             }
 
             return linkFound;

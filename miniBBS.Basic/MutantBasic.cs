@@ -23,7 +23,7 @@ namespace miniBBS.Basic
         private string _loadedData;
         private string _rootDirectory;
         private bool _autoStart;
-        private const string _version = "2";
+        private const string _version = "2.1";
         public static bool _debug = false;
 
         public Func<string, string> OnSave { get; set; }
@@ -467,9 +467,9 @@ namespace miniBBS.Basic
             vars["EMULATION$"] = () => '"' + user.Emulation.ToString() + '"';
             vars["TERMROWS"] = () => _session.Rows.ToString();
             vars["TERMCOLS"] = () => _session.Cols.ToString();
-            vars["DATE$"] = () => '"' + DateTime.Now.ToString("MM/dd/yyyy") + '"';
-            vars["TIME$"] = () => '"' + DateTime.Now.ToString("HH:mm:ss") + '"';
-            vars["TICKS"] = () => DateTime.Now.Ticks.ToString();
+            vars["DATE$"] = () => '"' + DateTime.Now.AddHours(_session.TimeZone).ToString("MM/dd/yyyy") + '"';
+            vars["TIME$"] = () => '"' + DateTime.Now.AddHours(_session.TimeZone).ToString("HH:mm:ss") + '"';
+            vars["TICKS"] = () => DateTime.Now.AddHours(_session.TimeZone).Ticks.ToString();
             vars["INKEY$"] = () =>
             {
                 var key = _session.Io.GetPolledKey();
