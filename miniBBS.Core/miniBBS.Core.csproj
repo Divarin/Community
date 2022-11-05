@@ -99,11 +99,11 @@
     <Compile Include="Interfaces\ITextEditor.cs" />
     <Compile Include="Interfaces\ITextFilesBrowser.cs" />
     <Compile Include="Interfaces\IUserIo.cs" />
-    <Compile Include="Interfaces\IWebLogger.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />
     <Compile Include="Models\Control\LoginRecord.cs" />
+    <Compile Include="Models\Control\SeenData.cs" />
     <Compile Include="Models\Control\TerminalSettings.cs" />
     <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Data\Blurb.cs" />

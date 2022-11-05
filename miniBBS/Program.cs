@@ -9,7 +9,6 @@ using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
-using miniBBS.Services;
 using miniBBS.Services.GlobalCommands;
 using miniBBS.Subscribers;
 using miniBBS.UserIo;
@@ -51,7 +50,6 @@ namespace miniBBS
                 .ToList();
 
             SysopScreen.Initialize(sessionsList);
-            DI.Get<IWebLogger>().StartContinuousRefresh(GlobalDependencyResolver.Default);
 
             while (!SysControl.HasFlag(SystemControlFlag.Shutdown))
             {
@@ -187,6 +185,7 @@ namespace miniBBS
             finally
             {
                 nodeParams.Client.Close();
+                session?.RecordSeenData(DI.GetRepository<Metadata>());
                 session?.Dispose();
                 _logger.Flush();
             }
@@ -291,7 +290,7 @@ namespace miniBBS
                     session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
                 }
 
-                OneTimeQuestions.Execute(session);
+                //OneTimeQuestions.Execute(session);
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
@@ -794,6 +793,9 @@ namespace miniBBS
                         session.Stream.Close();
                     }
                     return;
+                case "/seen":
+                    Seen.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case "/cls":
                 case "/clr":
                 case "/clear":
@@ -938,33 +940,6 @@ namespace miniBBS
                     return;
                 case "/new":
                     AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsNewTopic);
-                    return;
-                case "/web":
-                    if (parts.Length == 1)
-                        WebFlags.SetUserChatWebVisibility(session, true);
-                    else if (parts.Length == 2 && int.TryParse(parts[1], out int n))
-                        WebFlags.SetChatWebVisibility(session, true, n);
-                    else
-                        AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible);
-                    return;
-                case "/newweb":
-                case "/webnew":
-                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible | PostChatFlags.IsNewTopic);
-                    return;
-                case "/noweb":
-                    if (parts.Length == 1)
-                        WebFlags.SetUserChatWebVisibility(session, false);
-                    else if (parts.Length == 2 && int.TryParse(parts[1], out int n))
-                        WebFlags.SetChatWebVisibility(session, false, n);
-                    else
-                        AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible);
-                    return;
-                case "/newnoweb":
-                case "/nowebnew":
-                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible | PostChatFlags.IsNewTopic);
-                    return;
-                case "/webpref":
-                    WebFlags.UserPreferenceDialog(session);
                     return;
                 case "/tz":
                 case "/timezone":
@@ -1212,12 +1187,6 @@ namespace miniBBS
                     case "del": 
                         DeleteChannel.Execute(session); 
                         break;
-                    case "+w":
-                        WebFlags.SetChannelWebVisibility(session, true);
-                        break;
-                    case "-w":
-                        WebFlags.SetChannelWebVisibility(session, false);
-                        break;
                     default: 
                         SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); 
                         break;
@@ -1278,9 +1247,6 @@ namespace miniBBS
                     break;
                 case "voice":
                     Menus.Voice.Show(session);
-                    break;
-                case "web":
-                    Menus.Web.Show(session);
                     break;
                 default:
                     MainMenu.Show(session);

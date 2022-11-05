@@ -1,5 +1,8 @@
 ﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Core.Models.Data;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +27,39 @@ namespace miniBBS.Extensions
         {
             var username = session.Usernames.ContainsKey(userId) ? session.Usernames[userId] : null;
             return username != null && session.IsIgnoring(username);
+        }
+
+        public static void RecordSeenData(this BbsSession session, IRepository<Metadata> metaRepo)
+        {
+            if (session?.User == null)
+                return;
+
+            var data = new SeenData
+            {
+                SessionsStartUtc = session.SessionStartUtc,
+                SessionEndUtc = DateTime.UtcNow,
+                QuitMessage = session.Items.ContainsKey(SessionItem.LogoutMessage) ? 
+                    session.Items[SessionItem.LogoutMessage] as string ?? string.Empty : 
+                    string.Empty
+            };
+
+            var meta = new Metadata
+            {
+                UserId = session.User.Id,
+                Type = MetadataType.SeenData,
+                Data = JsonConvert.SerializeObject(data)
+            };
+
+            var oldMetas = metaRepo.Get(new Dictionary<string, object>
+            {
+                {nameof(Metadata.UserId), meta.UserId},
+                {nameof(Metadata.Type), meta.Type}
+            })?.ToList();
+
+            if (true == oldMetas?.Any())
+                metaRepo.DeleteRange(oldMetas);
+
+            metaRepo.Insert(meta);
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using miniBBS.Core.Enums;
-using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -29,21 +28,13 @@ namespace miniBBS.Services.GlobalCommands
                 return null;
             }
 
-            bool webVisible = 
-                postFlags.HasFlag(PostChatFlags.IsWebVisible) ||
-                session.WebVisiblePosts(GlobalDependencyResolver.Default);
-
-            if (postFlags.HasFlag(PostChatFlags.IsWebInvisible))
-                webVisible = false;
-
-            Chat chat = new Chat
+            var chat = new Chat
             {
                 DateUtc = DateTime.UtcNow,
                 ChannelId = session.Channel.Id,
                 FromUserId = session.User.Id,
                 Message = line,
-                ResponseToId = postFlags.HasFlag(PostChatFlags.IsNewTopic) ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber,
-                WebVisible = webVisible
+                ResponseToId = postFlags.HasFlag(PostChatFlags.IsNewTopic) ? null : session.LastReadMessageNumberWhenStartedTyping ?? session.LastReadMessageNumber
             };
 
             int lastRead =

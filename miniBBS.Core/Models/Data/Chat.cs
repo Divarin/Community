@@ -18,6 +18,5 @@ namespace miniBBS.Core.Models.Data
         public int FromUserId { get; set; }
         public DateTime DateUtc { get; set; }
         public string Message { get; set; }
-        public bool WebVisible { get; set; }
     }
 }

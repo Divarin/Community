@@ -24,7 +24,6 @@ namespace miniBBS.Menus
             $"--- {_clr("More Help Menus", ConsoleColor.Yellow)} ---",
                 $"{_clr("/? channels", ConsoleColor.Green)}, " + 
                 $"{_clr("/? msgs", ConsoleColor.Green)}, " +
-                $"{_clr("/? web", ConsoleColor.Green)}, " +
                 $"{_clr("/? users", ConsoleColor.Green)}, " + 
                 $"{_clr("/? bells", ConsoleColor.Green)}, " + 
                 $"{_clr("/? emotes", ConsoleColor.Green)}, " + 

@@ -44,10 +44,7 @@ namespace miniBBS.Menus
             $"{_clr("/index new", ConsoleColor.Green)}  : Shows a snippet of each 'new' message thread (messages not in response to any other message).",
             $"{_clr("/index length", ConsoleColor.Green)} : Shows a snippet of the top 100 longest messages sorted from longest to shortest.",
             $"{_clr("/index links", ConsoleColor.Green)} : Shows a snippet of the most recent 100 messages which contain a link to a text file",
-            $"{_clr("/read", ConsoleColor.Green)} : Begins continuous output of messages starting at the message pointer.  You can abort at page breaks (more prompts).",
-            $"--- {_clr("More Help Menus", ConsoleColor.Yellow)} ---",
-            $"{_clr("/? web", ConsoleColor.Green)} ",
-
+            $"{_clr("/read", ConsoleColor.Green)} : Begins continuous output of messages starting at the message pointer.  You can abort at page breaks (more prompts)."
         };
 
         public static void Show(BbsSession session)
