@@ -4,6 +4,7 @@ using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace miniBBS.Extensions
 {
@@ -255,6 +256,28 @@ namespace miniBBS.Extensions
                 .Replace("'", "&apos;")
                 .Replace("<", "&lt;")
                 .Replace(">", "&gt;");
+        }
+
+        /// <summary>
+        /// Returns a string showing the number of days, hours, and minutes.  
+        /// Only non-zero values are returned.  If <paramref name="timespan"/> is less than one minute then 
+        /// returns the number of seconds.
+        /// </summary>
+        public static string Dhm(this TimeSpan timespan)
+        {
+            var builder = new StringBuilder();
+            var days = timespan.Days;
+            var hours = timespan.Hours;
+            var minutes = timespan.Minutes;
+
+            if (days > 0) builder.Append($"{days}d ");
+            if (hours > 0) builder.Append($"{hours}h ");
+            if (minutes > 0) builder.Append($"{minutes}m");
+
+            if (builder.Length == 0)
+                builder.Append($"{Math.Ceiling(timespan.TotalSeconds)}s");
+
+            return builder.ToString();
         }
     }
 }

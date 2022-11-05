@@ -3,7 +3,7 @@
     public enum MetadataType
     {
         UserTermPreset,
-        UserChatWebVisibility,
-        OneTimeQuestionAnswered
+        OneTimeQuestionAnswered,
+        SeenData
     }
 }

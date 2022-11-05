@@ -29,7 +29,11 @@ namespace miniBBS.Commands
 
                 string moderatorOf = string.Empty;
                 if (true == chanFlags?.Any())
-                    moderatorOf = string.Join(", ", chanFlags.Select(f => channels[f.ChannelId].Name).Distinct());
+                {
+                    moderatorOf = string.Join(", ", chanFlags
+                        .Select(f => channels.ContainsKey(f.ChannelId) ? channels[f.ChannelId].Name : "Deleted Channel")                        
+                        .Distinct());
+                }
 
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("*** User Info ***");
@@ -42,6 +46,11 @@ namespace miniBBS.Commands
                 builder.AppendLine($"Moderator of : {moderatorOf}");
                 builder.AppendLine($"Time Zone    : {user.Timezone}");
                 builder.AppendLine($"Terminal     : {user.Cols} x {user.Rows}  {user.Emulation}");
+                
+                var metas = DI.GetRepository<Metadata>().Get(m => m.UserId, user.Id);
+                foreach (var meta in metas)
+                    builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");
+
                 session.Io.OutputLine(builder.ToString());
 
             }

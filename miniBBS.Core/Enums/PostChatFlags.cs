@@ -6,8 +6,6 @@ namespace miniBBS.Core.Enums
     public enum PostChatFlags
     {
         None = 0,
-        IsNewTopic = 1,
-        IsWebVisible = 2,
-        IsWebInvisible = 4
+        IsNewTopic = 1
     }
 }

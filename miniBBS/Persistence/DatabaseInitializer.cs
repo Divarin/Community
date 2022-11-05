@@ -54,7 +54,7 @@ namespace miniBBS.Persistence
 
         private void CreateChannelsTable(SQLiteConnection db)
         {
-            string sql = "CREATE TABLE Channels (Id integer primary key autoincrement, Name TEXT not null, RequiresInvite TEXT not null default 'False', RequiresVoice TEXT not null default 'False', DateCreatedUtc TEXT null, AutoWebVisible TEXT not null default 'False')";
+            string sql = "CREATE TABLE Channels (Id integer primary key autoincrement, Name TEXT not null, RequiresInvite TEXT not null default 'False', RequiresVoice TEXT not null default 'False', DateCreatedUtc TEXT null)";
             using (var cmd = new SQLiteCommand(sql, db))
             {
                 cmd.ExecuteNonQuery();
@@ -69,7 +69,7 @@ namespace miniBBS.Persistence
 
         private void CreateChatTable(SQLiteConnection db)
         {
-            string sql = "CREATE TABLE Chat (Id integer primary key autoincrement, ResponseToId integer null, ChannelId integer not null, FromUserId integer not null, DateUtc TEXT not null, Message TEXT not null, WebVisible TEXT not null default 'False')";
+            string sql = "CREATE TABLE Chat (Id integer primary key autoincrement, ResponseToId integer null, ChannelId integer not null, FromUserId integer not null, DateUtc TEXT not null, Message TEXT not null)";
             using (var cmd = new SQLiteCommand(sql, db))
             {
                 cmd.ExecuteNonQuery();
@@ -174,7 +174,7 @@ namespace miniBBS.Persistence
 
         private void CreateMetadataTable(SQLiteConnection db)
         {
-            string sql = "CREATE TABLE Metadata (Id integer primary key autoincrement, Type TEXT not null, UserId integer null, ChannelId integer null, Data TEXT not null)";
+            string sql = "CREATE TABLE Metadata (Id integer primary key autoincrement, Type TEXT not null, UserId integer null, ChannelId integer null, Data TEXT not null, DateAddedUtc TEXT null)";
             using (var cmd = new SQLiteCommand(sql, db))
             {
                 cmd.ExecuteNonQuery();

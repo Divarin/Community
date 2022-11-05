@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace miniBBS.Basic
 {
@@ -24,7 +23,7 @@ namespace miniBBS.Basic
         private string _loadedData;
         private string _rootDirectory;
         private bool _autoStart;
-        private const string _version = "2";
+        private const string _version = "2.1";
         public static bool _debug = false;
 
         public Func<string, string> OnSave { get; set; }
@@ -245,18 +244,21 @@ namespace miniBBS.Basic
                     foreach (var key in variables.Keys)
                         _session.Io.OutputLine($"{key} = {variables[key]}");
                 }
-                //else if (line.StartsWith("load", StringComparison.CurrentCultureIgnoreCase))
-                //{
-                //    TryLoad(ref progLines, ref variables);
-                //}
-                else if (line.StartsWith("save", StringComparison.CurrentCultureIgnoreCase))
+                else if (line.StartsWith("save", StringComparison.CurrentCultureIgnoreCase) || line.Equals("/s", StringComparison.CurrentCultureIgnoreCase))
                 {
                     _loadedData = ProgramData.Serialize(progLines);
                     OnSave(_loadedData);
                     _session.Io.OutputLine("program saved");
                 }                
-                else if (line.Equals("quit", StringComparison.CurrentCultureIgnoreCase))
+                else if (line.Equals("quit", StringComparison.CurrentCultureIgnoreCase) || line.Equals("/q", StringComparison.CurrentCultureIgnoreCase))
                 {
+                    quit = true;
+                }
+                else if (line.Equals("/sq", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _loadedData = ProgramData.Serialize(progLines);
+                    OnSave(_loadedData);
+                    _session.Io.OutputLine("program saved");
                     quit = true;
                 }
                 else if (line.StartsWith("help", StringComparison.CurrentCultureIgnoreCase))
@@ -465,9 +467,9 @@ namespace miniBBS.Basic
             vars["EMULATION$"] = () => '"' + user.Emulation.ToString() + '"';
             vars["TERMROWS"] = () => _session.Rows.ToString();
             vars["TERMCOLS"] = () => _session.Cols.ToString();
-            vars["DATE$"] = () => '"' + DateTime.Now.ToString("MM/dd/yyyy") + '"';
-            vars["TIME$"] = () => '"' + DateTime.Now.ToString("HH:mm:ss") + '"';
-            vars["TICKS"] = () => DateTime.Now.Ticks.ToString();
+            vars["DATE$"] = () => '"' + DateTime.Now.AddHours(_session.TimeZone).ToString("MM/dd/yyyy") + '"';
+            vars["TIME$"] = () => '"' + DateTime.Now.AddHours(_session.TimeZone).ToString("HH:mm:ss") + '"';
+            vars["TICKS"] = () => DateTime.Now.AddHours(_session.TimeZone).Ticks.ToString();
             vars["INKEY$"] = () =>
             {
                 var key = _session.Io.GetPolledKey();

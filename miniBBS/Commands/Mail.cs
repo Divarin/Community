@@ -36,7 +36,10 @@ namespace miniBBS.Commands
                             if ("sent".Equals(arg, StringComparison.CurrentCultureIgnoreCase))
                                 ListSentMails(session);
                             else
+                            {
                                 ListMails(session, mails);
+                                mails = GetMails(session);
+                            }
                             command = null;
                             break;
                         case "read":
@@ -62,6 +65,7 @@ namespace miniBBS.Commands
                                 else
                                     Error(session, "Invalid message number, please type '/mail read 123' where '123' is the message number.");
                             }
+                            mails = GetMails(session);
                             command = null;
                             break;
                         case "send":

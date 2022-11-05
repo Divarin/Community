@@ -339,8 +339,9 @@ namespace miniBBS.UserIo
                         }
                     }
                 }
-                else 
+                else
                 {
+                    text = text.Replace(Constants.Spaceholder, ' ');
                     var r = GetBytes(text);
                     session.Stream.Write(r, 0, r.Length);
                 }

@@ -463,7 +463,8 @@ namespace miniBBS.Services.Services
                         _session.Io.Output("Text to replace with: ");
                         var replace = _session.Io.InputLine();
                         _session.Io.OutputLine();
-                        line = line.Replace(search, replace);
+                        if (!string.IsNullOrWhiteSpace(search))
+                            line = line.Replace(search, replace);
                     }
                     break;
                 case 'R':

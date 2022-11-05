@@ -3,6 +3,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
+using miniBBS.Persistence;
 using miniBBS.Services;
 using System;
 using System.Collections.Generic;
@@ -37,20 +38,8 @@ namespace miniBBS.Commands
                 case "ip":
                     ManageIps(session, ref ipBans, args.Skip(1).ToArray());
                     break;
-                case "webcompile":
-                    di.Get<IWebLogger>().UpdateWebLog(di);
-                    session.Io.Error("Web log compiled.");
-                    break;
-                case "webstop":
-                    di.Get<IWebLogger>().StopContinuousRefresh();
-                    session.Io.Error("Web log continuous refresh stopped.");
-                    break;
-                case "webstart":
-                    di.Get<IWebLogger>().StartContinuousRefresh(di);
-                    session.Io.Error("Web log continuous refresh started.");
-                    break;
-                case "webstate":
-                    session.Io.Error($"Web log continuous refresh is going?  {di.Get<IWebLogger>().ContinuousRefresh}");
+                case "maint":
+                    DatabaseMaint.Maint(session);
                     break;
             }
         }
@@ -135,10 +124,7 @@ namespace miniBBS.Commands
             builder.AppendLine("ip - Lists banned IPs");
             builder.AppendLine("ip ban (ip) - adds ip (or mask) to IP ban list");
             builder.AppendLine("ip unban (ip) - removes ip (or mask) from IP ban list");
-            builder.AppendLine("webcompile - compile the web log");
-            builder.AppendLine("webstart - starts automatic compilation of the web log every 2 hours (if any new chats)");
-            builder.AppendLine("webstop - stops automatic compilation of the web log");
-            builder.AppendLine("webstate - shows whether or not auto compilation is started");
+            builder.AppendLine("maint - run maintenence");
 
             session.Io.Output(builder.ToString());
         }

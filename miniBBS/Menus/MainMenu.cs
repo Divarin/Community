@@ -22,7 +22,14 @@ namespace miniBBS.Menus
             $"{_clr("/o", ConsoleColor.Green)} : Logoff",
             $"{_clr("/who", ConsoleColor.Green)} : List of users currently logged on",
             $"--- {_clr("More Help Menus", ConsoleColor.Yellow)} ---",
-            $"{_clr("/? channels", ConsoleColor.Green)}, {_clr("/? msgs", ConsoleColor.Green)}, {_clr("/? users", ConsoleColor.Green)}, {_clr("/? bells", ConsoleColor.Green)}, {_clr("/? emotes", ConsoleColor.Green)}, {_clr("/? context", ConsoleColor.Green)}, {_clr("/? mod", ConsoleColor.Green)}, {_clr("/? voice", ConsoleColor.Green)} ",
+                $"{_clr("/? channels", ConsoleColor.Green)}, " + 
+                $"{_clr("/? msgs", ConsoleColor.Green)}, " +
+                $"{_clr("/? users", ConsoleColor.Green)}, " + 
+                $"{_clr("/? bells", ConsoleColor.Green)}, " + 
+                $"{_clr("/? emotes", ConsoleColor.Green)}, " + 
+                $"{_clr("/? context", ConsoleColor.Green)}, " + 
+                $"{_clr("/? mod", ConsoleColor.Green)}, " + 
+                $"{_clr("/? voice", ConsoleColor.Green)} ",
             $"--- {_clr("Subsystems", ConsoleColor.Yellow)} ---",
             $"{_clr("/cal", ConsoleColor.Green)} : Live-chat events calendar",
             $"{_clr("/mail", ConsoleColor.Green)} : E-Mail",

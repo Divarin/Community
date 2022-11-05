@@ -9,7 +9,6 @@ using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
-using miniBBS.Services;
 using miniBBS.Services.GlobalCommands;
 using miniBBS.Subscribers;
 using miniBBS.UserIo;
@@ -51,7 +50,6 @@ namespace miniBBS
                 .ToList();
 
             SysopScreen.Initialize(sessionsList);
-            DI.Get<IWebLogger>().StartContinuousRefresh(GlobalDependencyResolver.Default);
 
             while (!SysControl.HasFlag(SystemControlFlag.Shutdown))
             {
@@ -187,6 +185,7 @@ namespace miniBBS
             finally
             {
                 nodeParams.Client.Close();
+                session?.RecordSeenData(DI.GetRepository<Metadata>());
                 session?.Dispose();
                 _logger.Flush();
             }
@@ -291,7 +290,7 @@ namespace miniBBS
                     session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
                 }
 
-                OneTimeQuestions.Execute(session);
+                //OneTimeQuestions.Execute(session);
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
@@ -370,7 +369,7 @@ namespace miniBBS
         {
             session.Io.SetForeground(ConsoleColor.Cyan);
             var lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
-            var count = session.Chats.Count-1;
+            var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
             
             var chanNum = chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
@@ -394,7 +393,7 @@ namespace miniBBS
         /// </summary>
         private static void NotifyNewPost(Chat chat, BbsSession session)
         {
-            if (chat == null || chat.ChannelId != session.Channel.Id)
+            if (chat == null || chat.ChannelId != session.Channel.Id || session.IsIgnoring(chat.FromUserId))
                 return;
 
             int lastRead =
@@ -402,8 +401,7 @@ namespace miniBBS
                 session.LastReadMessageNumber ??
                 session.MsgPointer;
 
-            bool isAtEndOfMessages = lastRead == session.Chats.Keys.Max();
-            session.Chats[chat.Id] = chat;
+            bool isAtEndOfMessages = true == session.Chats?.Any() && lastRead == session.Chats.Keys[session.Chats.Keys.Count - 2];
 
             Action action = () =>
             {
@@ -430,7 +428,7 @@ namespace miniBBS
 
         private static void TryBell(BbsSession session, int userId)
         {
-            if (string.IsNullOrWhiteSpace(session.BellAlerts))
+            if (string.IsNullOrWhiteSpace(session.BellAlerts) || session.IsIgnoring(userId))
                 return;
             if ("on".Equals(session.BellAlerts, StringComparison.CurrentCultureIgnoreCase) || 
                (session.Usernames.ContainsKey(userId) && session.Usernames[userId].Equals(session.BellAlerts, StringComparison.CurrentCultureIgnoreCase)))
@@ -495,6 +493,11 @@ namespace miniBBS
         /// </summary>
         private static void NotifyUserMessage(BbsSession session, UserMessage message)
         {
+            var fromSession = DI.Get<ISessionsList>().Sessions.FirstOrDefault(s => s.Id == message.SessionId);
+            var fromUserId = fromSession?.User?.Id;
+            if (fromUserId.HasValue && session.IsIgnoring(fromUserId.Value))
+                return;
+
             Action action = () =>
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, message.TextColor))
@@ -553,7 +556,8 @@ namespace miniBBS
             if (session.User == null ||
                 message.ChannelId != session.Channel?.Id ||
                 message.FromUserId == session.User.Id ||
-                (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id))
+                (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id) ||
+                session.IsIgnoring(message.FromUserId))
             {
                 return;
             }
@@ -789,6 +793,9 @@ namespace miniBBS
                         session.Stream.Close();
                     }
                     return;
+                case "/seen":
+                    Seen.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case "/cls":
                 case "/clr":
                 case "/clear":
@@ -813,6 +820,9 @@ namespace miniBBS
                         session.Io.OutputLine("Goodbye!");
                         session.Stream.Close();
                     }
+                    return;
+                case "/ignore":
+                    Ignore.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/term":
                 case "/setup":
@@ -931,33 +941,6 @@ namespace miniBBS
                 case "/new":
                     AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsNewTopic);
                     return;
-                case "/web":
-                    if (parts.Length == 1)
-                        WebFlags.SetUserChatWebVisibility(session, true);
-                    else if (parts.Length == 2 && int.TryParse(parts[1], out int n))
-                        WebFlags.SetChatWebVisibility(session, true, n);
-                    else
-                        AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible);
-                    return;
-                case "/newweb":
-                case "/webnew":
-                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebVisible | PostChatFlags.IsNewTopic);
-                    return;
-                case "/noweb":
-                    if (parts.Length == 1)
-                        WebFlags.SetUserChatWebVisibility(session, false);
-                    else if (parts.Length == 2 && int.TryParse(parts[1], out int n))
-                        WebFlags.SetChatWebVisibility(session, false, n);
-                    else
-                        AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible);
-                    return;
-                case "/newnoweb":
-                case "/nowebnew":
-                    AddToChatLog.Execute(session, string.Join(" ", parts.Skip(1)), PostChatFlags.IsWebInvisible | PostChatFlags.IsNewTopic);
-                    return;
-                case "/webpref":
-                    WebFlags.UserPreferenceDialog(session);
-                    return;
                 case "/tz":
                 case "/timezone":
                 case "/time":
@@ -967,6 +950,12 @@ namespace miniBBS
                 case "/session":
                 case "/sessioninfo":
                     SessionInfo.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/times":
+                case "/dates":
+                case "/date":
+                case "/when":
+                    SessionInfo.Execute(session, "times");
                     return;
                 case "/ui":
                 case "/user":
@@ -1115,6 +1104,10 @@ namespace miniBBS
                 case "/sysop":
                     SysopCommand.Execute(session, ref _ipBans, parts.Skip(1).ToArray());
                     return;
+                case "/basic":
+                case "/bas":
+                    Commands.Basic.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
@@ -1194,12 +1187,6 @@ namespace miniBBS
                     case "del": 
                         DeleteChannel.Execute(session); 
                         break;
-                    case "+w":
-                        WebFlags.SetChannelWebVisibility(session, true);
-                        break;
-                    case "-w":
-                        WebFlags.SetChannelWebVisibility(session, false);
-                        break;
                     default: 
                         SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); 
                         break;
@@ -1260,9 +1247,6 @@ namespace miniBBS
                     break;
                 case "voice":
                     Menus.Voice.Show(session);
-                    break;
-                case "web":
-                    Menus.Web.Show(session);
                     break;
                 default:
                     MainMenu.Show(session);

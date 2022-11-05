@@ -90,7 +90,7 @@ namespace miniBBS.Commands
                 case "/online":
                 case "/onl":
                 case "/on":
-                    return $"[{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}] <{session.User.Name}>";
+                    return $"[Not Logged] <{session.User.Name}>";
                 case "/me": return $"* {session.User.Name}";
                 default: return $"* {session.User.Name} {command.Substring(1)}";
             }

@@ -1,6 +1,8 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
+using miniBBS.Services.GlobalCommands;
 using System;
 using System.Linq;
 using System.Text;
@@ -11,13 +13,15 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, params string[] args)
         {
-            if (args==null || args.Length <= 1)
+            if ("times".Equals(args?.FirstOrDefault(), StringComparison.CurrentCultureIgnoreCase))
+            {
+                ShowSessionTimes(session);
+            }
+            else if (args == null || args.Length <= 1)
+            {
                 ShowSessionInfo(session, args?.FirstOrDefault());
-
-            if (!session.User.Access.HasFlag(AccessFlag.Administrator))
-                return;
-
-            if ("flag".Equals(args[0]))
+            }
+            else if (session.User.Access.HasFlag(AccessFlag.Administrator) && "flag".Equals(args[0]))
             {
                 if (args.Length < 2)
                     session.Io.OutputLine($"{session.ControlFlags}");
@@ -67,6 +71,33 @@ namespace miniBBS.Commands
 
                 session.Io.OutputLine(builder.ToString());
             }
+        }
+    
+        private static void ShowSessionTimes(BbsSession session)
+        {
+            var sessions = DI.Get<ISessionsList>().Sessions
+                .Where(s => s.User != null)
+                .OrderBy(s => s.User.Name)
+                .ToList();
+
+            var now = DateTime.UtcNow;
+
+            var builder = new StringBuilder();
+
+            builder.AppendLine($"{now:yy-MM-dd HH:mm:ss} - UTC");
+            var communityUptime = now - SysopScreen.StartedAtUtc;
+            builder.AppendLine($"{DateTime.Now:yy-MM-dd HH:mm:ss} - Community (Cleveland) ({communityUptime.Dhm()})");
+            builder.AppendLine(" --- Active Sessions ---".Color(ConsoleColor.DarkGray));
+
+            foreach (var s in sessions)
+            {
+                var offset = s.TimeZone >= 0 ? $"+{s.TimeZone}" : $"{s.TimeZone}";
+                var duration = now - s.SessionStartUtc;
+                builder.AppendLine($"{now.AddHours(s.TimeZone):yy-MM-dd HH:mm:ss} (UTC{offset}) - User {s.User.Name.Color(ConsoleColor.White)} ({duration.Dhm()})");
+            }
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                session.Io.OutputLine(builder.ToString());
         }
     }
 }

@@ -4,6 +4,6 @@
     {
         LogoutMessage,
         LastWhisperFromUserId,
-        UserChatWebVisibility
+        IgnoreList
     }
 }

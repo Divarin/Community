@@ -1,6 +1,7 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Executors;
 using miniBBS.Basic.Interfaces;
+using miniBBS.Core;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -39,19 +40,41 @@ namespace miniBBS.Basic.Models
             }
             set
             {
+                key = EvaluateArrayExpressions(key);
+                if (true == EnvironmentVariables?.ContainsKey(key))
+                    throw new RuntimeException($"'{key}' is an Environment Variable");
+
                 if (key.Contains("$"))
                 {
                     if (!value.StartsWith("\"") && !value.EndsWith("\""))
                         value = '"' + value + '"';
+                    value = SubstituteInteriorQuotes(value);
                 }
-                else if(!double.TryParse(value, out double d))
+                else if(!double.TryParse(value, out double _))
                     throw new RuntimeException("type mismatch");
 
-                key = EvaluateArrayExpressions(key);
-                if (true == EnvironmentVariables?.ContainsKey(key))
-                    throw new RuntimeException($"'{key}' is an Environment Variable");
                 _globals[key] = value;
             }
+        }
+
+        private string SubstituteInteriorQuotes(string value)
+        {
+            if (value.Length < 3)
+                return value;
+
+            char[] arr = new char[value.Length];
+            arr[0] = value[0];
+            arr[arr.Length - 1] = value[value.Length - 1];
+            for (int i = 1; i < value.Length - 1; i++)
+            {
+                if (value[i] == Constants.Basic.Quote)
+                    arr[i] = Constants.Basic.QuoteSubstitute;
+                else
+                    arr[i] = value[i];
+            }
+
+            value = new string(arr);
+            return value;
         }
 
         private IDictionary<string, string> _globals = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);

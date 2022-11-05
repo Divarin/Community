@@ -265,19 +265,37 @@ namespace miniBBS.TextFiles
         {
             if (!ValidateFileOrDirectoryName(directoryName))
             {
-                session.Io.OutputLine("Illegal directory name");
+                session.Io.Error("Illegal directory name");
                 return;
             }
+
+            var canMake = currentLocation.IsOwnedByUser(session.User);
+            if ("/users/".Equals(currentLocation.Path, StringComparison.CurrentCultureIgnoreCase))
+            {
+                canMake |=
+                    session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                    directoryName.Equals(session.User.Name, StringComparison.CurrentCultureIgnoreCase);
+            }
+
+            if (!canMake)
+            {
+                session.Io.Error("Unable to create directory");
+                return;
+            } else if (directoryName.Equals(session.User.Name, StringComparison.CurrentCultureIgnoreCase))
+            {
+                directoryName = session.User.Name; // match casing to that of the user's name
+            }
+
             string dirname = $"{Constants.TextFileRootDirectory}{currentLocation.Path}{directoryName}";
             if (Directory.Exists(dirname))
             {
-                session.Io.OutputLine("Directory already exists.");
+                session.Io.Error("Directory already exists");
                 return;
             }
 
             if (File.Exists(dirname))
             {
-                session.Io.OutputLine("Cannot create directory because a file by the same name exists in this directory.");
+                session.Io.Error("Cannot create directory because a file by the same name exists in this directory");
                 return;
             }
 
@@ -334,6 +352,8 @@ namespace miniBBS.TextFiles
 
         private static bool ValidateFileOrDirectoryName(string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
             if (!name.IsPrintable())
                 return false;
             if (name.Length > Constants.MaxUserFilenameLength)

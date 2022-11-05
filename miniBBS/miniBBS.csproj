@@ -76,6 +76,7 @@
   <ItemGroup>
     <Compile Include="Commands\Afk.cs" />
     <Compile Include="Commands\Announce.cs" />
+    <Compile Include="Commands\Basic.cs" />
     <Compile Include="Commands\Bell.cs" />
     <Compile Include="Commands\Blurbs.cs" />
     <Compile Include="Commands\BrowseGames.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="Commands\Emote.cs" />
     <Compile Include="Commands\FauxMain.cs" />
     <Compile Include="Commands\FindMessages.cs" />
+    <Compile Include="Commands\Ignore.cs" />
     <Compile Include="Commands\IndexBy.cs" />
     <Compile Include="Commands\IpBan.cs" />
     <Compile Include="Commands\KickUser.cs" />
@@ -104,6 +106,7 @@
     <Compile Include="Commands\ReadFile.cs" />
     <Compile Include="Commands\ReadTextFile.cs" />
     <Compile Include="Commands\Roll.cs" />
+    <Compile Include="Commands\Seen.cs" />
     <Compile Include="Commands\SessionInfo.cs" />
     <Compile Include="Commands\SysopCommand.cs" />
     <Compile Include="Commands\TermSetup.cs" />
@@ -115,7 +118,6 @@
     <Compile Include="Commands\ToggleInviteOnly.cs" />
     <Compile Include="Commands\UpdatePassword.cs" />
     <Compile Include="Commands\UserInfo.cs" />
-    <Compile Include="Commands\WebFlags.cs" />
     <Compile Include="Commands\Whisper.cs" />
     <Compile Include="Commands\WhoIsAll.cs" />
     <Compile Include="Commands\WhoIsOn.cs" />
@@ -134,7 +136,6 @@
     <Compile Include="Menus\Moderator.cs" />
     <Compile Include="Menus\Users.cs" />
     <Compile Include="Menus\Voice.cs" />
-    <Compile Include="Menus\Web.cs" />
     <Compile Include="Persistence\DatabaseMaint.cs" />
     <Compile Include="Subscribers\ChannelMessageSubscriber.cs" />
     <Compile Include="Subscribers\ChannelPostSubscriber.cs" />
@@ -157,6 +158,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\miniBBS.Basic\miniBBS.Basic.csproj">
+      <Project>{596B7354-9EA5-4E40-A2DC-854E8EC32846}</Project>
+      <Name>miniBBS.Basic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\miniBBS.Core\miniBBS.Core.csproj">
       <Project>{36b12940-0f2c-4b2a-8f69-3bc4fe872390}</Project>
       <Name>miniBBS.Core</Name>

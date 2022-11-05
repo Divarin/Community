@@ -184,6 +184,7 @@ namespace miniBBS.Core.Models.Control
                 Messager?.Unsubscribe(ChannelMessageSubscriber);
                 Messager?.Unsubscribe(UserMessageSubscriber);
                 Messager?.Unsubscribe(EmoteSubscriber);
+                Messager?.Unsubscribe(GlobalMessageSubscriber);
 
                 _sessionsList.RemoveSession(this);
             }
