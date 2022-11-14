@@ -17,6 +17,7 @@ namespace miniBBS.Basic.Executors
         private Variables _variables;
         private string _dbFilename;
         private readonly string _rootDirectory;
+        private const string _stateTable = "mb_variablestate";
 
         public Sql(string rootDirectory)
         {
@@ -33,7 +34,7 @@ namespace miniBBS.Basic.Executors
 
             if (string.IsNullOrWhiteSpace(_dbFilename) || !_dbFilename.All(c => c == '.' || char.IsLetterOrDigit(c)))
             {
-                session.Io.OutputLine($"Illegal database filename, must contain only letters, numbers, and dots.  Cannot reference a database file in another directory.");
+                session.Io.OutputLine($"Illegal database filename, must contain only letters, numbers, and dots.  Cannot reference a database file in another directory.  Use variable 'DBFILE$' to set database filename.");
                 return;
             }
 
@@ -65,6 +66,69 @@ namespace miniBBS.Basic.Executors
                     AssignQueryResults(table, variables, assignToVariableName);
                 else
                     variables[assignToVariableName] = "";
+            }
+        }
+
+        public void ExecuteStateCommand(BbsSession session, string command, string stateKey, Variables variables)
+        {
+            _variables = variables;
+            _dbFilename = GetDatabaseFilename(variables);
+
+            if (string.IsNullOrWhiteSpace(_dbFilename) || !_dbFilename.All(c => c == '.' || char.IsLetterOrDigit(c)))
+            {
+                session.Io.OutputLine($"Illegal database filename, must contain only letters, numbers, and dots.  Cannot reference a database file in another directory.  Use variable 'DBFILE$' to set database filename.");
+                return;
+            }
+
+            stateKey = Evaluate.Execute(stateKey, variables);
+
+            stateKey = stateKey
+                ?.Replace("\"", "")
+                ?.Replace('/', '_')
+                ?.Replace(';', '_')
+                ?.Replace('\\', '_')
+                ?.Replace('\'', '_');
+
+            EnsureStateTableExists();
+            switch (command.ToLower())
+            {
+                case "savestate":
+                    if (string.IsNullOrWhiteSpace(stateKey)) 
+                        throw new RuntimeException("Missing state key parameter.");
+                    {
+                        var stateData = variables.GetState();
+                        NonQuery($"delete from {_stateTable} where StateKey = '{stateKey}'");
+                        NonQuery($"insert into {_stateTable} (StateKey, StateData) values ('{stateKey}', '{stateData}')");
+                    }
+                    break;
+                case "loadstate":
+                    if (string.IsNullOrWhiteSpace(stateKey))
+                        throw new RuntimeException("Missing state key parameter.");
+                    {
+                        var table = Query($"select StateData from {_stateTable} where StateKey = '{stateKey}' limit 1");
+                        if (table != null && table.Rows?.Count >= 1)
+                        {
+                            var stateData = table.Rows[0][0] as string;
+                            if (!string.IsNullOrWhiteSpace(stateData))
+                                variables.SetState(stateData);
+                        }
+                    }
+                    break;
+                case "clearstate":
+                    if (string.IsNullOrWhiteSpace(stateKey))
+                        throw new RuntimeException("Missing state key parameter.");
+                    NonQuery($"delete from {_stateTable} where StateKey = '{stateKey}'");
+                    break;
+                case "states":
+                    {
+                        var table = Query($"select StateKey from {_stateTable}");
+                        if (table != null && table.Rows?.Count > 0)
+                        {
+                            foreach (DataRow row in table.Rows)
+                                session.Io.OutputLine(row[0] as string);
+                        }
+                    }
+                    break;
             }
         }
 
@@ -207,6 +271,15 @@ namespace miniBBS.Basic.Executors
             {
                 foreach (DataRow row in table.Rows)
                     yield return row[0]?.ToString();
+            }
+        }
+
+        private void EnsureStateTableExists()
+        {
+            if (!GetTables().Any(t => t.Equals(_stateTable)))
+            {
+                var sql = $"create table {_stateTable} (StateKey TEXT not null, StateData TEXT null)";
+                NonQuery(sql);
             }
         }
 

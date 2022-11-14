@@ -79,6 +79,7 @@
     <Compile Include="Commands\Basic.cs" />
     <Compile Include="Commands\Bell.cs" />
     <Compile Include="Commands\Blurbs.cs" />
+    <Compile Include="Commands\Bot.cs" />
     <Compile Include="Commands\BrowseGames.cs" />
     <Compile Include="Commands\Calculate.cs" />
     <Compile Include="Commands\Calendar.cs" />

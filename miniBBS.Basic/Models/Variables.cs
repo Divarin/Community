@@ -2,11 +2,15 @@
 using miniBBS.Basic.Executors;
 using miniBBS.Basic.Interfaces;
 using miniBBS.Core;
+using miniBBS.Core.Interfaces;
+using miniBBS.Services;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using miniBBS.Extensions;
 
 namespace miniBBS.Basic.Models
 {
@@ -131,6 +135,21 @@ namespace miniBBS.Basic.Models
         public void ClearScoped()
         {
             _scopedStack.Clear();
+        }
+
+        public string GetState()
+        {
+            var json = JsonConvert.SerializeObject(_globals);
+            var stateData = GlobalDependencyResolver.Default.Get<ICompressor>().Compress(json);
+            return stateData;
+        }
+
+        public void SetState(string stateData)
+        {
+            var json = GlobalDependencyResolver.Default.Get<ICompressor>().Decompress(stateData);
+            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);            
+            foreach (var v in dict)
+                _globals[v.Key] = v.Value;
         }
 
         private string EvaluateArrayExpressions(string key)

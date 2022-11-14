@@ -307,6 +307,7 @@ namespace miniBBS
                 session.ShowPrompt();
 
                 string line = session.Io.InputLine(InputHandlingFlag.InterceptSingleCharacterCommand | InputHandlingFlag.UseLastLine);
+                line = line?.Trim();
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line))
                 {
@@ -1108,6 +1109,9 @@ namespace miniBBS
                 case "/bas":
                     Commands.Basic.Execute(session, parts.Skip(1).ToArray());
                     return;
+                case "/bots":
+                    Bot.ListBots(session, parts.Skip(1)?.FirstOrDefault());
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
@@ -1153,6 +1157,11 @@ namespace miniBBS
                 }
                 else
                     session.Io.Error($"Message number {msgNum} is out of range for this channel.");
+            }
+            else if (command.EndsWith("bot", StringComparison.CurrentCultureIgnoreCase) && command.Length >= 5)
+            {
+                var scriptName = command.Substring(1, command.Length - 4);
+                Bot.Execute(session, scriptName, string.Join(" ", parts.Skip(1)));
             }
             else
                 session.Io.Error("Unrecognized command.  Use /? for help.");

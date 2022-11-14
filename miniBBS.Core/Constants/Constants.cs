@@ -4,7 +4,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "4.3 - 2022.11.05";
+        public const string Version = "4.4 - 2022.11.14";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -50,7 +50,7 @@ namespace miniBBS.Core
         public static readonly string[] IllegalUsernames = new[]
         {
             "Sysop", "Administrator", "Admin", "Root", "Owner", "New", "Me", "On", "Off",
-            "Guest", "Anon", "Anonymous"
+            "Guest", "Anon", "Anonymous", "Flag"
         };
 
         /// <summary>

@@ -167,7 +167,15 @@ namespace miniBBS.TextFiles
             switch (file.ActualFilename.FileExtension().ToLower())
             {
                 case "bas":
-                    result = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Path) + "/", autoStart: false);
+                    result = new MutantBasic(
+                        StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Parent.Path) + "/", 
+                        autoStart: false);
+                    break;
+                case "mbs":
+                    result = new MutantBasic(
+                        StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Parent.Path) + "/",
+                        autoStart: false,
+                        scriptName: file.DisplayedFilename);
                     break;
                 case "db":
                     result = GlobalDependencyResolver.Default.Get<ISqlUi>() as ITextEditor;

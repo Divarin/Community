@@ -38,9 +38,29 @@ namespace miniBBS.Services.Services
         private const byte ACK = 0x06;
 
         /// <summary>
+        /// Data Link Escape
+        /// </summary>
+        private const byte DLE = 0x10;
+
+        /// <summary>
+        /// X-On (DC1) Transmit On
+        /// </summary>
+        private const byte XON = 0x11;
+
+        /// <summary>
+        /// X-Off (DC3) Transmit Off
+        /// </summary>
+        private const byte XOFF = 0x13;
+
+        /// <summary>
         /// Not Achnowledge
         /// </summary>
         private const byte NAK = 0x15;
+
+        /// <summary>
+        /// Synchronous idle
+        /// </summary>
+        private const byte SYN = 0x16;
 
         /// <summary>
         /// End of Transmission Block
@@ -115,17 +135,22 @@ namespace miniBBS.Services.Services
 
                 foreach (var req in inputBuffer)
                 {
-                    if (req == '0')
-                        continue;
+                    if (canceled) break;
+                    //if (req == '0') continue;
 
-                    if (!sendStarted && (C.Equals(req) || NAK.Equals(req)))
+                    if (!sendStarted)
                     {
-                        use16bitChecksum = Options.HasFlag(FileTransferProtocolOptions.XmodemCrc) || C.Equals(req);
-                        sendStarted = true;
-                        waitToStartStopwatch.Stop();
-                        lastPacket = GetNextPacketToSend(data, use16bitChecksum);
-                        session.Io.OutputRaw(lastPacket);
-                        session.Io.Flush();
+                        if (C.Equals(req) || NAK.Equals(req))
+                        {
+                            use16bitChecksum = Options.HasFlag(FileTransferProtocolOptions.XmodemCrc) || C.Equals(req);
+                            sendStarted = true;
+                            waitToStartStopwatch.Stop();
+                            lastPacket = GetNextPacketToSend(data, use16bitChecksum);
+                            session.Io.OutputRaw(lastPacket);
+                            session.Io.Flush();
+                        } 
+                        else if (req == CAN)
+                            canceled = true;
                     }
                     else
                     {
@@ -153,7 +178,7 @@ namespace miniBBS.Services.Services
                     }
                     Thread.Sleep(25);
                 }
-            } 
+            }
 
             return _offset >= Data.Length - 1;
         }

@@ -6,6 +6,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;
@@ -23,15 +24,23 @@ namespace miniBBS.Basic
         private string _loadedData;
         private string _rootDirectory;
         private bool _autoStart;
-        private const string _version = "2.1";
+        private readonly bool _isScript;
+        private readonly string _scriptName;
+        private readonly string _scriptInput;
+        private readonly bool _isDebugging;
+        private const string _version = "2.3";
         public static bool _debug = false;
 
         public Func<string, string> OnSave { get; set; }
 
-        public MutantBasic(string rootDirectory, bool autoStart)
+        public MutantBasic(string rootDirectory, bool autoStart, string scriptName = null, string scriptInput = null, bool isDebugging = false)
         {
             _rootDirectory = rootDirectory;
             _autoStart = autoStart;
+            _isScript = !string.IsNullOrWhiteSpace(scriptName);
+            _scriptName = scriptName;
+            _scriptInput = scriptInput;
+            _isDebugging = isDebugging;
         }
 
         public void EditText(BbsSession session, LineEditorParameters parameters = null)
@@ -48,18 +57,11 @@ namespace miniBBS.Basic
             
             try
             {
-                //new DatabaseInitializer().InitializeDatabase();
-
-                _session.Io.OutputLine($"  ***** Mutant Basic v{_version} ***** ");
-                _session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Cyan);
-
-                //if (autoRun && basicProgram.SourceVisible == 1)
-                //{
-                //    _session.Io.Output($"Run {basicProgram.Name} now?");
-                //    var _k = _session.Io.InputKey();
-                //    _session.Io.OutputLine();
-                //    autoRun = char.ToLower(_k.KeyChar) == 'y';
-                //}
+                if (!_isScript)
+                {
+                    _session.Io.OutputLine($"  ***** Mutant Basic v{_version} ***** ");
+                    _session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Cyan);
+                }
 
                 StartInternal();
             } 
@@ -244,7 +246,7 @@ namespace miniBBS.Basic
                     foreach (var key in variables.Keys)
                         _session.Io.OutputLine($"{key} = {variables[key]}");
                 }
-                else if (line.StartsWith("save", StringComparison.CurrentCultureIgnoreCase) || line.Equals("/s", StringComparison.CurrentCultureIgnoreCase))
+                else if ("save".Equals(line, StringComparison.CurrentCultureIgnoreCase) || "/s".Equals(line, StringComparison.CurrentCultureIgnoreCase))
                 {
                     _loadedData = ProgramData.Serialize(progLines);
                     OnSave(_loadedData);
@@ -329,7 +331,8 @@ namespace miniBBS.Basic
             _session.Io.AbortPollKey();
             _session.Io.ClearPolledKey();
 
-            _session.Io.PollKey();
+            if (!_isScript)
+                _session.Io.PollKey();
 
             int lastLineNumber = -1;
             List<string> currentLineStatements = null;
@@ -349,19 +352,27 @@ namespace miniBBS.Basic
                     break;
                 if (sp.LineNumber == lastLine.LineNumber && sp.StatementNumber > lastLine.StatementNumber)
                     break;
-                if (runTimer.Elapsed.TotalMinutes > Constants.BasicMaxRuntimeMin)
+
+                bool ranTooLong =
+                    (_isScript && runTimer.Elapsed.TotalSeconds > 5) ||
+                    runTimer.Elapsed.TotalMinutes > Constants.BasicMaxRuntimeMin;
+
+                if (ranTooLong)
                 {
                     _session.Io.OutputLine("Maximum program runtime reached.");
                     break;
                 }
 
-                var polledKey = _session.Io.GetPolledKey();
-                if (polledKey == (char)27 || polledKey == '\u0003') // escape or ctrl+c
+                if (!_isScript)
                 {
-                    brk = true;
-                    _session.Io.AbortPollKey();
-                    _session.Io.OutputLine();
-                    _session.Io.OutputLine($"? break at line {sp.LineNumber}");
+                    var polledKey = _session.Io.GetPolledKey();
+                    if (polledKey == (char)27 || polledKey == '\u0003') // escape or ctrl+c
+                    {
+                        brk = true;
+                        _session.Io.AbortPollKey();
+                        _session.Io.OutputLine();
+                        _session.Io.OutputLine($"? break at line {sp.LineNumber}");
+                    }
                 }
 
                 if (!progLines.ContainsKey(sp.LineNumber) ||
@@ -391,8 +402,11 @@ namespace miniBBS.Basic
                 }
             }
 
-            _session.Io.AbortPollKey();
-            _session.Io.OutputLine($"Program run complete, you may need to press a key to clear the input stream buffer.");
+            if (!_isScript)
+            {
+                _session.Io.AbortPollKey();
+                _session.Io.OutputLine($"Program run complete, you may need to press a key to clear the input stream buffer.");
+            }
         }
 
         private void TryLoad(ref SortedList<int, string> progLines, ref Variables variables)
@@ -406,7 +420,8 @@ namespace miniBBS.Basic
                 {
                     Labels = FindLabels(progLines)
                 };
-                _session.Io.OutputLine("program loaded");
+                if (!_isScript)
+                    _session.Io.OutputLine("program loaded");
             }
         }
 
@@ -478,6 +493,13 @@ namespace miniBBS.Basic
                 return "\"\"";
             };
             vars["INKEY"] = () => _session.Io.GetPolledTicks().ToString();
+
+            if (_isScript)
+            {
+                vars["SCRIPTNAME$"] = () => '"' + _scriptName + '"';
+                vars["CHAT$"] = () => '"' + _scriptInput + '"';
+                vars["DEBUGGING"] = () => _isDebugging ? "1" : "0";
+            }
 
             return vars;
         }
@@ -574,7 +596,15 @@ namespace miniBBS.Basic
                 {
                     case "?":
                     case "print":
-                        Print.Execute(_session, args, variables);
+                        if (_isScript)
+                        {
+                            Print.BroadcastToChannel(_session, args, variables);
+                            return new StatementPointer() { LineNumber = -1, StatementNumber = 0 }; // end
+                        }
+                        else
+                        {
+                            Print.Execute(_session, args, variables);
+                        }  
                         break;
                     case "let":
                         Let.Execute(_session, args, variables, _rootDirectory);
@@ -680,17 +710,12 @@ namespace miniBBS.Basic
                         }
                         break;
                     case "input":
-                        {
-                            //bool polling = _session.Io.IsPolling;
-                            //if (polling)
-                            //    _session.Io.AbortPollKey();
+                        if (!_isScript)
                             Input.Execute(_session, args, variables);
-                            //if (polling)
-                            //    _session.Io.PollKey();
-                        }
                         break;
                     case "get":
-                        Get.Execute(_session, args, variables);
+                        if (!_isScript)
+                            Get.Execute(_session, args, variables);
                         break;
                     case "end":
                         return new StatementPointer() { LineNumber = -1, StatementNumber = 0 };
@@ -724,14 +749,28 @@ namespace miniBBS.Basic
                         Rnd.SetSeed(args, variables);
                         break;
                     case "pollon":
-                        _session.Io.PollKey();
+                        if (!_isScript)
+                            _session.Io.PollKey();
                         break;
                     case "polloff":
-                        _session.Io.AbortPollKey();
+                        if (!_isScript)
+                            _session.Io.AbortPollKey();
                         break;
                     case "@":
                     case "sql":
                         new Sql(_rootDirectory).Execute(_session, args, variables);
+                        break;
+                    case "savestate":
+                        new Sql(_rootDirectory).ExecuteStateCommand(_session, "savestate", args, variables);
+                        break;
+                    case "loadstate":
+                        new Sql(_rootDirectory).ExecuteStateCommand(_session, "loadstate", args, variables);
+                        break;
+                    case "clearstate":
+                        new Sql(_rootDirectory).ExecuteStateCommand(_session, "clearstate", args, variables);
+                        break;
+                    case "states":
+                        new Sql(_rootDirectory).ExecuteStateCommand(_session, "states", null, variables);
                         break;
                     case "data":
                         // ignore data line
