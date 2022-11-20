@@ -19,10 +19,11 @@ namespace miniBBS.Basic.Executors
 
         private static readonly string[] _mathFunctions = new string[]
         { 
-            "RND", "SIN", "COS", "TAN", "ATAN", "ASIN", "ACOS", "SQR", "VAL", "STR$", "INT", "POW", 
+            "RND", "SIN", "COS", "TAN", "ATAN", "ASIN", "ACOS", "SQR", "VAL", "STR$", "INT", "POW", "MOD",
             "CHR$", "ASC", "LEFT$", "RIGHT$", "MID$", "REPLACE$", "INSTR", "LEN", "TAB", "ABS", "UC$", "LC$",
-            "COUNT",
-            "ISWORD", "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS"
+            "COUNT", "NL$", "ISWORD", 
+            "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
+            "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$"
         };
 
         private static readonly char[] _logicalOperators = new char[]
@@ -414,6 +415,15 @@ namespace miniBBS.Basic.Executors
                                 value = Math.Pow(double.Parse(a), double.Parse(b)).ToString();
                             }
                             break;
+                        case "mod":
+                            {
+                                string[] parts = value.Split(new char[] { ',', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                var a = Execute(parts[0], variables, pkg);
+                                var b = Execute(parts[1], variables, pkg);
+                                if (double.TryParse(a, out double dA) && int.TryParse(b, out int iB))
+                                    value = ((int)(dA % iB)).ToString();
+                            }
+                            break;
                         case "int": value = Int.Execute(value).ToString(); break;
                         case "chr$":
                             {
@@ -527,6 +537,20 @@ namespace miniBBS.Basic.Executors
                                 value = $"{count}";
                             }
                             break;
+                        case "nl$":
+                            {
+                                if (!string.IsNullOrWhiteSpace(value))
+                                {
+                                    string strN = Execute(value, variables, pkg).Detokenize(pkg.StringValues);
+                                    if (int.TryParse(strN, out int n) && n > 1 && n < 100)
+                                        value = Environment.NewLine.Repeat(n);
+                                    else
+                                        value = Environment.NewLine;
+                                }
+                                else
+                                    value = Environment.NewLine;
+                            }
+                            break;
                         case "uc$":
                             {
                                 value = value.Detokenize(pkg.StringValues);
@@ -596,6 +620,7 @@ namespace miniBBS.Basic.Executors
                         case "isword":
                             value = Words.IsWord(value.Detokenize(pkg.StringValues)) ? "True" : "False";
                             break;
+                        case "getword$":
                         case "getword":
                             {
                                 if (string.IsNullOrWhiteSpace(value))
@@ -615,9 +640,11 @@ namespace miniBBS.Basic.Executors
                                 }
                             }
                             break;
+                        case "getwordcontains$":
                         case "getwordcontains":
                             value = '"' + Words.GetWordContains(value.Detokenize(pkg.StringValues)) + '"';
                             break;
+                        case "getnextword$":
                         case "getnextword":
                             {
                                 if (string.IsNullOrWhiteSpace(value))
@@ -637,6 +664,7 @@ namespace miniBBS.Basic.Executors
                                 }
                             }
                             break;
+                        case "getnextwordcontains$":
                         case "getnextwordcontains":
                             value = '"' + Words.GetWordContains(value.Detokenize(pkg.StringValues), unique: true) + '"';
                             break;

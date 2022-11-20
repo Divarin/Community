@@ -38,8 +38,9 @@ namespace miniBBS.Commands
                         return new
                         {
                             Username = username,
-                            s.Afk,
+                            s.Afk,                            
                             s.AfkReason,
+                            s.DoNotDisturb,
                             s.IdleTime,
                             ChannelName = s.Channel.Name
                         };
@@ -62,6 +63,9 @@ namespace miniBBS.Commands
                             else
                                 listItem += "(AFK)";
                         }
+
+                        if (s.DoNotDisturb)
+                            listItem += "(DND)";
 
                         listItem += $" in {s.ChannelName}";
                         var idleTime = s.IdleTime.TotalMinutes;

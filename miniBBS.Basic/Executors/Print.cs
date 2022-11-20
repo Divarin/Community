@@ -1,5 +1,4 @@
-﻿using miniBBS.Basic.Interfaces;
-using miniBBS.Basic.Models;
+﻿using miniBBS.Basic.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
 using System;
@@ -45,6 +44,7 @@ namespace miniBBS.Basic.Executors
             var botname = variables["SCRIPTNAME$"]
                 .ToUpper()
                 .Replace(".MBS", "BOT")
+                .Replace(".BOT", "BOT")
                 .Replace("\"", "");
             
             line = Evaluate.Execute(line, variables);

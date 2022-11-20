@@ -27,6 +27,7 @@ namespace miniBBS.Commands
                     Username = s.User.Name,
                     s.Afk,
                     s.AfkReason,
+                    s.DoNotDisturb,
                     ChannelName = s.Channel.Name
                 })
                 .GroupBy(s => s.Username)
@@ -55,10 +56,13 @@ namespace miniBBS.Commands
                     if (afk != null)
                     {
                         if (!"away from keyboard".Equals(afk.AfkReason, StringComparison.CurrentCultureIgnoreCase))
-                            l += $"(AFK:{afk.AfkReason})";
+                            l += $" (AFK:{afk.AfkReason})";
                         else
-                            l += "(AFK)";
+                            l += " (AFK)";
                     }
+                    var dnd = usl.FirstOrDefault(x => x.DoNotDisturb);
+                    if (dnd != null)
+                        l += " (DND)";
                     l += $" in {string.Join(", ", usl.Select(x => x.ChannelName).Distinct())}";
                 }
 

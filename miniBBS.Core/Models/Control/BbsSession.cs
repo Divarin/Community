@@ -67,9 +67,14 @@ namespace miniBBS.Core.Models.Control
             }
             set
             {
+                var changed = _doNotDisturb != value;
                 _doNotDisturb = value;
+
                 if (!_doNotDisturb && DndMessages.Count > 0)
                     ShowDndMessages();
+
+                if (changed && User != null && Channel != null)
+                    Messager.Publish(this, new ChannelMessage(Id, Channel.Id, $"{User.Name} is {(_doNotDisturb ? "now" : "no longer")} in Do Not Disturb (DND) mode."));
             }
         }
 
@@ -79,9 +84,33 @@ namespace miniBBS.Core.Models.Control
         public TimeSpan IdleTime => DateTime.UtcNow - _lastActivityUtc;
         public IDictionary<int, string> Usernames { get; set; } 
         public SortedList<int, Chat> Chats { get; set; }
-        public int MsgPointer => UcFlag?.LastReadMessageNumber ?? 0;
 
+        #region message pointers
+        /// <summary>
+        /// The next message the user will read when they hit enter
+        /// </summary>
+        public int MsgPointer { get; set; } // => UcFlag?.LastReadMessageNumber ?? 0;
+        /// <summary>
+        /// The last message the user read when they hit enter (not including new, live, messages)
+        /// </summary>
+        public int LastMsgPointer { get; set; }
+        /// <summary>
+        /// The last message the user read (including new, live, messages)
+        /// </summary>
+        public int? LastReadMessageNumber { get; set; }
+        /// <summary>
+        /// The last message the user read (including new, live, messages) when they began typing a response 
+        /// If a new message shows up (updating LastReadMessageNumber) while they are typing a response then 
+        /// this value is unaffected.  This sets the re: number for that response
+        /// </summary>
+        public int? LastReadMessageNumberWhenStartedTyping { get; set; }
+        /// <summary>
+        /// The last message the user read using /re or /ra, used to find the next re: or ra message or to 
+        /// extract textfiles/basic program links from the message.
+        /// </summary>
         public int? ContextPointer { get; set; }
+        #endregion
+
         public UserChannelFlag UcFlag { get; set; }
         public Channel Channel { get; set; }
         public bool ForceLogout { get; set; }
@@ -93,8 +122,6 @@ namespace miniBBS.Core.Models.Control
         public bool Afk { get; set; }
         public string AfkReason { get; set; }
         public SessionControlFlags ControlFlags { get; set; } = SessionControlFlags.None;
-        public int? LastReadMessageNumber { get; set; }
-        public int? LastReadMessageNumberWhenStartedTyping { get; set; }
 
         private int _pingPongTimeMin = 0;
         private Thread _pingPongThread = null;

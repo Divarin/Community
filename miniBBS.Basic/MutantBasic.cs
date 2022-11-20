@@ -91,7 +91,11 @@ namespace miniBBS.Basic
             }
 
             SortedList<int, string> progLines = ProgramData.Deserialize(_loadedData);
-            var variables = new Variables(GetEnvironmentVaraibles(_session.User));
+            Dictionary<string, string> defaultValues = _isScript ?
+                new Dictionary<string, string>(){ { "CHAT$", _scriptInput } } :
+                null;
+
+            var variables = new Variables(GetEnvironmentVaraibles(_session.User), defaultValues);
 
             if (!string.IsNullOrWhiteSpace(_loadedData))
                 TryLoad(ref progLines, ref variables);
@@ -416,7 +420,11 @@ namespace miniBBS.Basic
             else
             {
                 progLines = ProgramData.Deserialize(_loadedData);
-                variables = new Variables(GetEnvironmentVaraibles(_session.User))
+                Dictionary<string, string> defaultValues = _isScript ?
+                    new Dictionary<string, string>() { { "CHAT$", _scriptInput } } :
+                    null;
+
+                variables = new Variables(GetEnvironmentVaraibles(_session.User), defaultValues)
                 {
                     Labels = FindLabels(progLines)
                 };
@@ -497,7 +505,6 @@ namespace miniBBS.Basic
             if (_isScript)
             {
                 vars["SCRIPTNAME$"] = () => '"' + _scriptName + '"';
-                vars["CHAT$"] = () => '"' + _scriptInput + '"';
                 vars["DEBUGGING"] = () => _isDebugging ? "1" : "0";
             }
 
@@ -596,9 +603,13 @@ namespace miniBBS.Basic
                 {
                     case "?":
                     case "print":
+                    case "uprint":
                         if (_isScript)
                         {
-                            Print.BroadcastToChannel(_session, args, variables);
+                            if ("uprint".Equals(command, StringComparison.CurrentCultureIgnoreCase))
+                                Print.Execute(_session, args, variables);
+                            else
+                                Print.BroadcastToChannel(_session, args, variables);
                             return new StatementPointer() { LineNumber = -1, StatementNumber = 0 }; // end
                         }
                         else

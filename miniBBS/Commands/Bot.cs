@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
@@ -14,8 +15,13 @@ namespace miniBBS.Commands
         public static void Execute(BbsSession session, string scriptName, string scriptInput)
         {
             var browser = DI.Get<ITextFilesBrowser>();
-            var scripts = browser.FindBasicPrograms(session, scripts: true).ToList();
-            var bots = scripts.Where(x => x.EndsWith($"/{scriptName}.mbs", StringComparison.CurrentCultureIgnoreCase)).ToList();
+            var scripts = browser
+                .FindBasicPrograms(session, scripts: true)
+                .Select(x => x.Split('|').First())
+                .ToList();
+            var bots = scripts.Where(x => 
+                x.EndsWith($"/{scriptName}.mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                x.EndsWith($"/{scriptName}.bot", StringComparison.CurrentCultureIgnoreCase) ).ToList();
             string bot = null;
 
             if (bots.Count < 1)
@@ -34,8 +40,8 @@ namespace miniBBS.Commands
             if (string.IsNullOrWhiteSpace(bot))
                 return;
 
-            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, 
-                $"<{session.User.Name} to {scriptName.ToUpper()}BOT> {scriptInput}"));
+            //session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, 
+            //    $"<{session.User.Name} to {scriptName.ToUpper()}BOT> {scriptInput}"));
             browser.RunScript(session, bot, scriptInput);
         }
 
@@ -43,17 +49,54 @@ namespace miniBBS.Commands
         {
             var browser = DI.Get<ITextFilesBrowser>();
             var scripts = browser.FindBasicPrograms(session, scripts: true).ToList();
-            var bots = scripts.Where(x => x.EndsWith($".mbs", StringComparison.CurrentCultureIgnoreCase)).ToList();
+            var bots = scripts
+                .Select(x => x.Split('|'))
+                .ToList();
             if (!string.IsNullOrWhiteSpace(searchTerm))
-                bots = bots.Where(x => x.ToUpper().Contains(searchTerm.ToUpper())).ToList();
+                bots = bots.Where(x => x[0].ToUpper().Contains(searchTerm.ToUpper())).ToList();
             var builder = new StringBuilder();
             
             builder.AppendLine(" *** Bots ***");
             foreach (var bot in bots)
-                builder.AppendLine(bot);
+            {
+                var botName = GetBotName(bot[0]);
+                var botOwner = GetBotOwner(bot[0]);
+                var botDesc = bot.Length >= 2 ? bot[1] : "No description";
+                builder.AppendLine($"{botName} by {botOwner} - {botDesc}");
+            }
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 session.Io.Output(builder.ToString());
+        }
+
+        private static string GetBotName(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return path;
+
+            path = path.ToUpper();
+
+            int start = path.LastIndexOf('/')+1;
+            int end = path.IndexOf(".MBS", start);
+            if (end < start) end = path.IndexOf(".BOT", start);
+            int len = end - start;
+
+            string name = path.Substring(start, len);
+            return name + "BOT";
+        }
+
+        private static string GetBotOwner(string path)
+        {
+            const string users = "users/";
+            
+            if (string.IsNullOrWhiteSpace(path) || path.Length <= users.Length)
+                return path;
+
+            path = path.Substring(users.Length);
+            int end = path.IndexOf('/');
+
+            string owner = path.Substring(0, end);
+            return owner;
         }
 
         private static string SelectBot(BbsSession session, List<string> bots)

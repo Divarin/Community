@@ -16,11 +16,17 @@ namespace miniBBS.Basic.Models
 {
     public class Variables : IDictionary<string, string>
     {
-        public Variables(IDictionary<string, Func<string>> environmentVariables)
+        public Variables(IDictionary<string, Func<string>> environmentVariables, IDictionary<string, string> defaultValues = null)
         {
             EnvironmentVariables = environmentVariables;
             Data = new Data();
             Functions = new List<Function>();
+
+            if (defaultValues != null)
+            {
+                foreach (var dv in defaultValues)
+                    this[dv.Key] = dv.Value;
+            }
         }
 
         public string this[string key]
@@ -48,7 +54,14 @@ namespace miniBBS.Basic.Models
                 if (true == EnvironmentVariables?.ContainsKey(key))
                     throw new RuntimeException($"'{key}' is an Environment Variable");
 
-                if (key.Contains("$"))
+                if (value == null)
+                {
+                    if (_globals.ContainsKey(key))
+                        _globals.Remove(key);
+                    return;
+                }
+
+                if (value != null && key.Contains("$"))
                 {
                     if (!value.StartsWith("\"") && !value.EndsWith("\""))
                         value = '"' + value + '"';

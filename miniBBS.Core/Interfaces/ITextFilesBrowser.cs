@@ -19,7 +19,7 @@ namespace miniBBS.Core.Interfaces
         bool ReadLink(BbsSession session, string msg);
 
         /// <summary>
-        /// Runs an .mbs script
+        /// Runs an .mbs/.bot script
         /// </summary>
         bool RunScript(BbsSession session, string scriptPath, string scriptInput);
 

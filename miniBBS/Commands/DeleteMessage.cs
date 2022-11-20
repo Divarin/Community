@@ -58,11 +58,16 @@ namespace miniBBS.Commands
                         DI.GetRepository<Chat>().Delete(toBeDeleted);
                         session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message)
                         {
-                            OnReceive = (s) => s.Chats.Remove(toBeDeleted.Id)
+                            OnReceive = (s) =>
+                            {
+                                s.Chats.Remove(toBeDeleted.Id);
+                                SetMessagePointer.Execute(s, s.MsgPointer);
+                            }
                         });
                         DI.Get<ILogger>().Log(session, message);
-                        if (session.MsgPointer > session.Chats.Keys.Max())
-                            SetMessagePointer.Execute(session, session.Chats.Keys.Max());
+                        SetMessagePointer.Execute(session, session.MsgPointer);
+                        //if (session.MsgPointer > session.Chats.Keys.Max())
+                        //    SetMessagePointer.Execute(session, session.Chats.Keys.Max());
                     }
                 }
             }

@@ -143,7 +143,7 @@ namespace miniBBS.TextFiles
         }
 
         /// <summary>
-        /// Runs an .mbs script
+        /// Runs an .mbs/.bot script
         /// </summary>
         public bool RunScript(BbsSession session, string scriptPath, string scriptInput)
         {
@@ -181,11 +181,15 @@ namespace miniBBS.TextFiles
 
                 foreach (var link in linksInDir)
                 {
+                    bool isBasic = !scripts && link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase);
+
+                    bool isBot = scripts && (
+                        link.DisplayedFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                        link.DisplayedFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase));
+
                     if (link.IsDirectory)
                         subdirs.Enqueue(link);
-                    else if (scripts && link.DisplayedFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase))
-                        yield return $"{link.Parent.Path}{link.Path}";
-                    else if (!scripts && link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
+                    else if (isBasic || isBot)
                         yield return $"{link.Parent.Path}{link.Path}|{link.Description}";
                 }
             } while (subdirs.Count > 0);
@@ -397,8 +401,12 @@ namespace miniBBS.TextFiles
                             var basicProgram = links.GetLink(parts[1], requireExactMatch: false);
                             if (true == basicProgram?.ActualFilename?.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
                                 RunBasicProgram(basicProgram);
-                            else if (true == basicProgram?.ActualFilename?.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase))
+                            else if (
+                                true == basicProgram?.ActualFilename?.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                                true == basicProgram?.ActualFilename?.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase))
+                            {
                                 RunBasicProgram(basicProgram, string.Join(" ", parts.Skip(2)), debugging: true);
+                            }
                             else
                                 _session.Io.OutputLine("Invalid Basic program.");
                         }
@@ -695,9 +703,8 @@ namespace miniBBS.TextFiles
             }
 
             string body = FileReader.LoadFileContents(_currentLocation, link);
-            bool isBasic =
-                link.ActualFilename.FileExtension().Equals("bas", StringComparison.CurrentCultureIgnoreCase) ||
-                link.ActualFilename.FileExtension().Equals("mbs", StringComparison.CurrentCultureIgnoreCase);
+            var basicExtensions = new[] { "bas", "mbs", "bot" };
+            bool isBasic = basicExtensions.Contains(link.ActualFilename.FileExtension(), StringComparer.CurrentCultureIgnoreCase);
 
             if (isBasic)
             {
@@ -782,7 +789,9 @@ namespace miniBBS.TextFiles
 
             try
             {
-                bool isScript = link.ActualFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase);
+                bool isScript = 
+                    link.ActualFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                    link.ActualFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase);
 
                 ITextEditor basic = new MutantBasic(
                     StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Parent.Path) + "/",

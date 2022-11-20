@@ -172,6 +172,7 @@ namespace miniBBS.TextFiles
                         autoStart: false);
                     break;
                 case "mbs":
+                case "bot":
                     result = new MutantBasic(
                         StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, file.Parent.Path) + "/",
                         autoStart: false,
