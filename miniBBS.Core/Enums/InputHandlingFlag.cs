@@ -28,6 +28,16 @@ namespace miniBBS.Core.Enums
         /// <summary>
         /// Allows use of up arrow to recall last typed line
         /// </summary>
-        UseLastLine = 8
+        UseLastLine = 8,
+
+        /// <summary>
+        /// Remove newline (Enter) input from echo
+        /// </summary>
+        DoNotEchoNewlines = 16,
+
+        /// <summary>
+        /// For enter text into chat, allow CTRL+ENTER to add a blank line in the text without submitting the text
+        /// </summary>
+        AllowCtrlEnterToAddNewLine = 32
     }
 }

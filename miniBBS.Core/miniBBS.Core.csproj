@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="Constants\Constants.cs" />
     <Compile Include="Enums\AccessFlag.cs" />
+    <Compile Include="Enums\ChatWriteFlags.cs" />
     <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\LoggingOptions.cs" />

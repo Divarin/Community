@@ -80,8 +80,9 @@ namespace miniBBS.Services.GlobalCommands
             session.Channel = channel;
             session.Chats = GlobalDependencyResolver.Default.Get<IChatCache>().GetChannelChats(session.Channel.Id);
             //new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id).ToDictionary(k => k.Id));
-            session.UcFlag = ucFlag;
+            session.UcFlag = ucFlag;            
             SetMessagePointer.Execute(session, session.UcFlag.LastReadMessageNumber);
+            
             session.ContextPointer = null;
             session.LastReadMessageNumber = null;
 
@@ -117,7 +118,7 @@ namespace miniBBS.Services.GlobalCommands
                 session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
             }
 
-            ShowNextMessage.Execute(session);
+            ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
 
             return true;
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using miniBBS.Core.Enums;
+using System;
 
 namespace miniBBS.Core
 {
@@ -31,6 +32,8 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const int TutorLogins = 10;
 
         public const int MaxVoteQuestionsPerUser = 5;
         public const int MaxVoteQuestionsPerDay = 1;
@@ -106,7 +109,18 @@ namespace miniBBS.Core
         // used for search results when searching chat history
         public const int MaxSnippetLength = 25;
 
-        public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
+        /// <summary>
+        /// While typing a message, if a new message comes in, the notification about that new message will be 
+        /// delayed until the user is done typing or this timespan has elapsed.
+        /// </summary>
+        public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(2);
+
+        public static readonly InputHandlingFlag ChatInputHandling = 
+            InputHandlingFlag.InterceptSingleCharacterCommand | 
+            InputHandlingFlag.UseLastLine | 
+            InputHandlingFlag.DoNotEchoNewlines | 
+            InputHandlingFlag.AllowCtrlEnterToAddNewLine;
+
         public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 5;
 

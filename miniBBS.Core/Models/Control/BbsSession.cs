@@ -93,7 +93,7 @@ namespace miniBBS.Core.Models.Control
         /// <summary>
         /// The last message the user read when they hit enter (not including new, live, messages)
         /// </summary>
-        public int LastMsgPointer { get; set; }
+        public int? LastMsgPointer { get; set; }
         /// <summary>
         /// The last message the user read (including new, live, messages)
         /// </summary>

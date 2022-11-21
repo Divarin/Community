@@ -59,6 +59,7 @@
     <Compile Include="GlobalCommands\ShowNextMessage.cs" />
     <Compile Include="GlobalCommands\SwitchOrMakeChannel.cs" />
     <Compile Include="GlobalCommands\SysopScreen.cs" />
+    <Compile Include="GlobalCommands\Tutor.cs" />
     <Compile Include="GlobalDependencyResolver.cs" />
     <Compile Include="Persistence\ChatCache.cs" />
     <Compile Include="Persistence\SqliteRepository.cs" />

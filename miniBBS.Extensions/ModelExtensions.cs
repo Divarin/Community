@@ -10,7 +10,7 @@ namespace miniBBS.Extensions
 {
     public static class ModelExtensions
     {
-        public static void Write(this Chat chat, BbsSession session, bool updateLastReadMessageNumber = true, bool monochrome = false)
+        public static void Write(this Chat chat, BbsSession session, ChatWriteFlags flags)
         {
             if (!session.Usernames.ContainsKey(chat.FromUserId))
             {
@@ -19,14 +19,16 @@ namespace miniBBS.Extensions
                     session.Usernames[chat.FromUserId] = un;
             }
 
-            var line = chat.GetWriteString(session, monochrome);
+            var line = chat.GetWriteString(session, flags.HasFlag(ChatWriteFlags.Monochorome));
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
                 session.Io.OutputLine(line);
             }
 
-            if (updateLastReadMessageNumber)
+            if (flags.HasFlag(ChatWriteFlags.UpdateLastReadMessage))
                 session.LastReadMessageNumber = chat.Id;
+            if (flags.HasFlag(ChatWriteFlags.UpdateLastMessagePointer))
+                session.LastMsgPointer = chat.Id;
         }
 
         public static string GetWriteString(this Chat chat, BbsSession session, bool monochrome = false)
@@ -43,15 +45,15 @@ namespace miniBBS.Extensions
 
             string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : $"Unknown (ID:{chat.FromUserId})";
             var chatNum = session.Chats.ItemNumber(chat.Id);
-            var reNum = session.Chats.ItemNumber(chat.ResponseToId);
-
+            var reNum = session.Chats.ItemNumber(chat.ResponseToId)?.ToString() ?? "none";
+            
             var line = string.Join("", new[]
             {
                 $"{clr(ConsoleColor.Cyan)}[{clr(ConsoleColor.White)}{chatNum}{clr(ConsoleColor.White)}:",
                 $"{clr(ConsoleColor.Blue)}{chat.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}",
                 $"{clr(ConsoleColor.Cyan)}] <",
                 $"{clr(ConsoleColor.Yellow)}{username}{clr(ConsoleColor.Cyan)}>",
-                $"{clr(ConsoleColor.DarkGray)} re:{reNum}{Environment.NewLine}",
+                $"{clr(ConsoleColor.DarkGray)} (re:{reNum}) ",
                 $"{clr(ConsoleColor.Green)}{chat.Message}{endClr()}"
             });
 

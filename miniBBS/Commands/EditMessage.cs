@@ -193,7 +193,7 @@ namespace miniBBS.Commands
             session.Io.OutputLine($"Updated re: number for message {session.Chats.ItemNumber(chat.Id)} to {(newRe.HasValue ? newRe.ToString() : "nothing")}.");
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                chat.Write(session, false, true);
+                chat.Write(session, ChatWriteFlags.Monochorome);
             }
         }
 

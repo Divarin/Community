@@ -91,11 +91,8 @@ namespace miniBBS.Basic
             }
 
             SortedList<int, string> progLines = ProgramData.Deserialize(_loadedData);
-            Dictionary<string, string> defaultValues = _isScript ?
-                new Dictionary<string, string>(){ { "CHAT$", _scriptInput } } :
-                null;
 
-            var variables = new Variables(GetEnvironmentVaraibles(_session.User), defaultValues);
+            var variables = new Variables(GetEnvironmentVaraibles(_session.User));
 
             if (!string.IsNullOrWhiteSpace(_loadedData))
                 TryLoad(ref progLines, ref variables);
@@ -420,11 +417,7 @@ namespace miniBBS.Basic
             else
             {
                 progLines = ProgramData.Deserialize(_loadedData);
-                Dictionary<string, string> defaultValues = _isScript ?
-                    new Dictionary<string, string>() { { "CHAT$", _scriptInput } } :
-                    null;
-
-                variables = new Variables(GetEnvironmentVaraibles(_session.User), defaultValues)
+                variables = new Variables(GetEnvironmentVaraibles(_session.User))
                 {
                     Labels = FindLabels(progLines)
                 };
@@ -505,6 +498,7 @@ namespace miniBBS.Basic
             if (_isScript)
             {
                 vars["SCRIPTNAME$"] = () => '"' + _scriptName + '"';
+                vars["CHAT$"] = () => '"' + _scriptInput + '"';
                 vars["DEBUGGING"] = () => _isDebugging ? "1" : "0";
             }
 

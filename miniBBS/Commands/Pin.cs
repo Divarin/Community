@@ -38,7 +38,7 @@ namespace miniBBS.Commands
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                 {
-                    msg.Write(session, false, true);
+                    msg.Write(session, ChatWriteFlags.Monochorome);
                     var r = session.Io.Ask("Pin this message?");
                     if (r == 'N')
                         return;
@@ -101,7 +101,7 @@ namespace miniBBS.Commands
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                msg.Write(session, false, true);
+                msg.Write(session, ChatWriteFlags.Monochorome);
                 var r = session.Io.Ask("Unpin this message?");
                 if (r == 'N')
                     return;

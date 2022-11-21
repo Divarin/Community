@@ -16,17 +16,11 @@ namespace miniBBS.Basic.Models
 {
     public class Variables : IDictionary<string, string>
     {
-        public Variables(IDictionary<string, Func<string>> environmentVariables, IDictionary<string, string> defaultValues = null)
+        public Variables(IDictionary<string, Func<string>> environmentVariables)
         {
             EnvironmentVariables = environmentVariables;
             Data = new Data();
             Functions = new List<Function>();
-
-            if (defaultValues != null)
-            {
-                foreach (var dv in defaultValues)
-                    this[dv.Key] = dv.Value;
-            }
         }
 
         public string this[string key]
