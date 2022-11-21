@@ -49,7 +49,8 @@ namespace miniBBS.UserIo
             {20, new byte[] { 8 } }, // replace DEL with backspace
             {148, new byte[] { 0} }, // insert
             {92, new byte[] { (byte)'£'} }, // british pound
-            {94, new byte[] { (byte)'^'} }, // up arrow (not up cursor, the *arrow*)
+            {94, new byte[] { (byte)'^'} }, // up arrow (not up cursor, the *arrow*),
+            {141, new byte[] { (byte)10} }, // shift+enter = newline (ctrl+enter on PC)
         };
 
         public Cbm(BbsSession session)

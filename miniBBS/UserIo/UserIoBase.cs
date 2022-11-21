@@ -259,6 +259,10 @@ namespace miniBBS.UserIo
                 {
                     // handle wordwrap and pause
                     var lines = text.SplitAndWrap(session, flags).ToList();
+                    // if the last line is just a newline and the line before that also ends with a newline then omit the last line
+                    // this is because splitAndWrap added an extra newline as a side-effect
+                    if (lines.Count >= 2 && lines.Last().Equals(Environment.NewLine) && lines[lines.Count - 2].EndsWith(Environment.NewLine))
+                        lines = lines.Take(lines.Count - 1).ToList();
                     if (flags.HasFlag(OutputHandlingFlag.PauseAtEnd))
                         lines.Add(TransformText(" --- End of Document ---"));
                     int totalLines = lines.Count;
@@ -418,7 +422,10 @@ namespace miniBBS.UserIo
             return result;
         }
 
-        protected string StreamInputLine(BbsSession session, Func<string, string> autoComplete = null, InputHandlingFlag handlingFlag = InputHandlingFlag.None)
+        protected string StreamInputLine(
+            BbsSession session, 
+            Func<string, string> autoComplete = null, 
+            InputHandlingFlag handlingFlag = InputHandlingFlag.None)
         {
             session.LastReadMessageNumberWhenStartedTyping = null;
 
@@ -503,6 +510,18 @@ namespace miniBBS.UserIo
                     if (bytes.Length < 1)
                         continue;
                     var data = Encoding.ASCII.GetString(bytes, 0, i);
+                    bool includedNewLine = false;
+
+                    if (data == "\n")
+                    {
+                        if (handlingFlag.HasFlag(InputHandlingFlag.AllowCtrlEnterToAddNewLine))
+                        {
+                            data = Environment.NewLine;
+                            includedNewLine = true;
+                        }
+                        else
+                            continue;
+                    }
 
                     // deal with one or more backspaces
                     foreach (var d in data)
@@ -530,8 +549,10 @@ namespace miniBBS.UserIo
                         continue; // only contained backspace(s)
 
                     string echo = handlingFlag.HasFlag(InputHandlingFlag.PasswordInput) ? "*".Repeat(data.Length) : data;
+                    
+                    if (includedNewLine || !handlingFlag.HasFlag(InputHandlingFlag.DoNotEchoNewlines) || echo != Environment.NewLine)
+                        StreamOutput(session, echo);
 
-                    StreamOutput(session, echo);
                     if (echo == "\r")
                         StreamOutput(session, "\n");
 
@@ -540,11 +561,16 @@ namespace miniBBS.UserIo
                     if (lineBuilder.Length > 2 && lineBuilder.ToString().EndsWith("+++"))
                         return "/o"; // force logout
 
-                    if (data.Contains("\r"))
+                    if (!includedNewLine && data.Contains("\r"))
                     {
                         if (handlingFlag.HasFlag(InputHandlingFlag.PasswordInput))
                             StreamOutput(session, Environment.NewLine);
-                        var result = lineBuilder.ToString()?.Replace("\r", "")?.Replace("\n", "")?.Replace("\0", "");
+                        var result = lineBuilder.ToString()?.Replace("\0", "");
+                        
+                        // strip newlines from only the end of the result, leaving any that are in the middle or beginning.
+                        while (true == result?.EndsWith("\r") || true == result?.EndsWith("\n"))
+                            result = result.Substring(0, result.Length - 1);
+
                         if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine))
                             session.LastLine = result;
                         return result;

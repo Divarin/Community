@@ -305,13 +305,14 @@ namespace miniBBS
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
             {
                 session.ShowPrompt();
+                string line = session.Io.InputLine(Constants.ChatInputHandling);
 
-                string line = session.Io.InputLine(InputHandlingFlag.InterceptSingleCharacterCommand | InputHandlingFlag.UseLastLine);
+                line = line?.Trim();
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     // enter (advance to next n lines)
-                    ShowNextMessage.Execute(session);
+                    ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.UpdateLastMessagePointer);
                 }
                 else if (line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
                     ExecuteCommand(session, line);
@@ -335,40 +336,32 @@ namespace miniBBS
                         if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
                         {
                             notifiedAboutNoOneInChannel = true;
-                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                            {
-                                string msg =
-                                    $"Tutor:{Environment.NewLine}" +
-                                    $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
-                                    "Type /who to see who all is online and in what channels.";
-                                session.Io.OutputLine(msg);
-                            }
+                            Tutor.Execute(session,
+                                $"Tutor:{Environment.NewLine}" +
+                                $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
+                                "Type /who to see who all is online and in what channels.");
                         }
 
                         if (!notifiedAboutHowToDeleteOwnMessages && chat.Message.Length < 4)
                         {
                             notifiedAboutHowToDeleteOwnMessages = true;
-                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                            {
-                                string msg =
-                                    $"Tutor:{Environment.NewLine}" +
-                                    $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
-                                    $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
-                                    $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
-                                    "This notification will not be shown again during this session.";
-                                session.Io.OutputLine(msg);
-                            }
+                            Tutor.Execute(session,
+                                $"Tutor:{Environment.NewLine}" +
+                                $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
+                                $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
+                                $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
+                                "This notification will not be shown again during this session.");
                         }
                     }
                 }
             }
-
         }
 
         private static void Prompt(BbsSession session)
         {
             session.Io.SetForeground(ConsoleColor.Cyan);
-            var lastRead = session.Chats.ItemNumber(session.LastReadMessageNumber) ?? -1;
+            
+            var lastRead = session.Chats.ItemNumber(session.LastMsgPointer) ?? -1;
             var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
             
@@ -397,8 +390,9 @@ namespace miniBBS
                 return;
 
             int lastRead =
-                session.LastReadMessageNumberWhenStartedTyping ??
-                session.LastReadMessageNumber ??
+                session.LastMsgPointer ??
+                //session.LastReadMessageNumberWhenStartedTyping ??
+                //session.LastReadMessageNumber ??
                 session.MsgPointer;
 
             bool isAtEndOfMessages = true == session.Chats?.Any() && lastRead == session.Chats.Keys[session.Chats.Keys.Count - 2];
@@ -409,9 +403,12 @@ namespace miniBBS
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 {
                     session.Io.Output($"{Environment.NewLine}Now: ");
-                    chat.Write(session);
+                    chat.Write(session, ChatWriteFlags.UpdateLastReadMessage);
                     if (isAtEndOfMessages)
+                    {
                         SetMessagePointer.Execute(session, chat.Id);
+                        session.LastMsgPointer = session.MsgPointer;
+                    }
                 }
             };
 
@@ -890,7 +887,7 @@ namespace miniBBS
                 case "/e":
                 case "/end":
                     SetMessagePointer.Execute(session, session.Chats.Keys.Max());
-                    session.Chats[session.MsgPointer].Write(session);
+                    session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
                     return;                
                 case "/chl":
                 case "/chanlist":
@@ -1108,14 +1105,17 @@ namespace miniBBS
                 case "/bas":
                     Commands.Basic.Execute(session, parts.Skip(1).ToArray());
                     return;
+                case "/bots":
+                    Bot.ListBots(session, parts.Skip(1)?.FirstOrDefault());
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
-                    session.Chats[session.MsgPointer].Write(session);
+                    session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
                     return;
                 case ".":
                 case ">":
-                    ShowNextMessage.Execute(session);
+                    ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.UpdateLastMessagePointer);
                     return;
                 case "[":
                 case "{":
@@ -1149,10 +1149,15 @@ namespace miniBBS
                 if (n.HasValue)
                 {
                     SetMessagePointer.Execute(session, n.Value);
-                    ShowNextMessage.Execute(session);
+                    ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.UpdateLastMessagePointer);
                 }
                 else
                     session.Io.Error($"Message number {msgNum} is out of range for this channel.");
+            }
+            else if (command.EndsWith("bot", StringComparison.CurrentCultureIgnoreCase) && command.Length >= 5)
+            {
+                var scriptName = command.Substring(1, command.Length - 4);
+                Bot.Execute(session, scriptName, string.Join(" ", parts.Skip(1)));
             }
             else
                 session.Io.Error("Unrecognized command.  Use /? for help.");

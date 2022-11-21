@@ -34,6 +34,8 @@ namespace miniBBS.Services.GlobalCommands
             {
                 session.UcFlag.LastReadMessageNumber = msgPointer;
                 session.UcFlag = session.UcFlagRepo.InsertOrUpdate(session.UcFlag);
+                session.LastMsgPointer = session.MsgPointer;
+                session.MsgPointer = msgPointer;
             }
 
             session.ContextPointer = null;

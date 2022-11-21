@@ -142,7 +142,29 @@ namespace miniBBS.TextFiles
             }
         }
 
-        public IEnumerable<string> FindBasicPrograms(BbsSession session)
+        /// <summary>
+        /// Runs an .mbs/.bot script
+        /// </summary>
+        public bool RunScript(BbsSession session, string scriptPath, string scriptInput)
+        {
+            bool linkFound = false;
+            _session = session;
+            _currentLocation = _topLevel;
+            IList<Link> links = TopLevel.GetLinks().ToList();
+
+            Link link = FindLink($"[{scriptPath}]", links);
+            if (link != null && !link.IsDirectory)
+            {
+                linkFound = true;
+                RunBasicProgram(link, scriptInput);
+            }
+            else
+                session.Io.OutputLine("Sorry I was unable to find that file.");
+
+            return linkFound;
+        }
+
+        public IEnumerable<string> FindBasicPrograms(BbsSession session, bool scripts = false)
         {
             var root = TopLevel.GetLinks()
                 .FirstOrDefault(l => l.IsDirectory && "CommunityUsers".Equals(l.DisplayedFilename, StringComparison.CurrentCultureIgnoreCase));
@@ -159,9 +181,15 @@ namespace miniBBS.TextFiles
 
                 foreach (var link in linksInDir)
                 {
+                    bool isBasic = !scripts && link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase);
+
+                    bool isBot = scripts && (
+                        link.DisplayedFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                        link.DisplayedFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase));
+
                     if (link.IsDirectory)
                         subdirs.Enqueue(link);
-                    else if (link.DisplayedFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
+                    else if (isBasic || isBot)
                         yield return $"{link.Parent.Path}{link.Path}|{link.Description}";
                 }
             } while (subdirs.Count > 0);
@@ -373,6 +401,12 @@ namespace miniBBS.TextFiles
                             var basicProgram = links.GetLink(parts[1], requireExactMatch: false);
                             if (true == basicProgram?.ActualFilename?.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
                                 RunBasicProgram(basicProgram);
+                            else if (
+                                true == basicProgram?.ActualFilename?.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                                true == basicProgram?.ActualFilename?.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase))
+                            {
+                                RunBasicProgram(basicProgram, string.Join(" ", parts.Skip(2)), debugging: true);
+                            }
                             else
                                 _session.Io.OutputLine("Invalid Basic program.");
                         }
@@ -669,7 +703,10 @@ namespace miniBBS.TextFiles
             }
 
             string body = FileReader.LoadFileContents(_currentLocation, link);
-            if (link.ActualFilename.FileExtension().Equals("bas", StringComparison.CurrentCultureIgnoreCase))
+            var basicExtensions = new[] { "bas", "mbs", "bot" };
+            bool isBasic = basicExtensions.Contains(link.ActualFilename.FileExtension(), StringComparer.CurrentCultureIgnoreCase);
+
+            if (isBasic)
             {
                 if (true == link.Description?.EndsWith(Constants.BasicSourceProtectedFlag))
                     body = "Source code protected from viewing.";
@@ -744,7 +781,7 @@ namespace miniBBS.TextFiles
             FileWriter.WriteUploadedData(_session, _currentLocation, filename, getData);
         }
 
-        private void RunBasicProgram(Link link)
+        private void RunBasicProgram(Link link, string scriptInput = null, bool debugging = false)
         {
             string body = FileReader.LoadFileContents(_currentLocation, link);
             var previousLocation = _session.CurrentLocation;
@@ -752,7 +789,17 @@ namespace miniBBS.TextFiles
 
             try
             {
-                ITextEditor basic = new MutantBasic(StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Path) + "/", autoStart: true);
+                bool isScript = 
+                    link.ActualFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                    link.ActualFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase);
+
+                ITextEditor basic = new MutantBasic(
+                    StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Parent.Path) + "/",
+                    autoStart: true,
+                    scriptName: isScript ? link.DisplayedFilename : null,
+                    scriptInput: scriptInput,
+                    isDebugging: debugging);
+
                 basic.EditText(_session, new LineEditorParameters
                 {
                     Filename = link.DisplayedFilename,

@@ -16,11 +16,7 @@ namespace miniBBS.Commands
             if ("times".Equals(args?.FirstOrDefault(), StringComparison.CurrentCultureIgnoreCase))
             {
                 ShowSessionTimes(session);
-            }
-            else if (args == null || args.Length <= 1)
-            {
-                ShowSessionInfo(session, args?.FirstOrDefault());
-            }
+            }            
             else if (session.User.Access.HasFlag(AccessFlag.Administrator) && "flag".Equals(args[0]))
             {
                 if (args.Length < 2)
@@ -33,6 +29,10 @@ namespace miniBBS.Commands
                         session.ControlFlags |= f;
                     session.Io.OutputLine($"{session.ControlFlags}");
                 }
+            }
+            else if (args == null || args.Length <= 1)
+            {
+                ShowSessionInfo(session, args?.FirstOrDefault());
             }
         }
 

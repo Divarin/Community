@@ -38,8 +38,9 @@ namespace miniBBS.Services.GlobalCommands
             };
 
             int lastRead =
-                session.LastReadMessageNumberWhenStartedTyping ??
-                session.LastReadMessageNumber ??
+                session.LastMsgPointer ??
+                //session.LastReadMessageNumberWhenStartedTyping ??
+                //session.LastReadMessageNumber ??
                 session.MsgPointer;
 
             bool isAtEndOfMessages = true != session.Chats?.Any() || lastRead == session.Chats.Keys.Max();
@@ -53,7 +54,10 @@ namespace miniBBS.Services.GlobalCommands
                 session.LastReadMessageNumber = chat.Id;
             }
             if (isAtEndOfMessages)
+            {
                 SetMessagePointer.Execute(session, chat.Id);
+                session.LastMsgPointer = session.MsgPointer;
+            }
             session.Messager.Publish(session, new ChannelPostMessage(chat, session.Id));
             return chat;
         }

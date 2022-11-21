@@ -19,8 +19,13 @@ namespace miniBBS.Core.Interfaces
         bool ReadLink(BbsSession session, string msg);
 
         /// <summary>
+        /// Runs an .mbs/.bot script
+        /// </summary>
+        bool RunScript(BbsSession session, string scriptPath, string scriptInput);
+
+        /// <summary>
         /// Searches the CommunityUsers directories for published BASIC (.bas) programs and brings back links to them.
         /// </summary>
-        IEnumerable<string> FindBasicPrograms(BbsSession session);
+        IEnumerable<string> FindBasicPrograms(BbsSession session, bool scripts = false);
     }
 }

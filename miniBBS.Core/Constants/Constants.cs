@@ -1,10 +1,11 @@
-﻿using System;
+﻿using miniBBS.Core.Enums;
+using System;
 
 namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "4.3 - 2022.11.05";
+        public const string Version = "4.5 - 2022.11.21";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -32,6 +33,8 @@ namespace miniBBS.Core
             }
         }
 
+        public const int TutorLogins = 10;
+
         public const int MaxVoteQuestionsPerUser = 5;
         public const int MaxVoteQuestionsPerDay = 1;
 
@@ -50,7 +53,7 @@ namespace miniBBS.Core
         public static readonly string[] IllegalUsernames = new[]
         {
             "Sysop", "Administrator", "Admin", "Root", "Owner", "New", "Me", "On", "Off",
-            "Guest", "Anon", "Anonymous"
+            "Guest", "Anon", "Anonymous", "Flag"
         };
 
         /// <summary>
@@ -106,7 +109,18 @@ namespace miniBBS.Core
         // used for search results when searching chat history
         public const int MaxSnippetLength = 25;
 
-        public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(1);
+        /// <summary>
+        /// While typing a message, if a new message comes in, the notification about that new message will be 
+        /// delayed until the user is done typing or this timespan has elapsed.
+        /// </summary>
+        public static readonly TimeSpan DelayedNotificationsMaxWaitTime = TimeSpan.FromMinutes(2);
+
+        public static readonly InputHandlingFlag ChatInputHandling = 
+            InputHandlingFlag.InterceptSingleCharacterCommand | 
+            InputHandlingFlag.UseLastLine | 
+            InputHandlingFlag.DoNotEchoNewlines | 
+            InputHandlingFlag.AllowCtrlEnterToAddNewLine;
+
         public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 5;
 
