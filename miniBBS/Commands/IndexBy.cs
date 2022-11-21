@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Models.Control;
+using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
@@ -60,8 +61,7 @@ namespace miniBBS.Commands
                 if (!lastDay.HasValue || lastDay.Value != thisDate)
                 {
                     lastDay = thisDate;
-                    string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
-                    lines.Push($"{session.Chats.ItemNumber(chat.Id)} : {chat.DateUtc.AddHours(session.TimeZone):MM-dd HH:mm} : <{username}> {chat.Message.MaxLength(Constants.MaxSnippetLength)}");
+                    lines.Push(FormatLine(session, chat));
                 }
             }
 
@@ -92,10 +92,7 @@ namespace miniBBS.Commands
             foreach (var chat in session.Chats.Values)
             {
                 if (!chat.ResponseToId.HasValue)
-                {
-                    string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
-                    lines.Push($"{session.Chats.ItemNumber(chat.Id)} : {chat.DateUtc.AddHours(session.TimeZone):MM-dd HH:mm} : <{username}> {chat.Message.MaxLength(Constants.MaxSnippetLength)}");
-                }
+                    lines.Push(FormatLine(session, chat));
             }
 
             lines.Push("Index of new messages, most recent first:");
@@ -123,11 +120,7 @@ namespace miniBBS.Commands
             var chats = session.Chats.Values
                 .OrderByDescending(c => c.Message.Length)
                 .Take(100)
-                .Select(chat =>
-                {
-                    string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
-                    return $"{session.Chats.ItemNumber(chat.Id)} : {chat.DateUtc.AddHours(session.TimeZone):MM-dd HH:mm} : <{username}> {chat.Message.MaxLength(Constants.MaxSnippetLength)}";
-                });
+                .Select(chat => FormatLine(session, chat));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
@@ -154,11 +147,7 @@ namespace miniBBS.Commands
                 .Where(c => c.Message.StartsWith("TextFile Link:"))
                 .OrderByDescending(c => c.DateUtc)
                 .Take(100)
-                .Select(chat =>
-                {
-                    string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
-                    return $"{session.Chats.ItemNumber(chat.Id)} : {chat.DateUtc.AddHours(session.TimeZone):MM-dd HH:mm} : <{username}> {chat.Message.MaxLength(Constants.MaxSnippetLength)}";
-                });
+                .Select(chat => FormatLine(session, chat));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
@@ -183,5 +172,23 @@ namespace miniBBS.Commands
             }
         }
 
+        private static string FormatLine(BbsSession session, Chat chat)
+        {
+            string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
+            string formatted;
+            formatted = $"{session.Chats.ItemNumber(chat.Id)} : {chat.DateUtc.AddHours(session.TimeZone):MM-dd HH:mm} : <{username}>";
+            if (session.Cols < 80)
+            {
+                formatted += Environment.NewLine;
+                formatted += $"{chat.Message.MaxLength(session.Cols - 8)}";
+            }
+            else
+            {
+                formatted += $" {chat.Message}";
+                formatted = formatted.MaxLength(session.Cols - 8);
+            }
+
+            return formatted;
+        }
     }
 }
