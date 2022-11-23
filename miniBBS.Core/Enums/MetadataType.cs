@@ -4,6 +4,7 @@
     {
         UserTermPreset,
         OneTimeQuestionAnswered,
-        SeenData
+        SeenData,
+        LoginStartupMode
     }
 }

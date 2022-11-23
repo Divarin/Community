@@ -41,6 +41,8 @@ namespace miniBBS.TextFiles
             var originalLocation = _session.CurrentLocation;
             _session.CurrentLocation = Module.TextFilesBrowser;
 
+            _session.Io.Error("Entering Files subsystem, use DOS/*NIX like commands to get around.  Type 'QUIT' to exit or '?' for help.");
+
             try
             {
                 // replace the prompt so that after ping/pongs and other notifications 
@@ -51,11 +53,7 @@ namespace miniBBS.TextFiles
                         ShowPrompt();
                 };
 
-                if (!_session.DoNotDisturb)
-                {
-                    _session.DoNotDisturb = true;
-                    _session.Io.OutputLine("Do not disturb mode is now ON.  Type 'dnd' to toggle this.");
-                }
+                _session.DoNotDisturb = true;
 
                 CommandResult cmd = CommandResult.ReadDirectory;
                 IList<Link> links = null;
@@ -380,7 +378,6 @@ namespace miniBBS.TextFiles
                         break;
                     case "dnd":
                         _session.DoNotDisturb = !_session.DoNotDisturb;
-                        _session.Io.OutputLine($"Do not disturb mode is : {(_session.DoNotDisturb ? "On" : "Off")}");
                         break;
                     case "edit":
                     case "nano":

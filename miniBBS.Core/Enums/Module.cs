@@ -17,6 +17,7 @@
         BasicEditor,
         BasicInterpreter,
         SqlUi,
-        Polls
+        Polls,
+        MessageBase
     }
 }

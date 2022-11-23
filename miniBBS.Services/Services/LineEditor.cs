@@ -124,7 +124,7 @@ namespace miniBBS.Services.Services
                         var status = OnSave(body);
                         Notify(status);
                         var result = CommandResult.Saved;
-                        if ("sq".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
+                        if (_parameters.QuitOnSave || "sq".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
                             result |= CommandResult.ExitEditor;
                         return result;
                     }
@@ -595,9 +595,12 @@ namespace miniBBS.Services.Services
 
         private void Notify(string notification)
         {
-            using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            if (!string.IsNullOrWhiteSpace(notification))
             {
-                _session.Io.OutputLine($" >>> {notification} <<<");
+                using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                {
+                    _session.Io.OutputLine($" >>> {notification} <<<");
+                }
             }
         }
 

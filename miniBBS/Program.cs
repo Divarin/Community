@@ -212,23 +212,13 @@ namespace miniBBS
 
         private static void RunSession(BbsSession session)
         {
-            if (session.User.TotalLogons == 1)
-            {
-                session.CurrentLocation = Module.FauxMain;
-                if (!FauxMain.Execute(session))
-                {
-                    session.Io.OutputLine("Goodbye!");
-                    session.Stream.Close();
-                    return;
-                }
-            }
-            else if (session.User.TotalLogons < 10)
-            {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
-                {
-                    session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /main if you want to see it again.");
-                }
-            }
+            //else if (session.User.TotalLogons < 10)
+            //{
+            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+            //    {
+            //        session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /main if you want to see it again.");
+            //    }
+            //}
 
             session.CurrentLocation = Module.Chat;
 
@@ -276,6 +266,8 @@ namespace miniBBS
                 Thread.Sleep(1000);
             }
 
+            var startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 if (session.User.Timezone == 0)
@@ -290,16 +282,28 @@ namespace miniBBS
                     session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
                 }
 
-                //OneTimeQuestions.Execute(session);
-
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
-                if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false))
+                if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
                 {
                     throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
                 }
 
                 session.Io.OutputLine("Press Enter/Return to read next message.");
+            }
+
+            OneTimeQuestions.Execute(session);
+            startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
+
+            if (startupMode == LoginStartupMode.MainMenu)
+            {
+                session.CurrentLocation = Module.FauxMain;
+                if (!FauxMain.Execute(session))
+                {
+                    session.Io.OutputLine("Goodbye!");
+                    session.Stream.Close();
+                    return;
+                }
             }
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
@@ -336,8 +340,7 @@ namespace miniBBS
                         if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
                         {
                             notifiedAboutNoOneInChannel = true;
-                            Tutor.Execute(session,
-                                $"Tutor:{Environment.NewLine}" +
+                            Tutor.Execute(session,                                
                                 $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
                                 "Type /who to see who all is online and in what channels.");
                         }
@@ -346,7 +349,6 @@ namespace miniBBS
                         {
                             notifiedAboutHowToDeleteOwnMessages = true;
                             Tutor.Execute(session,
-                                $"Tutor:{Environment.NewLine}" +
                                 $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
                                 $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
                                 $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
@@ -400,16 +402,16 @@ namespace miniBBS
             Action action = () =>
             {
                 TryBell(session, chat.FromUserId);
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                //{
+                //    session.Io.Output($"{Environment.NewLine}Now: ");
+                chat.Write(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.LiveMessageNotification);
+                if (isAtEndOfMessages)
                 {
-                    session.Io.Output($"{Environment.NewLine}Now: ");
-                    chat.Write(session, ChatWriteFlags.UpdateLastReadMessage);
-                    if (isAtEndOfMessages)
-                    {
-                        SetMessagePointer.Execute(session, chat.Id);
-                        session.LastMsgPointer = session.MsgPointer;
-                    }
+                    SetMessagePointer.Execute(session, chat.Id);
+                    session.LastMsgPointer = session.MsgPointer;
                 }
+                //}
             };
 
             if (session.DoNotDisturb)
@@ -778,6 +780,9 @@ namespace miniBBS
                         session.Io.Output(msg);
                     }
                     return;
+                case "/msg":
+                    Msg.Execute(session);
+                    return;
                 case "/o":
                 case "/off":
                 case "/g":
@@ -825,6 +830,9 @@ namespace miniBBS
                 case "/setup":
                 case "/emu":
                     TermSetup.Execute(session);
+                    return;
+                case "/pref":
+                    UserPreferences.Execute(session);
                     return;
                 case "/bell":
                 case "/sound":
@@ -882,7 +890,6 @@ namespace miniBBS
                     return;
                 case "/dnd":
                     session.DoNotDisturb = !session.DoNotDisturb;
-                    session.Io.OutputLine($"Do not disturb mode is : {(session.DoNotDisturb ? "On" : "Off")}");
                     return;
                 case "/e":
                 case "/end":

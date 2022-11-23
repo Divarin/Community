@@ -46,7 +46,7 @@ namespace miniBBS.Menus
             new Cmd("/calc", 47), new Cmd("/calculate", 47), new Cmd("/calculator", 47), new Cmd("/whisper", 48), new Cmd("/wh", 48), 
             new Cmd("/r", 48), new Cmd("/reply", 48), new Cmd("/bots", 49), new Cmd("/dnd", 50), new Cmd("/uptime", 51), 
             new Cmd("/times", 52), new Cmd("/dates", 52), new Cmd("/date", 52), new Cmd("/when", 52), new Cmd("/ignore", 53), 
-            new Cmd("/basic", 54), new Cmd("/bas", 54), new Cmd("/seen", 55)
+            new Cmd("/basic", 54), new Cmd("/bas", 54), new Cmd("/seen", 55), new Cmd("/msg", 56), new Cmd("/pref", 57)
         };
 
         public static void Execute(BbsSession session)

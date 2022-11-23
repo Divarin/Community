@@ -1,6 +1,9 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
+using System;
+using System.Collections.Generic;
 
 namespace miniBBS.Services.GlobalCommands
 {
@@ -12,7 +15,17 @@ namespace miniBBS.Services.GlobalCommands
             if (session.User?.TotalLogons >= Constants.TutorLogins)
                 return;
 
-            session.Io.Error(msg);
+            HashSet<string> shown;
+            if (session.Items.ContainsKey(SessionItem.ShownTutorMessages))
+                shown = session.Items[SessionItem.ShownTutorMessages] as HashSet<string>;
+            else
+            {
+                shown = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+                session.Items[SessionItem.ShownTutorMessages] = shown;
+            }
+
+            if (shown.Add(msg))
+                session.Io.Error($"Tutor:{Environment.NewLine}{msg}");
         }
     }
 }

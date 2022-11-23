@@ -172,7 +172,7 @@ namespace miniBBS.Commands
             }
         }
 
-        private static string FormatLine(BbsSession session, Chat chat)
+        public static string FormatLine(BbsSession session, Chat chat)
         {
             string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
             string formatted;
