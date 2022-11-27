@@ -297,8 +297,8 @@ namespace miniBBS
 
             if (startupMode == LoginStartupMode.MainMenu)
             {
-                session.CurrentLocation = Module.FauxMain;
-                if (!FauxMain.Execute(session))
+                session.CurrentLocation = Module.MainMenu;
+                if (!Commands.MainMenu.Execute(session))
                 {
                     session.Io.OutputLine("Goodbye!");
                     session.Stream.Close();
@@ -816,7 +816,7 @@ namespace miniBBS
                 case "/fauxmenu":
                 case "/fakemain":
                 case "/fakemenu":
-                    if (!FauxMain.Execute(session))
+                    if (!Commands.MainMenu.Execute(session))
                     {
                         // logoff
                         session.Io.OutputLine("Goodbye!");
@@ -878,6 +878,9 @@ namespace miniBBS
                     return;
                 case "/rere":
                     EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());
+                    return;
+                case "/combine":
+                    EditMessage.CombineMessages(session, parts.Skip(1).ToArray());
                     return;
                 case "/pin":
                     Pin.Execute(session, parts.Skip(1).ToArray());
@@ -1261,7 +1264,7 @@ namespace miniBBS
                     Menus.Voice.Show(session);
                     break;
                 default:
-                    MainMenu.Show(session);
+                    Menus.MainMenu.Show(session);
                     break;
             }
         }

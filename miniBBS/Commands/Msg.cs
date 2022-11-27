@@ -185,6 +185,10 @@ namespace miniBBS.Commands
                         case 'L':
                             ListMessages(session, chat.Id);
                             break;
+                        case 'c':
+                        case 'C':
+                            ListChannels.Execute(session);
+                            break;
                         case 'q':
                         case 'Q':
                             session.Io.Error("Leaving message base mode.");
@@ -245,6 +249,8 @@ namespace miniBBS.Commands
         {
             var builder = new StringBuilder();
             builder.AppendLine("--- Listing start of new threads ---");
+            builder.AppendLine("(Unread message threads only)".Color(ConsoleColor.DarkGray));
+
             foreach (var c in session.Chats.Where(c => c.Key >= startingId && c.Value.ResponseToId == null))
                 builder.AppendLine(IndexBy.FormatLine(session, c.Value));
 
@@ -323,22 +329,24 @@ namespace miniBBS.Commands
         };
 
         private static readonly string _menu =
-            " *** Mutiny Community Message Base Menu *** \n".Color(ConsoleColor.Magenta) +
+            " *** Community Message Base Menu *** \n".Color(ConsoleColor.Magenta) +
             Environment.NewLine +
-            "[".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Previous Channel    ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
+            "[".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Previous Channel  ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
             "]".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Next Channel".Color(ConsoleColor.White) +
             Environment.NewLine +
-            "<".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Previous message    ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
-            ">".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Next Message (also ENTER)".Color(ConsoleColor.White) +
+            "<".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Previous Message  ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
+            ">".Color(ConsoleColor.Green) + "/".Color(ConsoleColor.DarkGray) + "ENTER".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Next Msg".Color(ConsoleColor.White) +
             Environment.NewLine + 
-            "B".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Back one thread     ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
-            "F".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Forward one thread".Color(ConsoleColor.White) +
+            "B".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Back One Thread   ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
+            "F".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Fwd. One Thread".Color(ConsoleColor.White) +
             Environment.NewLine +
-            "R".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Reply to message    ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
-            "P".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Post a new message".Color(ConsoleColor.White) +
+            "R".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Reply to Message  ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
+            "P".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Post New".Color(ConsoleColor.White) +
             Environment.NewLine +
-            "L".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "List messages       ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
-            "Q".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Quit Message Bases".Color(ConsoleColor.White);
+            "L".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "List Messages     ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
+            "C".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "List Channels".Color(ConsoleColor.White) +
+            Environment.NewLine + 
+            "Q".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Quit Msg Bases".Color(ConsoleColor.White);
 
         private const string _warning =
             "The 'Message Base' is an alternate view of the Chat Rooms.  These messages are actually chat room messages.  Threading is accomplished by use of 're:' numbers (see help on 'content' for more info).  " +

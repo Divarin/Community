@@ -197,6 +197,138 @@ namespace miniBBS.Commands
             }
         }
 
+        public static void CombineMessages(BbsSession session, params string[] args)
+        {
+            if (args == null || args.Length < 2 || !int.TryParse(args[0], out int msg1) || !int.TryParse(args[1], out int msg2) || msg1 == msg2)
+            {
+                var msg = string.Join(Environment.NewLine, new[]
+                {
+                    "Usage: '/combine n1 n2 [o]' where n1 is message number 1 and n2 is message number 2.",
+                    "Optional argument [o] can specify separator between texts: nothing, space, newline, paragraph (two newlines).",
+                    "Default separator is '.  ' if message 1 ends with a letter or digit, otherwise nothing"
+                });
+                session.Io.Error(msg);
+                return;
+            }
+
+            var small = Math.Min(msg1, msg2);
+            var big = Math.Max(msg1, msg2);
+
+            var key1 = session.Chats.ItemKey(small);
+            var key2 = session.Chats.ItemKey(big);
+            
+            if (!key1.HasValue)
+            {
+                session.Io.Error($"Message {small} not found.");
+                return;
+            }
+
+            if (!key2.HasValue)
+            {
+                session.Io.Error($"Message {big} not found.");
+                return;
+            }
+
+            var chat1 = session.Chats[key1.Value];
+            var chat2 = session.Chats[key2.Value];
+
+            int? originalFlags = null;
+            if (session.User.Access.HasFlag(AccessFlag.Administrator) && args.Any(a => "silent".Equals(a, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                originalFlags = (int)session.ControlFlags;
+                session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+            }
+            
+            CombineMessages(session, chat1, chat2, args.Skip(2).ToArray());
+
+            session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} combined two messages into one:{Environment.NewLine}{session.Chats[key1.Value].Message}"));
+
+            if (originalFlags.HasValue)
+                session.ControlFlags = (SessionControlFlags)originalFlags.Value;
+        }
+
+        private static void CombineMessages(BbsSession session, Chat chat1, Chat chat2, params string[] args)
+        {
+            if (chat1.FromUserId != chat2.FromUserId)
+            {
+                session.Io.Error("Cannot combine chats from two different users.");
+                return;
+            }
+
+            var mayCombine =
+                session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
+                session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
+                (chat1.FromUserId == session.User.Id &&
+                (DateTime.UtcNow - chat1.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable &&
+                (DateTime.UtcNow - chat2.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable);
+
+            if (!mayCombine)
+            {
+                session.Io.Error("Access denied.");
+                return;
+            }
+
+            var chatRepo = DI.GetRepository<Chat>();
+
+            var separator = char.IsLetterOrDigit(chat1.Message.Last()) ? ".  " : string.Empty;
+            if (args?.Length >= 1)
+            {
+                switch (args[0].ToLower())
+                {
+                    case "space":
+                    case "\" \"":
+                    case " ":
+                        separator = " ";
+                        break;
+                    case "newline":
+                    case "nl":
+                    case "cr":
+                    case "enter":
+                        separator = Environment.NewLine;
+                        break;
+                    case "paragraph":
+                    case "p":
+                        separator = Environment.NewLine.Repeat(2);
+                        break;
+                    case "none":
+                    case "nothing":
+                        separator = string.Empty;
+                        break;
+                }
+            }
+            
+            var text = $"{chat1.Message}{separator}{chat2.Message}";
+            chat1.Message = text;
+            chatRepo.Update(chat1);
+
+            var originalFlags = session.ControlFlags;
+            session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+
+            var chatsReferring = session.Chats
+                .Values
+                .Where(c => c.ResponseToId == chat2.Id)
+                .ToList();
+
+            if (true == chatsReferring?.Any())
+            {
+                var chat1id = chat1.Id.ToString();
+                foreach (var c in chatsReferring)
+                    ReassignReNumber(session, session.Chats.ItemNumber(c.Id).ToString(), chat1id);
+            }
+
+            session.Chats.Remove(chat2.Id);            
+            chatRepo.Delete(chat2);
+
+            session.ControlFlags = originalFlags;
+            if (session.LastMsgPointer == chat2.Id)
+                session.LastMsgPointer = chat1.Id;
+            if (session.MsgPointer == chat2.Id)
+                session.MsgPointer = chat1.Id;
+            if (session.LastReadMessageNumber == chat2.Id)
+                session.LastReadMessageNumber = chat1.Id;
+        }
+
         private static Chat FindChatToBeEdited(BbsSession session, params string[] args)
         {
             Chat toBeEdited = null;

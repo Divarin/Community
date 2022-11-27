@@ -66,8 +66,6 @@ namespace miniBBS.Commands
                         });
                         DI.Get<ILogger>().Log(session, message);
                         SetMessagePointer.Execute(session, session.MsgPointer);
-                        //if (session.MsgPointer > session.Chats.Keys.Max())
-                        //    SetMessagePointer.Execute(session, session.Chats.Keys.Max());
                     }
                 }
             }

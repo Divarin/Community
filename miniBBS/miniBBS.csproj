@@ -90,7 +90,7 @@
     <Compile Include="Commands\DeleteMessage.cs" />
     <Compile Include="Commands\EditMessage.cs" />
     <Compile Include="Commands\Emote.cs" />
-    <Compile Include="Commands\FauxMain.cs" />
+    <Compile Include="Commands\MainMenu.cs" />
     <Compile Include="Commands\FindMessages.cs" />
     <Compile Include="Commands\Ignore.cs" />
     <Compile Include="Commands\IndexBy.cs" />

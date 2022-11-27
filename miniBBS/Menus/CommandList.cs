@@ -21,7 +21,7 @@ namespace miniBBS.Menus
             new Cmd("/sound",6), new Cmd("/m", 7),
             new Cmd("/announce",8), new Cmd("/help",9), new Cmd("/?",9), 
             new Cmd("?",9), new Cmd("/??",9), new Cmd("/about",10), new Cmd("/a",10), new Cmd("/del",11), new Cmd("/delete",11), 
-            new Cmd("/d",11), new Cmd("/typo",12), new Cmd("/edit",12), new Cmd("/s",12), new Cmd("/rere",13), new Cmd("/pin",14), 
+            new Cmd("/d",11), new Cmd("/typo",12), new Cmd("/edit", 12), new Cmd("/combine", 12), new Cmd("/s",12), new Cmd("/rere",13), new Cmd("/pin",14), 
             new Cmd("/pins",14), new Cmd("/pin", 14), new Cmd("/unpin", 14), new Cmd("/e",15), new Cmd("/end",15), new Cmd("/chl",16), 
             new Cmd("/chanlist",16), 
             new Cmd("/channellist",16), new Cmd("/channelist",16), new Cmd("/ch",17), new Cmd("/chan",17), new Cmd("/channel",17), 

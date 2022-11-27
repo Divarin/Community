@@ -25,6 +25,7 @@ namespace miniBBS.Menus
             $"{_clr("/d (msg #)", ConsoleColor.Green)} : Deletes the given message number.",
             $"{_clr("/edit \"(search)\" \"(replace)\"", ConsoleColor.Green)} : Edits the last message you typed.",
             $"{_clr("/edit (msg #) \"(search)\" \"(replace)\"", ConsoleColor.Green)} : Edits the specified message.",
+            $"{_clr("/combine (msg #1) (msg #2)", ConsoleColor.Green)} : Combines two of your messages into one message.",
             $"{_clr("/re", ConsoleColor.Green)} : Reads previous message's 're:' message (see '{_clr("/? context", ConsoleColor.Green)}').",
             $"{_clr("/rere (n)", ConsoleColor.Green)}: Edits only the 're:' (in-response-to) number of the last message you read/posted",
             $"{_clr("/rere (msg #) (n)", ConsoleColor.Green)} : Edits only the 're:' (in-response-to) number of the specified message",

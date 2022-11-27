@@ -6,7 +6,7 @@ using System;
 
 namespace miniBBS.Commands
 {
-    public static class FauxMain
+    public static class MainMenu
     {
         private static Func<string, ConsoleColor, string> _clr = (txt, clr) => UserIoExtensions.WrapInColor(txt, clr);
 
@@ -61,7 +61,7 @@ namespace miniBBS.Commands
             var originalLocation = session.CurrentLocation;
             var originalDnd = session.DoNotDisturb;
             session.DoNotDisturb = true;
-            session.CurrentLocation = Core.Enums.Module.FauxMain;
+            session.CurrentLocation = Core.Enums.Module.MainMenu;
 
             try
             {

@@ -47,7 +47,7 @@ namespace miniBBS.Commands
                 session.Io.Output(builder.ToString());
             }
 
-            if (session.CurrentLocation == Module.FauxMain)
+            if (session.CurrentLocation == Module.MainMenu)
             {
                 session.Io.Output($"Enter program # : ".Color(ConsoleColor.White));
                 var inp = session.Io.InputLine();
