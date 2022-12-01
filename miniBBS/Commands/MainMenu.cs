@@ -1,6 +1,6 @@
 ﻿using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions;
+using miniBBS.Extensions_UserIo;
 using miniBBS.Services.GlobalCommands;
 using System;
 
@@ -65,7 +65,7 @@ namespace miniBBS.Commands
 
             try
             {
-                do
+                while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
                 {
                     session.Io.OutputLine(string.Join(Environment.NewLine, _menu));
                     session.Io.Output("[Main Menu] > ");
@@ -110,7 +110,9 @@ namespace miniBBS.Commands
                                 break;
                         }
                     }
-                } while (true);
+                };
+
+                return false;
             }
             finally
             {

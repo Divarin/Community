@@ -97,6 +97,8 @@ namespace miniBBS.Core.Models.Control
         /// The next message the user will read when they hit enter
         /// </summary>
         public int MsgPointer { get; set; } // => UcFlag?.LastReadMessageNumber ?? 0;
+
+
         /// <summary>
         /// The last message the user read when they hit enter (not including new, live, messages)
         /// </summary>

@@ -68,6 +68,7 @@
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="ModelExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReadMessageTracker.cs" />
     <Compile Include="RepositoryExtensions.cs" />
     <Compile Include="SessionExtensions.cs" />
     <Compile Include="StringExtensions.cs" />

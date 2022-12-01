@@ -1,7 +1,7 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions;
+using miniBBS.Extensions_Collection;
 using System;
 using System.Collections.Generic;
 using System.Linq;

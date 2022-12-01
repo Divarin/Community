@@ -1,7 +1,7 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions;
+using miniBBS.Extensions_String;
 using System.Linq;
 
 namespace miniBBS.Basic.Executors

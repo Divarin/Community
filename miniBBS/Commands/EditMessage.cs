@@ -3,7 +3,11 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions;
+using miniBBS.Extensions_Collection;
+using miniBBS.Extensions_Model;
+using miniBBS.Extensions_String;
+using miniBBS.Extensions_UserIo;
+using miniBBS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -193,7 +197,7 @@ namespace miniBBS.Commands
             session.Io.OutputLine($"Updated re: number for message {session.Chats.ItemNumber(chat.Id)} to {(newRe.HasValue ? newRe.ToString() : "nothing")}.");
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                chat.Write(session, ChatWriteFlags.Monochorome);
+                chat.Write(session, ChatWriteFlags.Monochorome, GlobalDependencyResolver.Default);
             }
         }
 
@@ -204,7 +208,7 @@ namespace miniBBS.Commands
                 var msg = string.Join(Environment.NewLine, new[]
                 {
                     "Usage: '/combine n1 n2 [o]' where n1 is message number 1 and n2 is message number 2.",
-                    "Optional argument [o] can specify separator between texts: nothing, space, newline, paragraph (two newlines).",
+                    "Optional argument [o] can specify separator between texts: 'nothing', 'space', 'newline', 'paragraph' (two newlines).",
                     "Default separator is '.  ' if message 1 ends with a letter or digit, otherwise nothing"
                 });
                 session.Io.Error(msg);
@@ -310,15 +314,15 @@ namespace miniBBS.Commands
                 .Where(c => c.ResponseToId == chat2.Id)
                 .ToList();
 
-            if (true == chatsReferring?.Any())
-            {
-                var chat1id = chat1.Id.ToString();
-                foreach (var c in chatsReferring)
-                    ReassignReNumber(session, session.Chats.ItemNumber(c.Id).ToString(), chat1id);
-            }
-
             session.Chats.Remove(chat2.Id);            
             chatRepo.Delete(chat2);
+
+            if (true == chatsReferring?.Any())
+            {
+                var chat1Num = session.Chats.ItemNumber(chat1.Id).ToString();
+                foreach (var c in chatsReferring)
+                    ReassignReNumber(session, session.Chats.ItemNumber(c.Id).ToString(), chat1Num);
+            }
 
             session.ControlFlags = originalFlags;
             if (session.LastMsgPointer == chat2.Id)

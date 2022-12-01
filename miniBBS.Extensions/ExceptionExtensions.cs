@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace miniBBS.Extensions
+namespace miniBBS.Extensions_Exception
 {
     public static class ExceptionExtensions
     {
         public static Exception InnermostException(this Exception ex)
         {
-            while (ex.InnerException != null)
+            while (ex?.InnerException != null)
                 ex = ex.InnerException;
             return ex;
         }

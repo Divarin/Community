@@ -96,7 +96,7 @@ namespace miniBBS.UserIo
             var resultBuilder = new StringBuilder();
             var codeBuilder = new StringBuilder();
             bool inCode = false;
-            
+
             foreach (var c in line)
             {
                 if (c == Constants.InlineColorizer)

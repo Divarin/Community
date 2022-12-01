@@ -2,7 +2,9 @@
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions;
+using miniBBS.Extensions_Collection;
+using miniBBS.Extensions_ReadTracker;
+using miniBBS.Extensions_UserIo;
 using System;
 using System.Linq;
 
@@ -53,6 +55,9 @@ namespace miniBBS.Services.GlobalCommands
                 session.Io.OutputLine($"Message {session.Chats.ItemNumber(chat.Id)} Posted to {session.Channel.Name}.");
                 session.LastReadMessageNumber = chat.Id;
             }
+
+            session.MarkRead(chat.Id, GlobalDependencyResolver.Default);
+
             if (isAtEndOfMessages)
             {
                 SetMessagePointer.Execute(session, chat.Id);

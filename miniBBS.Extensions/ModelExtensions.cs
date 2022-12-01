@@ -3,16 +3,23 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Extensions_Collection;
+using miniBBS.Extensions_ReadTracker;
+using miniBBS.Extensions_String;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Extensions
+namespace miniBBS.Extensions_Model
 {
     public static class ModelExtensions
     {
-        public static void Write(this Chat chat, BbsSession session, ChatWriteFlags flags)
+        public static void Write(this Chat chat, BbsSession session, ChatWriteFlags flags, IDependencyResolver di)
         {
+            if (chat == null || session == null)
+                return;
+
             if (!session.Usernames.ContainsKey(chat.FromUserId))
             {
                 string un = session.UserRepo.Get(chat.FromUserId)?.Name;
@@ -30,10 +37,15 @@ namespace miniBBS.Extensions
                 session.LastReadMessageNumber = chat.Id;
             if (flags.HasFlag(ChatWriteFlags.UpdateLastMessagePointer))
                 session.LastMsgPointer = chat.Id;
+            
+            session.MarkRead(chat.Id, di);
         }
 
         public static string GetWriteString(this Chat chat, BbsSession session, ChatWriteFlags flags = ChatWriteFlags.None)
         {
+            if (chat == null || session == null)
+                return string.Empty;
+
             Func<string> endClr = () =>
                 flags.HasFlag(ChatWriteFlags.Monochorome) ?
                 string.Empty :
@@ -91,7 +103,7 @@ namespace miniBBS.Extensions
 
         private static string Quote(BbsSession session, int? responseToId)
         {
-            if (!responseToId.HasValue || !session.Chats.ContainsKey(responseToId.Value))
+            if (!responseToId.HasValue || true != session?.Chats?.ContainsKey(responseToId.Value))
                 return string.Empty;
 
             var quoted = session.Chats[responseToId.Value];
@@ -109,6 +121,9 @@ namespace miniBBS.Extensions
 
         public static bool CanJoin(this Channel channel, BbsSession session)
         {
+            if (channel == null || session == null)
+                return false;
+
             var userFlags = session.UcFlagRepo.Get(f => f.UserId, session.User.Id)
                 .ToDictionary(k => k.ChannelId);
 
@@ -122,6 +137,9 @@ namespace miniBBS.Extensions
 
         public static IEnumerable<User> GetModerators(this Channel channel, BbsSession session, bool includeAdminsAndGlobalMods)
         {
+            if (channel == null || session == null)
+                return new User[] { };
+
             List<User> users = new List<User>();
 
             if (includeAdminsAndGlobalMods)
@@ -145,6 +163,9 @@ namespace miniBBS.Extensions
 
         public static void Show(this SeenData seenData, BbsSession session, int userId)
         {
+            if (seenData == null || session == null)
+                session?.Io?.OutputLine("I have no information about that user.");
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 var username = session.Usernames.ContainsKey(userId) ? session.Usernames[userId] : "Unknown";
@@ -165,6 +186,9 @@ namespace miniBBS.Extensions
 
         public static LoginStartupMode GetStartupMode(this User user, IRepository<Metadata> metaRepo)
         {
+            if (user == null || metaRepo == null)
+                return LoginStartupMode.MainMenu;
+
             var meta = metaRepo.Get(new Dictionary<string, object>
             {
                 {nameof(Metadata.UserId), user.Id},
@@ -176,6 +200,26 @@ namespace miniBBS.Extensions
                 mode = lsm;
 
             return mode;
+        }
+
+        public static bool TryGetDataAs<T>(this Metadata meta, out T value)
+        {
+            if (meta?.Data == null)
+            {
+                value = default;
+                return false;
+            }
+
+            try
+            {
+                value = JsonConvert.DeserializeObject<T>(meta.Data);
+                return true;
+            }
+            catch
+            {
+                value = default;
+                return false;
+            }
         }
     }
 }

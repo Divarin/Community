@@ -100,6 +100,7 @@
     <Compile Include="Commands\ListModerators.cs" />
     <Compile Include="Commands\Logout.cs" />
     <Compile Include="Commands\Mail.cs" />
+    <Compile Include="Commands\MarkChats.cs" />
     <Compile Include="Commands\MoveMsg.cs" />
     <Compile Include="Commands\Msg.cs" />
     <Compile Include="Commands\OneTimeQuestions.cs" />

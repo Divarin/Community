@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Extensions
+namespace miniBBS.Extensions_Repo
 {
     public static class RepositoryExtensions
     {

@@ -1,6 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions;
+using miniBBS.Extensions_UserIo;
 using System;
 
 namespace miniBBS.Menus

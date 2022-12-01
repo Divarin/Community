@@ -1,7 +1,7 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions;
+using miniBBS.Extensions_Model;
 using System;
 using System.Linq;
 
@@ -29,7 +29,7 @@ namespace miniBBS.Services.GlobalCommands
             else
             {
                 Chat nextMessage = session.Chats[session.MsgPointer];
-                nextMessage.Write(session, chatWriteFlags);
+                nextMessage.Write(session, chatWriteFlags, GlobalDependencyResolver.Default);
 
                 if (!SetMessagePointer.Execute(session, session.MsgPointer + 1) && !chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase))
                 {

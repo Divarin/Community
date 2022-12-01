@@ -5,6 +5,7 @@
         LogoutMessage,
         LastWhisperFromUserId,
         IgnoreList,
-        ShownTutorMessages
+        ShownTutorMessages,
+        ReadMessages
     }
 }

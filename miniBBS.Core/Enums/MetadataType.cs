@@ -5,6 +5,8 @@
         UserTermPreset,
         OneTimeQuestionAnswered,
         SeenData,
-        LoginStartupMode
+        LoginStartupMode,
+        UserChatWebVisibility,
+        ReadMessages
     }
 }

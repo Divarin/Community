@@ -3,7 +3,7 @@ using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Interfaces;
 using miniBBS.Basic.Models;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions;
+using miniBBS.Extensions_String;
 using System;
 using System.Collections.Generic;
 using System.Data;

@@ -3,7 +3,12 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions;
+using miniBBS.Extensions_Collection;
+using miniBBS.Extensions_Model;
+using miniBBS.Extensions_ReadTracker;
+using miniBBS.Extensions_String;
+using miniBBS.Extensions_UserIo;
+using miniBBS.Services;
 using miniBBS.Services.GlobalCommands;
 using System;
 using System.Collections.Generic;
@@ -30,6 +35,7 @@ namespace miniBBS.Commands
 
             try
             {
+                SetMessagePointer.SetToFirstUnreadMessage(session);
                 var chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                 FindThreadStart(session, ref chat);
                 int threadStart = chat.Id;
@@ -51,7 +57,7 @@ namespace miniBBS.Commands
 
                 Action PrevThread = () =>
                 {
-                    var newChat = session.Chats.Values.FirstOrDefault(x => x.Id < threadStart && !x.ResponseToId.HasValue);
+                    var newChat = session.Chats.Values.LastOrDefault(x => x.Id < threadStart && !x.ResponseToId.HasValue);
                     if (newChat != null)
                     {
                         chat = newChat;
@@ -251,7 +257,9 @@ namespace miniBBS.Commands
             builder.AppendLine("--- Listing start of new threads ---");
             builder.AppendLine("(Unread message threads only)".Color(ConsoleColor.DarkGray));
 
-            foreach (var c in session.Chats.Where(c => c.Key >= startingId && c.Value.ResponseToId == null))
+            var readIds = session.ReadChatIds(DI.Get<IDependencyResolver>());
+
+            foreach (var c in session.Chats.Where(c => !readIds.Contains(c.Key) && c.Value.ResponseToId == null))
                 builder.AppendLine(IndexBy.FormatLine(session, c.Value));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -311,7 +319,7 @@ namespace miniBBS.Commands
 
         private static void WriteMessage(BbsSession session, ref Chat chat)
         {
-            chat.Write(session, _chatWriteFlags);
+            chat.Write(session, _chatWriteFlags, GlobalDependencyResolver.Default);
         }
 
         private static readonly Action<BbsSession> Prompt = (session) =>
