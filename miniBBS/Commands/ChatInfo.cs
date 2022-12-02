@@ -1,7 +1,7 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions_Collection;
+using miniBBS.Extensions;
 using System;
 using System.Text;
 

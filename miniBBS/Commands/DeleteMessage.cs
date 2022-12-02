@@ -4,7 +4,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions_Collection;
+using miniBBS.Extensions;
 using miniBBS.Services.GlobalCommands;
 using System;
 using System.Linq;

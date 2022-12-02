@@ -3,15 +3,12 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions_Collection;
-using miniBBS.Extensions_ReadTracker;
-using miniBBS.Extensions_String;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Extensions_Model
+namespace miniBBS.Extensions
 {
     public static class ModelExtensions
     {

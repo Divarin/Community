@@ -2,13 +2,13 @@
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions_Collection;
+using miniBBS.Extensions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Extensions_Session
+namespace miniBBS.Extensions
 {
     public static class SessionExtensions
     {

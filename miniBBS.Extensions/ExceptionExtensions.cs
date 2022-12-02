@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace miniBBS.Extensions_Exception
+namespace miniBBS.Extensions
 {
     public static class ExceptionExtensions
     {

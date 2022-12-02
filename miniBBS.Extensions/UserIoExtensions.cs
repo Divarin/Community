@@ -2,7 +2,7 @@
 using miniBBS.Interfaces;
 using System;
 
-namespace miniBBS.Extensions_UserIo
+namespace miniBBS.Extensions
 {
     public static class UserIoExtensions
     {

@@ -1,13 +1,12 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions_UserIo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace miniBBS.Extensions_String
+namespace miniBBS.Extensions
 {
     public static class StringExtensions
     {

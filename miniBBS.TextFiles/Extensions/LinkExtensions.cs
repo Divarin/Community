@@ -1,4 +1,4 @@
-﻿using miniBBS.Extensions_String;
+﻿using miniBBS.Extensions;
 using miniBBS.TextFiles.Models;
 using System;
 using System.Collections.Generic;

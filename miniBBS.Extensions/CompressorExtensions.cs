@@ -2,7 +2,7 @@
 using System;
 using System.Text;
 
-namespace miniBBS.Extensions_Compressor
+namespace miniBBS.Extensions
 {
     public static class CompressorExtensions
     {

@@ -2,14 +2,12 @@
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions_Model;
-using miniBBS.Extensions_Repo;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Extensions_ReadTracker
+namespace miniBBS.Extensions
 {
     public static class ReadMessageTracker
     {
@@ -46,7 +44,7 @@ namespace miniBBS.Extensions_ReadTracker
 
         public static void SaveReads(this BbsSession session, IDependencyResolver di)        
         {
-            if (session == null || di == null)
+            if (session?.User == null || di == null)
                 return;
 
             var set = GetReads(session, di);
@@ -87,6 +85,9 @@ namespace miniBBS.Extensions_ReadTracker
 
         private static HashSet<int> TryGetReadsSetFromAnotherSession(BbsSession session, IDependencyResolver di)
         {
+            if (session?.User == null)
+                return null;
+
             var sessionsList = di.Get<ISessionsList>();
             var otherSesssions = sessionsList.Sessions.Where(s => s.User?.Id == session.User.Id && s.Id != session.Id).ToList();
             if (true != otherSesssions?.Any())
@@ -115,6 +116,9 @@ namespace miniBBS.Extensions_ReadTracker
 
         private static Metadata GetReadsMetaFromDatabase(BbsSession session, IRepository<Metadata> metaRepo)
         {
+            if (session?.User == null)
+                return null;
+
             var meta = metaRepo.Get(new Dictionary<string, object>
             {
                 {nameof(Metadata.Type), MetadataType.ReadMessages},

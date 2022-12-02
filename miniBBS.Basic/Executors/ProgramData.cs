@@ -1,5 +1,5 @@
 ﻿using miniBBS.Core.Interfaces;
-using miniBBS.Extensions_Compressor;
+using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;
 using System.Collections.Generic;

@@ -6,7 +6,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions_Compressor;
+using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;
 using System;

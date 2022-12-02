@@ -3,7 +3,7 @@ using miniBBS.Basic.Executors;
 using miniBBS.Basic.Interfaces;
 using miniBBS.Core;
 using miniBBS.Core.Interfaces;
-using miniBBS.Extensions_Compressor;
+using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;
 using System;

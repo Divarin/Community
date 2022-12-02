@@ -1,8 +1,7 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions_Collection;
-using miniBBS.Extensions_UserIo;
+using miniBBS.Extensions;
 using miniBBS.Persistence;
 using System;
 using System.Collections.Generic;

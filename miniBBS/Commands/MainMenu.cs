@@ -1,6 +1,6 @@
 ﻿using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions_UserIo;
+using miniBBS.Extensions;
 using miniBBS.Services.GlobalCommands;
 using System;
 

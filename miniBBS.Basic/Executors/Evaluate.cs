@@ -2,7 +2,7 @@
 using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Models;
 using miniBBS.Core;
-using miniBBS.Extensions_String;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;

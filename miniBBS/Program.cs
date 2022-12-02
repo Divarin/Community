@@ -5,13 +5,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
-using miniBBS.Extensions_Collection;
-using miniBBS.Extensions_Exception;
-using miniBBS.Extensions_Model;
-using miniBBS.Extensions_ReadTracker;
-using miniBBS.Extensions_Session;
-using miniBBS.Extensions_String;
-using miniBBS.Extensions_UserIo;
+using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
@@ -200,11 +194,21 @@ namespace miniBBS
             }
             finally
             {
-                nodeParams.Client.Close();
-                session?.SaveReads(GlobalDependencyResolver.Default);
-                session?.RecordSeenData(DI.GetRepository<Metadata>());
-                session?.Dispose();
-                _logger.Flush();
+                try
+                {
+                    nodeParams?.Client?.Close();
+                    session?.SaveReads(GlobalDependencyResolver.Default);
+                    session?.RecordSeenData(DI.GetRepository<Metadata>());
+                    session?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+                finally
+                {
+                    _logger?.Flush();
+                }
             }
         }
 
