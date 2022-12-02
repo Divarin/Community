@@ -11,12 +11,13 @@
         TextFilesBrowser,
         TextFileEditor,
         TextFileReader,
-        FauxMain,
+        MainMenu,
         ConfigureEmulation,
         Calendar,
         BasicEditor,
         BasicInterpreter,
         SqlUi,
-        Polls
+        Polls,
+        MessageBase
     }
 }

@@ -8,6 +8,9 @@ namespace miniBBS.Extensions
     {
         public static char Ask(this IUserIo io, string question)
         {
+            if (io == null)
+                return (char)0;
+
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
                 io.Output($"{question}: ");
@@ -19,6 +22,9 @@ namespace miniBBS.Extensions
 
         public static void Error(this IUserIo io, string message)
         {
+            if (io == null)
+                return;
+
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 io.OutputLine(message);
         }
@@ -30,6 +36,9 @@ namespace miniBBS.Extensions
 
         public static void Pause(this IUserIo io)
         {
+            if (io == null)
+                return;
+
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
             {
                 io.Output("[Press Any Key]");

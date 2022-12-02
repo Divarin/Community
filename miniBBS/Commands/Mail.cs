@@ -54,11 +54,11 @@ namespace miniBBS.Commands
                         case "del":
                             {
                                 if (int.TryParse(arg, out int n) && n >= 1 && n <= mails.Count)
-                                    DeleteMail(mails[n - 1]);
+                                    DeleteMail(session, mails[n - 1]);
                                 else if ("all".Equals(arg, StringComparison.CurrentCultureIgnoreCase))
                                 {
                                     if (true == mails?.Any())
-                                        DeleteAllMail(mails);
+                                        DeleteAllMail(session, mails);
                                     else
                                         session.Io.Error("You have no e-mail to delete.");
                                 }
@@ -273,7 +273,7 @@ namespace miniBBS.Commands
                                 SendMail(session, mail.FromUserId, $"re: {mail.Subject.Replace("re: ", "")}");
                             break;
                         case 'D':
-                            DeleteMail(mail);
+                            DeleteMail(session, mail);
                             break;
                     }
                 }
@@ -337,16 +337,22 @@ namespace miniBBS.Commands
                     ReadMail(session, sentMails[n - 1]);
             }
         }
-        private static void DeleteMail(Core.Models.Data.Mail mail)
+        private static void DeleteMail(BbsSession session, Core.Models.Data.Mail mail)
         {
-            var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
-            mailRepo.Delete(mail);
+            if ('Y' == session.Io.Ask($"Are you sure you want to delete this mail:{Environment.NewLine}From: {session.Username(mail.FromUserId)}, To: {session.Username(mail.ToUserId)}{Environment.NewLine}Subject: {mail.Subject}{Environment.NewLine}Delete?"))
+            {
+                var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
+                mailRepo.Delete(mail);
+            }
         }
 
-        private static void DeleteAllMail(IEnumerable<Core.Models.Data.Mail> mails)
+        private static void DeleteAllMail(BbsSession session, IEnumerable<Core.Models.Data.Mail> mails)
         {
-            var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
-            mailRepo.DeleteRange(mails);
+            if (true == mails?.Any() && 'Y' == session.Io.Ask($"Are you sure you want to delete all {mails.Count()} of your mails?"))
+            {
+                var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
+                mailRepo.DeleteRange(mails);
+            }
         }
 
         private static IList<Core.Models.Data.Mail> GetMails(BbsSession session)

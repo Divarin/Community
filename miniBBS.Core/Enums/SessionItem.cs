@@ -4,6 +4,8 @@
     {
         LogoutMessage,
         LastWhisperFromUserId,
-        IgnoreList
+        IgnoreList,
+        ShownTutorMessages,
+        ReadMessages
     }
 }

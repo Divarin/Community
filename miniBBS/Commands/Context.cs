@@ -2,6 +2,7 @@
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
+using miniBBS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,7 +77,7 @@ namespace miniBBS.Commands
             session.Io.SetForeground(ConsoleColor.Yellow);
             session.Io.OutputLine($"Recalling message {session.Chats.ItemNumber(reChat.Id)} to provide context for message {session.Chats.ItemNumber(currentChat.Id)}:");
             session.Io.SetForeground(ConsoleColor.Magenta);
-            reChat.Write(session, ChatWriteFlags.Monochorome);
+            reChat.Write(session, ChatWriteFlags.Monochorome, GlobalDependencyResolver.Default);
             session.Io.SetForeground(color);
 
             session.ContextPointer = reChat.Id;

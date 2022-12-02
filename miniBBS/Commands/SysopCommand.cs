@@ -1,10 +1,8 @@
 ﻿using miniBBS.Core.Enums;
-using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using miniBBS.Persistence;
-using miniBBS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +17,6 @@ namespace miniBBS.Commands
             if (!session.User.Access.HasFlag(AccessFlag.Administrator) || true != args?.Any())
                 return;
 
-            var di = GlobalDependencyResolver.Default;
             switch (args[0].ToLower())
             {
                 case "?":
@@ -41,6 +38,34 @@ namespace miniBBS.Commands
                 case "maint":
                     DatabaseMaint.Maint(session);
                     break;
+                case "newthread":
+                case "chain":
+                    ChainMessages(session, startNewThread: "newthread".Equals(args[0], StringComparison.CurrentCultureIgnoreCase), args.Skip(1).ToArray());
+                    break;
+            }
+        }
+
+        private static void ChainMessages(BbsSession session, bool startNewThread, params string[] args)
+        {
+            if (args == null || args.Length < 2 || !int.TryParse(args[0], out int start) || !int.TryParse(args[1], out int end) || end <= start)
+            {
+                session.Io.Error("Usage: '/sysop newthread startMsg# endMsg#' or '/sysop chain startMsg# endMsg#'.");
+                return;
+            }
+
+            var originalFlags = session.ControlFlags;
+            session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+            try
+            { 
+                if (startNewThread)
+                    EditMessage.ReassignReNumber(session, start.ToString(), "none");
+
+                for (int i=start+1; i <= end; i++)
+                    EditMessage.ReassignReNumber(session, i.ToString(), (i-1).ToString());
+            }
+            finally
+            {
+                session.ControlFlags = originalFlags;
             }
         }
 
@@ -125,6 +150,8 @@ namespace miniBBS.Commands
             builder.AppendLine("ip ban (ip) - adds ip (or mask) to IP ban list");
             builder.AppendLine("ip unban (ip) - removes ip (or mask) from IP ban list");
             builder.AppendLine("maint - run maintenence");
+            builder.AppendLine("newthread (n1) (n2) - chains contiguous messages together using re: numbers starting with message # n1 and ending with n2.  n1 is marked as 'new thread'.");
+            builder.AppendLine("chain (n1) (n2) - chains contiguous messages together using re: numbers starting with message # n1 and ending with n2.  n1's re: number is left untouched.");
 
             session.Io.Output(builder.ToString());
         }

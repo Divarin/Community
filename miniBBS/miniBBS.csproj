@@ -90,7 +90,7 @@
     <Compile Include="Commands\DeleteMessage.cs" />
     <Compile Include="Commands\EditMessage.cs" />
     <Compile Include="Commands\Emote.cs" />
-    <Compile Include="Commands\FauxMain.cs" />
+    <Compile Include="Commands\MainMenu.cs" />
     <Compile Include="Commands\FindMessages.cs" />
     <Compile Include="Commands\Ignore.cs" />
     <Compile Include="Commands\IndexBy.cs" />
@@ -100,7 +100,9 @@
     <Compile Include="Commands\ListModerators.cs" />
     <Compile Include="Commands\Logout.cs" />
     <Compile Include="Commands\Mail.cs" />
+    <Compile Include="Commands\MarkChats.cs" />
     <Compile Include="Commands\MoveMsg.cs" />
+    <Compile Include="Commands\Msg.cs" />
     <Compile Include="Commands\OneTimeQuestions.cs" />
     <Compile Include="Commands\Pin.cs" />
     <Compile Include="Commands\Polls.cs" />
@@ -119,6 +121,7 @@
     <Compile Include="Commands\ToggleInviteOnly.cs" />
     <Compile Include="Commands\UpdatePassword.cs" />
     <Compile Include="Commands\UserInfo.cs" />
+    <Compile Include="Commands\UserPreferences.cs" />
     <Compile Include="Commands\Whisper.cs" />
     <Compile Include="Commands\WhoIsAll.cs" />
     <Compile Include="Commands\WhoIsOn.cs" />

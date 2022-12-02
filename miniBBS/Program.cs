@@ -9,6 +9,7 @@ using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
 using miniBBS.Persistence;
+using miniBBS.Services;
 using miniBBS.Services.GlobalCommands;
 using miniBBS.Subscribers;
 using miniBBS.UserIo;
@@ -30,26 +31,35 @@ namespace miniBBS
 
         static void Main(string[] args)
         {
-            if (args?.Length < 1 || !int.TryParse(args[0], out int port))
-                port = 23;
+            TcpListener listener = null;
 
-            if (args?.Length >= 2 && args[1] == "local")
-                Constants.IsLocal = true;
+            try
+            {
+                if (args?.Length < 1 || !int.TryParse(args[0], out int port))
+                    port = 23;
 
-            _logger = DI.Get<ILogger>();
+                if (args?.Length >= 2 && args[1] == "local")
+                    Constants.IsLocal = true;
 
-            new DatabaseInitializer().InitializeDatabase();
+                _logger = DI.Get<ILogger>();
 
-            var listener = new TcpListener(IPAddress.Any, port);
-            listener.Start();
+                new DatabaseInitializer().InitializeDatabase();
 
-            var sessionsList = DI.Get<ISessionsList>();
-            Console.WriteLine(Constants.Version);
-            _ipBans = DI.GetRepository<Core.Models.Data.IpBan>().Get()
-                .Select(x => x.IpMask)
-                .ToList();
+                listener = new TcpListener(IPAddress.Any, port);
+                listener.Start();
 
-            SysopScreen.Initialize(sessionsList);
+                var sessionsList = DI.Get<ISessionsList>();
+                Console.WriteLine(Constants.Version);
+                _ipBans = DI.GetRepository<Core.Models.Data.IpBan>().Get()
+                    .Select(x => x.IpMask)
+                    .ToList();
+
+                SysopScreen.Initialize(sessionsList);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(null, $"{DateTime.Now} (outside of main loop) - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+            }
 
             while (!SysControl.HasFlag(SystemControlFlag.Shutdown))
             {
@@ -77,7 +87,7 @@ namespace miniBBS
                 }
             }
 
-            listener.Stop();            
+            listener?.Stop();            
         }
 
         private static void BeginConnection(object o)
@@ -101,7 +111,7 @@ namespace miniBBS
 
                 if (sessionsList.Sessions.Count(s => !string.IsNullOrWhiteSpace(s.IpAddress) && s.IpAddress.Equals(ip)) > Constants.MaxSessionsPerIpAddress)
                 {
-                    Console.WriteLine("Too many connections from this address.");
+                    DI.Get<ILogger>().Log(session, $"Too many connections from {session?.IpAddress}.");
                     return;
                 }
 
@@ -184,14 +194,23 @@ namespace miniBBS
             }
             finally
             {
-                nodeParams.Client.Close();
-                session?.RecordSeenData(DI.GetRepository<Metadata>());
-                session?.Dispose();
-                _logger.Flush();
+                try
+                {
+                    nodeParams?.Client?.Close();
+                    session?.SaveReads(GlobalDependencyResolver.Default);
+                    session?.RecordSeenData(DI.GetRepository<Metadata>());
+                    session?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+                finally
+                {
+                    _logger?.Flush();
+                }
             }
         }
-
-
 
         private static void ShowNotifications(BbsSession session)
         {
@@ -212,23 +231,13 @@ namespace miniBBS
 
         private static void RunSession(BbsSession session)
         {
-            if (session.User.TotalLogons == 1)
-            {
-                session.CurrentLocation = Module.FauxMain;
-                if (!FauxMain.Execute(session))
-                {
-                    session.Io.OutputLine("Goodbye!");
-                    session.Stream.Close();
-                    return;
-                }
-            }
-            else if (session.User.TotalLogons < 10)
-            {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
-                {
-                    session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /main if you want to see it again.");
-                }
-            }
+            //else if (session.User.TotalLogons < 10)
+            //{
+            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+            //    {
+            //        session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /main if you want to see it again.");
+            //    }
+            //}
 
             session.CurrentLocation = Module.Chat;
 
@@ -267,14 +276,13 @@ namespace miniBBS
                 session.StartPingPong(Constants.DefaultPingPongDelayMin);
                 session.Io.OutputLine($"Welcome to Mutiny Community version {Constants.Version}.");
                 session.Io.OutputLine("Type '/?' for help (DON'T FORGET THE SLASH!!!!).");
-                session.Io.SetForeground(ConsoleColor.Cyan);
-                session.Io.OutputLine(" ------------------- ");
-                session.Io.OutputLine("Feel free to hang out as long as you want, there is no time limit!");
                 Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
                 Thread.Sleep(1000);
             }
+
+            var startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
@@ -290,17 +298,31 @@ namespace miniBBS
                     session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
                 }
 
-                //OneTimeQuestions.Execute(session);
-
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
-                if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false))
+                if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
                 {
                     throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
                 }
 
-                session.Io.OutputLine("Press Enter/Return to read next message.");
             }
+
+            OneTimeQuestions.Execute(session);
+            startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
+
+            if (startupMode == LoginStartupMode.MainMenu)
+            {
+                session.CurrentLocation = Module.MainMenu;
+                if (!Commands.MainMenu.Execute(session))
+                {
+                    session.Io.OutputLine("Goodbye!");
+                    session.Stream.Close();
+                    return;
+                }
+            }
+
+            session.CurrentLocation = Module.Chat;
+            session.Io.OutputLine("Press Enter/Return to read next message.");
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
             {
@@ -336,8 +358,7 @@ namespace miniBBS
                         if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
                         {
                             notifiedAboutNoOneInChannel = true;
-                            Tutor.Execute(session,
-                                $"Tutor:{Environment.NewLine}" +
+                            Tutor.Execute(session,                                
                                 $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
                                 "Type /who to see who all is online and in what channels.");
                         }
@@ -346,7 +367,6 @@ namespace miniBBS
                         {
                             notifiedAboutHowToDeleteOwnMessages = true;
                             Tutor.Execute(session,
-                                $"Tutor:{Environment.NewLine}" +
                                 $"You just entered a message '{chat.Message}' into the chat.{Environment.NewLine}" +
                                 $"Did you intend to execute a command?  All commands start with a slash (/).{Environment.NewLine}" +
                                 $"Type /? for help.  Type /d to delete your message, '{chat.Message}', from the channel.{Environment.NewLine}" +
@@ -400,16 +420,16 @@ namespace miniBBS
             Action action = () =>
             {
                 TryBell(session, chat.FromUserId);
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                //{
+                //    session.Io.Output($"{Environment.NewLine}Now: ");
+                chat.Write(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.LiveMessageNotification, GlobalDependencyResolver.Default);
+                if (isAtEndOfMessages)
                 {
-                    session.Io.Output($"{Environment.NewLine}Now: ");
-                    chat.Write(session, ChatWriteFlags.UpdateLastReadMessage);
-                    if (isAtEndOfMessages)
-                    {
-                        SetMessagePointer.Execute(session, chat.Id);
-                        session.LastMsgPointer = session.MsgPointer;
-                    }
+                    SetMessagePointer.Execute(session, chat.Id);
+                    session.LastMsgPointer = session.MsgPointer;
                 }
+                //}
             };
 
             if (session.DoNotDisturb)
@@ -552,7 +572,7 @@ namespace miniBBS
         {
             if (session.User == null ||
                 message.ChannelId != session.Channel?.Id ||
-                message.FromUserId == session.User.Id ||
+                message.SessionId == session.Id ||
                 (message.TargetUserId.HasValue && message.TargetUserId.Value != session.User.Id) ||
                 session.IsIgnoring(message.FromUserId))
             {
@@ -778,6 +798,9 @@ namespace miniBBS
                         session.Io.Output(msg);
                     }
                     return;
+                case "/msg":
+                    Msg.Execute(session);
+                    return;
                 case "/o":
                 case "/off":
                 case "/g":
@@ -811,7 +834,7 @@ namespace miniBBS
                 case "/fauxmenu":
                 case "/fakemain":
                 case "/fakemenu":
-                    if (!FauxMain.Execute(session))
+                    if (!Commands.MainMenu.Execute(session))
                     {
                         // logoff
                         session.Io.OutputLine("Goodbye!");
@@ -825,6 +848,9 @@ namespace miniBBS
                 case "/setup":
                 case "/emu":
                     TermSetup.Execute(session);
+                    return;
+                case "/pref":
+                    UserPreferences.Execute(session);
                     return;
                 case "/bell":
                 case "/sound":
@@ -871,6 +897,9 @@ namespace miniBBS
                 case "/rere":
                     EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());
                     return;
+                case "/combine":
+                    EditMessage.CombineMessages(session, parts.Skip(1).ToArray());
+                    return;
                 case "/pin":
                     Pin.Execute(session, parts.Skip(1).ToArray());
                     return;
@@ -882,12 +911,11 @@ namespace miniBBS
                     return;
                 case "/dnd":
                     session.DoNotDisturb = !session.DoNotDisturb;
-                    session.Io.OutputLine($"Do not disturb mode is : {(session.DoNotDisturb ? "On" : "Off")}");
                     return;
                 case "/e":
                 case "/end":
                     SetMessagePointer.Execute(session, session.Chats.Keys.Max());
-                    session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
+                    session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage, GlobalDependencyResolver.Default);
                     return;                
                 case "/chl":
                 case "/chanlist":
@@ -947,6 +975,18 @@ namespace miniBBS
                 case "/session":
                 case "/sessioninfo":
                     SessionInfo.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/shh":
+                    if (session.ControlFlags.HasFlag(SessionControlFlags.DoNotSendNotifications))
+                    {
+                        session.ControlFlags &= ~SessionControlFlags.DoNotSendNotifications;
+                        session.Io.OutputLine("Sending multi-node notifications as normal".Color(ConsoleColor.Blue));
+                    }
+                    else
+                    {
+                        session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+                        session.Io.OutputLine("Suspending multi-node notifications".Color(ConsoleColor.Blue));
+                    }
                     return;
                 case "/times":
                 case "/dates":
@@ -1108,10 +1148,16 @@ namespace miniBBS
                 case "/bots":
                     Bot.ListBots(session, parts.Skip(1)?.FirstOrDefault());
                     return;
+                case "/mark":
+                    MarkChats.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/ur":
+                    SetMessagePointer.SetToFirstUnreadMessage(session);
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
-                    session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
+                    session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage, GlobalDependencyResolver.Default);
                     return;
                 case ".":
                 case ">":
@@ -1254,7 +1300,7 @@ namespace miniBBS
                     Menus.Voice.Show(session);
                     break;
                 default:
-                    MainMenu.Show(session);
+                    Menus.MainMenu.Show(session);
                     break;
             }
         }

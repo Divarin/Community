@@ -2,6 +2,7 @@
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Extensions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -13,19 +14,19 @@ namespace miniBBS.Extensions
     {
         public static HashSet<string> IgnoreList(this BbsSession session)
         {
-            if (session.Items.ContainsKey(SessionItem.IgnoreList))
+            if (true == session?.Items?.ContainsKey(SessionItem.IgnoreList))
                 return session.Items[SessionItem.IgnoreList] as HashSet<string>;
             return null;
         }
 
         public static bool IsIgnoring(this BbsSession session, string username)
         {
-            return true == session.IgnoreList()?.Contains(username, StringComparer.CurrentCultureIgnoreCase);
+            return true == session?.IgnoreList()?.Contains(username, StringComparer.CurrentCultureIgnoreCase);
         }
 
         public static bool IsIgnoring(this BbsSession session, int userId)
         {
-            var username = session.Usernames.ContainsKey(userId) ? session.Usernames[userId] : null;
+            var username = session.Username(userId);
             return username != null && session.IsIgnoring(username);
         }
 
@@ -60,6 +61,11 @@ namespace miniBBS.Extensions
                 metaRepo.DeleteRange(oldMetas);
 
             metaRepo.Insert(meta);
+        }
+
+        public static string Username(this BbsSession session, int userId)
+        {
+            return session?.Usernames?.GetOrDefault(userId, "Unknown") ?? "Unknown";
         }
     }
 }

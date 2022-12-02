@@ -21,12 +21,12 @@ namespace miniBBS.Menus
             new Cmd("/sound",6), new Cmd("/m", 7),
             new Cmd("/announce",8), new Cmd("/help",9), new Cmd("/?",9), 
             new Cmd("?",9), new Cmd("/??",9), new Cmd("/about",10), new Cmd("/a",10), new Cmd("/del",11), new Cmd("/delete",11), 
-            new Cmd("/d",11), new Cmd("/typo",12), new Cmd("/edit",12), new Cmd("/s",12), new Cmd("/rere",13), new Cmd("/pin",14), 
-            new Cmd("/pins",14), new Cmd("/pin", 14), new Cmd("/unpin", 14), new Cmd("/e",15), new Cmd("/end",15), new Cmd("/chl",16), 
-            new Cmd("/chanlist",16), 
+            new Cmd("/d",11), new Cmd("/typo",12), new Cmd("/edit", 12), new Cmd("/combine", 12), new Cmd("/s",12), new Cmd("/rere",13), new Cmd("/pin",14), 
+            new Cmd("/pins",14), new Cmd("/pin", 14), new Cmd("/unpin", 14), new Cmd("/e",15), new Cmd("/end",15), new Cmd("/ur", 15), new Cmd("/mark", 15),
+            new Cmd("/chl",16),  new Cmd("/chanlist",16), 
             new Cmd("/channellist",16), new Cmd("/channelist",16), new Cmd("/ch",17), new Cmd("/chan",17), new Cmd("/channel",17), 
             new Cmd("/w",18), new Cmd("/who",18), new Cmd("/u",19), new Cmd("/users",19), new Cmd("/f",20), new Cmd("/find",20), 
-            new Cmd("/search",20), new Cmd("/fu",20), new Cmd("/fs",20), new Cmd("/afk",21), new Cmd("/read",22), new Cmd("/nonstop",22), 
+            new Cmd("/search",20), new Cmd("/fu",20), new Cmd("/fs",20), new Cmd("/afk",21), new Cmd("/shh", 21), new Cmd("/read",22), new Cmd("/nonstop",22), 
             new Cmd("/ctx",23), new Cmd("/cx",23), new Cmd("/re",23), new Cmd("/ref",23), new Cmd("/wat",23), new Cmd("/ra", 23), new Cmd("/new",24), 
             new Cmd("/tz",25), new Cmd("/timezone",25), new Cmd("/time",25), new Cmd("/si",26), new Cmd("/session",26), 
             new Cmd("/sessioninfo",26), new Cmd("/ui",27), new Cmd("/user",27), new Cmd("/userinfo",27), new Cmd("/ci",28), new Cmd("/chat",28), 
@@ -46,7 +46,7 @@ namespace miniBBS.Menus
             new Cmd("/calc", 47), new Cmd("/calculate", 47), new Cmd("/calculator", 47), new Cmd("/whisper", 48), new Cmd("/wh", 48), 
             new Cmd("/r", 48), new Cmd("/reply", 48), new Cmd("/bots", 49), new Cmd("/dnd", 50), new Cmd("/uptime", 51), 
             new Cmd("/times", 52), new Cmd("/dates", 52), new Cmd("/date", 52), new Cmd("/when", 52), new Cmd("/ignore", 53), 
-            new Cmd("/basic", 54), new Cmd("/bas", 54), new Cmd("/seen", 55)
+            new Cmd("/basic", 54), new Cmd("/bas", 54), new Cmd("/seen", 55), new Cmd("/msg", 56), new Cmd("/pref", 57)
         };
 
         public static void Execute(BbsSession session)

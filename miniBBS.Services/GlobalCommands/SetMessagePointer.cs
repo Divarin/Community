@@ -1,4 +1,6 @@
-﻿using miniBBS.Core.Models.Control;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System.Linq;
 
 namespace miniBBS.Services.GlobalCommands
@@ -34,12 +36,37 @@ namespace miniBBS.Services.GlobalCommands
             {
                 session.UcFlag.LastReadMessageNumber = msgPointer;
                 session.UcFlag = session.UcFlagRepo.InsertOrUpdate(session.UcFlag);
-                session.LastMsgPointer = session.MsgPointer;
+                if (session.MsgPointer > 0)
+                    session.LastMsgPointer = session.MsgPointer;
+                else
+                    session.LastMsgPointer = msgPointer;
                 session.MsgPointer = msgPointer;
             }
 
             session.ContextPointer = null;
             return changed;
+        }
+
+        public static void SetToFirstUnreadMessage(BbsSession session)
+        {
+            var _readIds = session.ReadChatIds(GlobalDependencyResolver.Default);
+            bool _found = false;
+            var _firstUnread = session.Chats.Keys.FirstOrDefault(x =>
+            {
+                if (!_readIds.Contains(x))
+                {
+                    _found = true;
+                    return true;
+                }
+                return false;
+            });
+            if (_found)
+            {
+                Execute(session, _firstUnread);
+                ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.UpdateLastMessagePointer);
+            }
+            else
+                session.Io.Error("You have no unread messages in this channel.");
         }
     }
 }

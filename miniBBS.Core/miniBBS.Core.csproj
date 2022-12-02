@@ -69,6 +69,7 @@
     <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\LoggingOptions.cs" />
+    <Compile Include="Enums\LoginStartupMode.cs" />
     <Compile Include="Enums\MetadataType.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OneTimeQuestion.cs" />
@@ -106,6 +107,7 @@
     <Compile Include="Models\Control\LoginRecord.cs" />
     <Compile Include="Models\Control\SeenData.cs" />
     <Compile Include="Models\Control\TerminalSettings.cs" />
+    <Compile Include="Models\Control\UserPreference.cs" />
     <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Data\Blurb.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />

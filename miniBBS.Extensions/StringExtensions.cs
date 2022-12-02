@@ -15,6 +15,9 @@ namespace miniBBS.Extensions
         /// </summary>
         public static string ToUpperFirst(this string str)
         {
+            if (string.IsNullOrWhiteSpace(str))
+                return str;
+
             char[] arr = new char[str.Length];
             arr[0] = char.ToUpper(str[0]);
             for (int i = 1; i < str.Length; i++)
@@ -25,6 +28,9 @@ namespace miniBBS.Extensions
 
         public static string Repeat(this string str, int count)
         {
+            if (string.IsNullOrWhiteSpace(str) || count == 1)
+                return str;
+
             char[] array = new char[str.Length * count];
             int offset = 0;
 
@@ -49,7 +55,7 @@ namespace miniBBS.Extensions
 
         public static IEnumerable<string> SplitAndWrap(this string str, BbsSession session, OutputHandlingFlag flags)
         {
-            if (string.IsNullOrWhiteSpace(str))
+            if (string.IsNullOrWhiteSpace(str) || session == null)
             {
                 yield return str;
                 yield break;
@@ -159,6 +165,9 @@ namespace miniBBS.Extensions
 
         public static string PadAndCenter(this string str, int totalLength)
         {
+            if (string.IsNullOrWhiteSpace(str))
+                return str;
+
             int spacesToAdd = totalLength - str.Length;
             if (spacesToAdd > 0)
             {
@@ -228,6 +237,9 @@ namespace miniBBS.Extensions
 
         public static string Color(this string str, ConsoleColor color)
         {
+            if (string.IsNullOrWhiteSpace(str))
+                return str;
+
             return UserIoExtensions.WrapInColor(str, color);
         }
 
@@ -253,9 +265,9 @@ namespace miniBBS.Extensions
         public static string HtmlSafe(this string str)
         {
             return str
-                .Replace("'", "&apos;")
-                .Replace("<", "&lt;")
-                .Replace(">", "&gt;");
+                ?.Replace("'", "&apos;")
+                ?.Replace("<", "&lt;")
+                ?.Replace(">", "&gt;");
         }
 
         /// <summary>
@@ -278,6 +290,21 @@ namespace miniBBS.Extensions
                 builder.Append($"{Math.Ceiling(timespan.TotalSeconds)}s");
 
             return builder.ToString();
+        }
+
+        public static string FriendlyName(this Enum enumValue)
+        {
+            string name = enumValue.ToString();            
+            var list = new List<char>();
+            list.Add(name[0]);
+            for (int i=1; i < name.Length; i++)
+            {
+                var c = name[i];
+                if (char.IsUpper(c))
+                    list.Add(' ');
+                list.Add(c);
+            }
+            return new string(list.ToArray());
         }
     }
 }

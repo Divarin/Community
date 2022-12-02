@@ -7,7 +7,7 @@ namespace miniBBS.Extensions
     {
         public static Exception InnermostException(this Exception ex)
         {
-            while (ex.InnerException != null)
+            while (ex?.InnerException != null)
                 ex = ex.InnerException;
             return ex;
         }

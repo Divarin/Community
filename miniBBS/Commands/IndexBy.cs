@@ -1,4 +1,4 @@
-﻿using miniBBS.Core;
+﻿using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
@@ -34,9 +34,40 @@ namespace miniBBS.Commands
                 case "link":
                     TextFilesLinks(session);
                     return;
+                case "unread":
+                    Unread(session);
+                    return;
                 default:
                     ShowUsage(session);
                     return;
+            }
+        }
+
+        private static void Unread(BbsSession session)
+        {
+            if (true != session.Chats?.Any())
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                {
+                    session.Io.OutputLine("No chats in this channel.");
+                }
+                return;
+            }
+
+            var readIds = session.ReadChatIds(DI.Get<IDependencyResolver>());
+            var builder = new StringBuilder(); 
+            builder.AppendLine("Index of unread messages, oldest first:");
+
+            foreach (var line in session.Chats
+                        .Where(c => !readIds.Contains(c.Key))
+                        .Select(c => FormatLine(session, c.Value)))
+            {
+                builder.AppendLine(line);
+            }
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+            {
+                session.Io.OutputLine(builder.ToString());
             }
         }
 
@@ -166,13 +197,14 @@ namespace miniBBS.Commands
                 session.Io.OutputLine("Usage: /index (index type)");
                 session.Io.OutputLine("Index Types:");
                 session.Io.OutputLine("/index date   : shows the first post from each day.");
-                session.Io.OutputLine("/index new    : shows new messages (msgs without 're:' numbers).");
+                session.Io.OutputLine("/index new    : shows starts of new threads (msgs without 're:' numbers).");
                 session.Io.OutputLine("/index length : shows long messages.");
                 session.Io.OutputLine("/index links  : shows messages with textfile links.");
+                session.Io.OutputLine("/index unread : shows unread messages in current channel.");
             }
         }
 
-        private static string FormatLine(BbsSession session, Chat chat)
+        public static string FormatLine(BbsSession session, Chat chat)
         {
             string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : "Unknown";
             string formatted;

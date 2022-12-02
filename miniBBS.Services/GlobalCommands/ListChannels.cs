@@ -4,6 +4,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -24,6 +25,7 @@ namespace miniBBS.Services.GlobalCommands
             var chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
 
             int longestChannelName = chans.Max(c => c.Name.Length) + 1;
+            var readIds = session.ReadChatIds(GlobalDependencyResolver.Default);
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
@@ -44,7 +46,9 @@ namespace miniBBS.Services.GlobalCommands
                         lastRead = userFlags[chan.Id].LastReadMessageNumber;
                     else
                         lastRead = -1;
-                    var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
+                    //var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
+                    var unread = GetUnreadCount(session, readIds, chatRepo, chan.Id);
+
                     builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
                     builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
                     builder.Append($"{chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}");
@@ -72,6 +76,15 @@ namespace miniBBS.Services.GlobalCommands
                 .Where(c => c.CanJoin(session))
                 .OrderBy(c => c.Id)
                 .ToArray();
+        }
+
+        private static int GetUnreadCount(BbsSession session, List<int> readIds, IRepository<Chat> chatRepo, int channelId)
+        {
+            var di = GlobalDependencyResolver.Default;            
+            var count = chatRepo
+                .Get(c => c.ChannelId, channelId)
+                ?.Count(c => !readIds.Contains(c.Id)) ?? 0;
+            return count;
         }
     }
 }

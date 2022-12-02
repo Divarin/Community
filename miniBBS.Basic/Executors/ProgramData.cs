@@ -1,6 +1,4 @@
-﻿using miniBBS.Basic.Extensions;
-using miniBBS.Basic.Interfaces;
-using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Interfaces;
 using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;

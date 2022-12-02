@@ -8,6 +8,8 @@ namespace miniBBS.Core.Enums
         None = 0,
         UpdateLastReadMessage = 1,
         UpdateLastMessagePointer = 2,
-        Monochorome = 4
+        Monochorome = 4,
+        FormatForMessageBase = 8,
+        LiveMessageNotification = 16
     }
 }

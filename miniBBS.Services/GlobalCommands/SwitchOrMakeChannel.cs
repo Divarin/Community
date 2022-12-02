@@ -18,7 +18,7 @@ namespace miniBBS.Services.GlobalCommands
             "del"
         };
 
-        public static bool Execute(BbsSession session, string channelNameOrNumber, bool allowMakeNewChannel)
+        public static bool Execute(BbsSession session, string channelNameOrNumber, bool allowMakeNewChannel, bool fromMessageBase = false)
         {
             bool invalidChannelName = 
                 channelNameOrNumber == null || 
@@ -113,12 +113,15 @@ namespace miniBBS.Services.GlobalCommands
 
             messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
 
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            if (!fromMessageBase)
             {
-                session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
-            }
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                {
+                    session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
+                }
 
-            ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
+                ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
+            }
 
             return true;
         }

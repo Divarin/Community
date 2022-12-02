@@ -53,6 +53,9 @@ namespace miniBBS.Services.GlobalCommands
                 session.Io.OutputLine($"Message {session.Chats.ItemNumber(chat.Id)} Posted to {session.Channel.Name}.");
                 session.LastReadMessageNumber = chat.Id;
             }
+
+            session.MarkRead(chat.Id, GlobalDependencyResolver.Default);
+
             if (isAtEndOfMessages)
             {
                 SetMessagePointer.Execute(session, chat.Id);

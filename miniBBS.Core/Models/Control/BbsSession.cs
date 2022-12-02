@@ -74,7 +74,14 @@ namespace miniBBS.Core.Models.Control
                     ShowDndMessages();
 
                 if (changed && User != null && Channel != null)
+                {
+                    Io.OutputLine(string.Format("{0}You are {1} in Do Not Disturb (DND) mode.{2}", 
+                        $"{Constants.InlineColorizer}{(int)ConsoleColor.Red}{Constants.InlineColorizer}",
+                        _doNotDisturb ? "now" : "no longer",
+                        $"{Constants.InlineColorizer}-1{Constants.InlineColorizer}"));
+
                     Messager.Publish(this, new ChannelMessage(Id, Channel.Id, $"{User.Name} is {(_doNotDisturb ? "now" : "no longer")} in Do Not Disturb (DND) mode."));
+                }
             }
         }
 
@@ -90,6 +97,8 @@ namespace miniBBS.Core.Models.Control
         /// The next message the user will read when they hit enter
         /// </summary>
         public int MsgPointer { get; set; } // => UcFlag?.LastReadMessageNumber ?? 0;
+
+
         /// <summary>
         /// The last message the user read when they hit enter (not including new, live, messages)
         /// </summary>

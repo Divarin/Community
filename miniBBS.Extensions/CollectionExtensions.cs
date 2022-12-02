@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace miniBBS.Extensions
 {
@@ -16,7 +17,7 @@ namespace miniBBS.Extensions
 
         public static int? ItemKey<T>(this SortedList<int, T> list, int index)
         {
-            if (index >= 0 && index < list.Keys.Count)
+            if (true == list?.Any() && list.Keys.Contains(index))
                 return list.Keys[index];
             return null;
         }
@@ -24,14 +25,23 @@ namespace miniBBS.Extensions
         public static int IndexOf<T>(this IEnumerable<T> enumerable, Func<T, bool> selector)
         {
             int i = 0;
-            foreach (var t in enumerable)
+            if (enumerable != null)
             {
-                if (selector(t))
-                    return i;
-                i++;
+                foreach (var t in enumerable)
+                {
+                    if (selector(t))
+                        return i;
+                    i++;
+                }
             }
             return -1;
         }
 
+        public static TValue GetOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
+        {
+            if (true == dict?.ContainsKey(key))
+                return dict[key];
+            return defaultValue;
+        }
     }
 }

@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
+using miniBBS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,7 @@ namespace miniBBS.Commands
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                 {
-                    msg.Write(session, ChatWriteFlags.Monochorome);
+                    msg.Write(session, ChatWriteFlags.Monochorome, GlobalDependencyResolver.Default);
                     var r = session.Io.Ask("Pin this message?");
                     if (r == 'N')
                         return;
@@ -101,7 +102,7 @@ namespace miniBBS.Commands
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                msg.Write(session, ChatWriteFlags.Monochorome);
+                msg.Write(session, ChatWriteFlags.Monochorome, GlobalDependencyResolver.Default);
                 var r = session.Io.Ask("Unpin this message?");
                 if (r == 'N')
                     return;
