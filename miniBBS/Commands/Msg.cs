@@ -89,9 +89,11 @@ namespace miniBBS.Commands
                                 var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
                                     .ToDictionary(k => k.Id));
                                 var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
-                                int? nextChannelNumber = currentChannelNumber.Value + 1;
-                                var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
-                                nextChannelNumber = chans.ItemNumber(nextChannelId);
+                                int nextChannelNumber = currentChannelNumber.Value + 1;
+                                if (nextChannelNumber >= chans.Count)
+                                    nextChannelNumber = 0;
+                                //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
+                                //nextChannelNumber = chans.ItemNumber(nextChannelId);
                                 SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber + 1}", false, fromMessageBase: true);
                                 chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                                 threadQ.Clear();
@@ -103,9 +105,11 @@ namespace miniBBS.Commands
                                 var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
                                     .ToDictionary(k => k.Id));
                                 var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
-                                int? nextChannelNumber = currentChannelNumber.Value - 1;
-                                var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
-                                nextChannelNumber = chans.ItemNumber(nextChannelId);
+                                int nextChannelNumber = currentChannelNumber.Value - 1;
+                                if (nextChannelNumber < 0)
+                                    nextChannelNumber = chans.Count - 1;
+                                //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
+                                //nextChannelNumber = chans.ItemNumber(nextChannelId);
                                 SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber + 1}", false, fromMessageBase: true);
                                 chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                                 threadQ.Clear();

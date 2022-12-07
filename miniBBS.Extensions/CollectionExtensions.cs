@@ -17,8 +17,12 @@ namespace miniBBS.Extensions
 
         public static int? ItemKey<T>(this SortedList<int, T> list, int index)
         {
-            if (true == list?.Any() && list.Keys.Contains(index))
-                return list.Keys[index];
+            if (index >= 0 && index < list.Keys.Count)
+            {
+                var key = list.Keys[index];
+                return key;
+            }
+
             return null;
         }
 
