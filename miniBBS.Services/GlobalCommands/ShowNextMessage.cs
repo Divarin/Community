@@ -29,6 +29,7 @@ namespace miniBBS.Services.GlobalCommands
             else
             {
                 Chat nextMessage = session.Chats[session.MsgPointer];
+                
                 nextMessage.Write(session, chatWriteFlags, GlobalDependencyResolver.Default);
 
                 if (!SetMessagePointer.Execute(session, session.MsgPointer + 1) && !chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase))

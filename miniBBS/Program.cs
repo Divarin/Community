@@ -415,7 +415,7 @@ namespace miniBBS
                 //session.LastReadMessageNumber ??
                 session.MsgPointer;
 
-            bool isAtEndOfMessages = true == session.Chats?.Any() && lastRead == session.Chats.Keys[session.Chats.Keys.Count - 2];
+            bool isAtEndOfMessages = true == session.Chats?.Keys?.Count >= 2 && lastRead == session.Chats.Keys[session.Chats.Keys.Count - 2];
 
             Action action = () =>
             {
@@ -1169,9 +1169,11 @@ namespace miniBBS
                         var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
                             .ToDictionary(k => k.Id));
                         var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
-                        int? nextChannelNumber = currentChannelNumber.Value - 1;
-                        var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
-                        nextChannelNumber = chans.ItemNumber(nextChannelId);
+                        int nextChannelNumber = currentChannelNumber.Value - 1;
+                        if (nextChannelNumber < 0)
+                            nextChannelNumber = chans.Count - 1;
+                        //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
+                        //nextChannelNumber = chans.ItemNumber(nextChannelId);
                         SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber+1}", false);
                     }
                     return;
@@ -1181,9 +1183,11 @@ namespace miniBBS
                         var chans = new SortedList<int, Channel>(GetChannel.GetChannels(session)
                             .ToDictionary(k => k.Id));
                         var currentChannelNumber = chans.ItemNumber(session.Channel.Id);
-                        int? nextChannelNumber = currentChannelNumber.Value + 1;
-                        var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
-                        nextChannelNumber = chans.ItemNumber(nextChannelId);
+                        int nextChannelNumber = currentChannelNumber.Value + 1;
+                        if (nextChannelNumber >= chans.Count)
+                            nextChannelNumber = 0; 
+                        //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
+                        //nextChannelNumber = chans.ItemNumber(nextChannelId);
                         SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber+1}", false);
                     }
                     return;
