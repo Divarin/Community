@@ -31,7 +31,7 @@ namespace miniBBS.Menus
             new Cmd("/tz",25), new Cmd("/timezone",25), new Cmd("/time",25), new Cmd("/si",26), new Cmd("/session",26), 
             new Cmd("/sessioninfo",26), new Cmd("/ui",27), new Cmd("/user",27), new Cmd("/userinfo",27), new Cmd("/ci",28), new Cmd("/chat",28), 
             new Cmd("/chatinfo",28), new Cmd("/cal",29), new Cmd("/calendar",29), new Cmd("/index",30), new Cmd("/i",30), 
-            new Cmd("/ipban",31), new Cmd("/pp",32), new Cmd("/keepalive",32), new Cmd("/ping",32), new Cmd("/newuser",33), 
+            new Cmd("/ipban",31), new Cmd("/pp",32), new Cmd("/keepalive",32), new Cmd("/ping",32), new Cmd("/ss", 32), new Cmd("/newuser",33), 
             new Cmd("/wave",34), new Cmd("/poke",34), new Cmd("/smile",34), new Cmd("/frown",34), new Cmd("/wink",34), new Cmd("/nod",34), 
             new Cmd("/fairwell",35), new Cmd("/farewell",35), new Cmd("/goodbye",35), new Cmd("/bye",35), new Cmd("/me",35), 
             new Cmd("/online",35), new Cmd("/onl",35), new Cmd("/on",35),  new Cmd("/roll",36), 

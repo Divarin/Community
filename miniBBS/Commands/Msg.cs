@@ -251,15 +251,30 @@ namespace miniBBS.Commands
             return int.Parse(str);
         }
 
+        private static bool _startAtCurrent = true;
+        private static bool _showUnreadOnly = true;
+        private static bool _showThreadStartsOnly = true;
+
         private static void ListMessages(BbsSession session, int startingId)
         {
+            if (!SetListOptions(session, startingId))
+                return;
+
             var builder = new StringBuilder();
-            builder.AppendLine("--- Listing start of new threads ---");
-            builder.AppendLine("(Unread message threads only)".Color(ConsoleColor.DarkGray));
+            builder.AppendLine("--- Listing Messages ---");
 
-            var readIds = session.ReadChatIds(DI.Get<IDependencyResolver>());
+            IEnumerable<KeyValuePair<int, Chat>> chats = session.Chats;
+            if (_startAtCurrent)
+                chats = chats.Where(c => c.Key >= startingId);
+            if (_showUnreadOnly)
+            {
+                var readIds = session.ReadChatIds(DI.Get<IDependencyResolver>());
+                chats = chats.Where(c => !readIds.Contains(c.Key));
+            }
+            if (_showThreadStartsOnly)
+                chats = chats.Where(c => c.Value.ResponseToId == null);
 
-            foreach (var c in session.Chats.Where(c => !readIds.Contains(c.Key) && c.Value.ResponseToId == null))
+            foreach (var c in chats)
                 builder.AppendLine(IndexBy.FormatLine(session, c.Value));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -268,6 +283,34 @@ namespace miniBBS.Commands
             }
 
             session.Io.OutputLine("To change to a specific message, just type the message number.".Color(ConsoleColor.White));
+        }
+
+        private static bool SetListOptions(BbsSession session, int currentMessageId)
+        {
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                bool exitMenu = false;
+                var currentMessageNum = session.Chats.ItemNumber(currentMessageId);
+                while (!exitMenu)
+                {
+                    session.Io.OutputLine("** List Messages Options **");
+                    session.Io.OutputLine("A) Start at : " + $"{(_startAtCurrent ? $"Current Message (>= {currentMessageNum})" : "First Message (>= 0)")}".Color(ConsoleColor.Yellow));
+                    session.Io.OutputLine("B) Show unread messages only : " + $"{_showUnreadOnly}".Color(ConsoleColor.Yellow));
+                    session.Io.OutputLine("C) Show only starts of threads : " + $"{_showThreadStartsOnly}".Color(ConsoleColor.Yellow));
+                    session.Io.OutputLine("ENTER) List Messages".Color(ConsoleColor.Green));
+                    session.Io.OutputLine("Q) Quit");
+                    var k = session.Io.Ask("List Messages");
+                    switch (k)
+                    {
+                        case 'A': _startAtCurrent = !_startAtCurrent; break;
+                        case 'B': _showUnreadOnly = !_showUnreadOnly; break;
+                        case 'C': _showThreadStartsOnly = !_showThreadStartsOnly; break;
+                        case 'Q': return false;
+                        default: exitMenu = true; break;
+                    }
+                }
+            }
+            return true;
         }
 
         private static void PostMessage(BbsSession session, PostChatFlags flags)

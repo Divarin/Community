@@ -465,7 +465,7 @@ namespace miniBBS.UserIo
 
                     if (handlingFlag.HasFlag(InputHandlingFlag.AutoCompleteOnTab) &&
                         bytes?.Length > 0 &&
-                        (bytes[0] == '\t' || bytes[0] == 29))
+                        (bytes[0] == '\t' || bytes[0] == 17))
                     {
                         string acText = autoComplete?.Invoke(lineBuilder.ToString());
                         acText = TransformText(acText);
@@ -475,7 +475,7 @@ namespace miniBBS.UserIo
                             i = acText.Length;
                         }
                     }
-
+                    
                     if (handlingFlag.HasFlag(InputHandlingFlag.InterceptSingleCharacterCommand) &&
                         lineBuilder.Length == 0 &&
                         Constants.LegitOneCharacterCommands.Contains((char)bytes[0]))
@@ -496,7 +496,7 @@ namespace miniBBS.UserIo
                     }
 
                     bytes = InterpretInput(bytes);
-
+                    
                     if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine) && 
                         bytes.Length >= 3 &&
                         bytes[0] == 27 && bytes[1] == 91 && bytes[2] == 65 && 
@@ -510,6 +510,10 @@ namespace miniBBS.UserIo
                     if (bytes.Length < 1)
                         continue;
                     var data = Encoding.ASCII.GetString(bytes, 0, i);
+                    
+                    // fix for SyncTERM version 1.2b
+                    if (data == "\r\0") data = Environment.NewLine; 
+
                     bool includedNewLine = false;
 
                     if (data == "\n")

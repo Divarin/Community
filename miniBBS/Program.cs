@@ -65,15 +65,15 @@ namespace miniBBS
             {
                 try
                 {
-                    TcpClientFactory clientFactory = new TcpClientFactory(listener);
+                    var clientFactory = new TcpClientFactory(listener);
                     clientFactory.AwaitConnection();
                     while (clientFactory.Client == null)
                     {
                         Thread.Sleep(25);
                     }
-                    TcpClient client = clientFactory.Client;
-                    ParameterizedThreadStart threadStart = new ParameterizedThreadStart(BeginConnection);
-                    Thread thread = new Thread(threadStart);
+                    var client = clientFactory.Client;
+                    var threadStart = new ParameterizedThreadStart(BeginConnection);
+                    var thread = new Thread(threadStart);
                     thread.Start(new NodeParams
                     {
                         Client = client,
@@ -101,11 +101,11 @@ namespace miniBBS
 
                 var client = nodeParams.Client;
                 var sysControl = nodeParams.SysControl;
-
+                
                 var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
                 if (true == _ipBans?.Any(x => Commands.IpBan.FitsMask(ip, x)))
                 {
-                    Console.WriteLine($"Banned ip {ip} rejected.");
+                    _logger?.Log(null, $"Banned ip {ip} rejected.", LoggingOptions.ToConsole);
                     return;
                 }
 
@@ -189,7 +189,7 @@ namespace miniBBS
                     x.Message.Contains("Unable to read data from the transport connection") ||
                     x.Message.Contains("Unable to write data to the transport connection")))
                 {
-                    _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                    _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}", LoggingOptions.ToConsole | LoggingOptions.ToDatabase);
                 }
             }
             finally
@@ -1028,6 +1028,18 @@ namespace miniBBS
                             session.StartPingPong(i, silently: false);
                         else
                             session.StartPingPong(0, silently: false);
+                    }
+                    return;
+                case "/ss":
+                    if (session.PingType == PingPongType.Invisible)
+                    {
+                        session.PingType = PingPongType.ScreenSaver;
+                        session.Io.Error("Screen saver enabled");
+                    }
+                    else
+                    {
+                        session.PingType = PingPongType.Invisible;
+                        session.Io.Error("Screen saver disabled");
                     }
                     return;
                 case "/newuser":

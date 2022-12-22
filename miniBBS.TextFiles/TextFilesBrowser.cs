@@ -920,6 +920,22 @@ namespace miniBBS.TextFiles
             var builder = new StringBuilder();
             builder.AppendLine($"{Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{links.Count} total entries in {_currentLocation.ActualFilename}{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
 
+            var flags = filters?.Where(f => f.StartsWith("-"))?.ToArray();
+            filters = filters?.Except(flags);
+            int descOffset = 0;
+            bool descOffsetWords = false;
+            if (true == flags?.Any())
+            {
+                var flag = flags.First().Substring(1);
+                if (flag.EndsWith("w", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    descOffsetWords = true;
+                    flag = flag.Substring(0, flag.Length - 1);
+                }
+                if (int.TryParse(flag, out int n) && n > 0)
+                    descOffset = n;
+            }
+
             for (int i = 0; i < links.Count; i++)
             {
                 var link = links[i];
@@ -928,8 +944,15 @@ namespace miniBBS.TextFiles
                 var filename = link.IsDirectory ? $"[{Constants.InlineColorizer}{(int)ConsoleColor.Blue}{Constants.InlineColorizer}{link.DisplayedFilename}{Constants.InlineColorizer}-1{Constants.InlineColorizer}]" : $"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{link.DisplayedFilename}{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
                 string line = $"{(i + 1).ToString().PadLeft(3, Constants.Spaceholder)} : {filename}, ";
 
-                line += links[i].Description
+                var desc = links[i].Description
                     .Replace(Environment.NewLine, " ");
+
+                if (!descOffsetWords && descOffset > 0 && desc.Length > descOffset)
+                    desc = desc.Substring(descOffset);
+                else if (descOffsetWords && descOffset > 0)
+                    desc = string.Join(" ", desc.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Skip(descOffset));
+
+                line += desc;
                 
                 line = line.MaxLength(_session.Cols);
                 builder.AppendLine(line);

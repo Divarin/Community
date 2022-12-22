@@ -41,7 +41,7 @@ namespace miniBBS.Services.Services
 
         private void Log(Guid? sessionId, string ipAddress, int? userId, string username, string message, LoggingOptions loggingOptions)
         {
-            LogEntry entry = new LogEntry
+            var entry = new LogEntry
             {
                 SessionId = sessionId,
                 IpAddress = ipAddress,

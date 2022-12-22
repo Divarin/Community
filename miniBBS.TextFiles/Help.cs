@@ -96,7 +96,11 @@ namespace miniBBS.TextFiles
             "The commands 'dir', 'ls', and 'grep' all list the sub-directories and files in the current directory.  There some differences between " +
             "these commands.  'dir' will list sub-directories and files with snippets of their descriptions.  'ls' will list only the names of " +
             "sub-directories and files and this is done in a \"wide\" format meaning more than one entry per line.  'grep' works exactly like 'dir' " +
-            "except when it comes to searching.  Please read 'help searching' for information on how to use these commands to search for files.";
+            "except when it comes to searching.  Please read 'help searching' for information on how to use these commands to search for files. \r\n\r\n" +
+            "One obscure feature of 'dir', you can truncate a portion of the start of each description with '-n' or '-nw' where 'n' is a number.  " +
+            "the 'w' means 'words', so if you want to skip the first 7 words of each description you can use '-7w'.  If you want to skip the first " +
+            "10 characters of each description you can use '-10'.  This is to facilitate browsing where the descriptions all start with the same header value " +
+            "and the descriptive part of the description is cut off due to line-length.";
 
         private const string _cd =
             "Examples:cd 12, cd Jokes, chdir Humor, cd.., cd /, cd \\ \r\n\r\n" +

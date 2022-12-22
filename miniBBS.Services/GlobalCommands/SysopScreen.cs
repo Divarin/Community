@@ -164,20 +164,20 @@ namespace miniBBS.Services.GlobalCommands
 
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($" (L)og entries: {_logMessages.Count} | (C)lear Logs | (U)sers called: {_logins.Count}  ");
+            Console.Write($" (I)ssues: {_logMessages.Count} | (C)lear Issues | (L)ogins: {_logins.Count} ({_logins.Select(l => l.Username).Distinct().Count()} users)  ");
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true);
                 switch (key.Key)
                 {
-                    case ConsoleKey.L:
+                    case ConsoleKey.I:
                         DisplayLogs();
                         RedrawFromStart();
                         break;
                     case ConsoleKey.C:
                         _logMessages.Clear();
                         break;
-                    case ConsoleKey.U:
+                    case ConsoleKey.L:
                         DisplayLogins();
                         RedrawFromStart();
                         break;
