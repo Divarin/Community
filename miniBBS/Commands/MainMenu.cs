@@ -8,19 +8,19 @@ namespace miniBBS.Commands
 {
     public static class MainMenu
     {
-        private static Func<string, ConsoleColor, string> _clr = (txt, clr) => UserIoExtensions.WrapInColor(txt, clr);
+        private static readonly Func<string, ConsoleColor, string> _clr = (txt, clr) => UserIoExtensions.WrapInColor(txt, clr);
 
         private static readonly string[] _menu = new[]
         {
             $"{_clr("***", ConsoleColor.Yellow)} {_clr("Mutiny Community Main Menu", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
-            $"{_clr("M", ConsoleColor.Green)}) Message Boards",
-            $"{_clr("C", ConsoleColor.Green)}) Chat Rooms",
+            $"{_clr("M", ConsoleColor.Green)}) Messages & Chat",
+            //$"{_clr("C", ConsoleColor.Green)}) Chat Rooms",
             $"{_clr("E", ConsoleColor.Green)}) E-Mail",
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
             $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
             $"{_clr("G", ConsoleColor.Green)}) Games",
             $"{_clr("O", ConsoleColor.Green)}) Logoff",
-            $"{_clr("L", ConsoleColor.Green)}) Learn how to do MUCH MORE with Community!"
+            $"{_clr("L", ConsoleColor.Green)}) Learn how to do more with Community!"
         };
 
         private const string _learn =
@@ -28,11 +28,11 @@ namespace miniBBS.Commands
 "this is primarily a chat based system.  The chats posted to the chat rooms are persisted and act as a message base.  That means you can read " +
 "and respond to chats that have been left in the past and you can post chats that will be readable by people who will login in the future. " +
 "\r\n\r\n" +
-"This means that the M)essage Base messages and the C)hat room messages are one and the same.  The only difference is the look and feel of how you " +
-"interact with those messages.  If you prefer a traditional Message Base style then feel free to use it.  However, in this mode, you cannot engage in real-time chats " +
-"with users who are currently on Community.  Alternatively you can use the Chat room interface to read and post messages and if people are online " +
-"right now they will see these messages and can respond right away and you'll see their response and thus real-time conversation will ensue!" +
-"\r\n\r\n" +
+//"This means that the M)essage Base messages and the C)hat room messages are one and the same.  The only difference is the look and feel of how you " +
+//"interact with those messages.  If you prefer a traditional Message Base style then feel free to use it.  However, in this mode, you cannot engage in real-time chats " +
+//"with users who are currently on Community.  Alternatively you can use the Chat room interface to read and post messages and if people are online " +
+//"right now they will see these messages and can respond right away and you'll see their response and thus real-time conversation will ensue!" +
+//"\r\n\r\n" +
 "Since this BBS was originally built out as a chat based system most of the functionality is accessed via slash commands (commands starting with a '/') " +
 "in the chat room.  For example you can /whisper to another user or /wave to users or run bots using commands like /guessbot. " +
 "\r\n\r\n" +
@@ -76,9 +76,10 @@ namespace miniBBS.Commands
                         switch (char.ToUpper(key.Value))
                         {
                             case 'M':
-                                Msg.Execute(session);
-                                break;
+                                //Msg.Execute(session);
+                                //break;
                             case 'C':
+                                Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
                                 session.Io.Error("Use '/main' to return to main menu.");
                                 return true;
                             case 'E':

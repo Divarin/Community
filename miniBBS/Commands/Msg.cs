@@ -92,8 +92,6 @@ namespace miniBBS.Commands
                                 int nextChannelNumber = currentChannelNumber.Value + 1;
                                 if (nextChannelNumber >= chans.Count)
                                     nextChannelNumber = 0;
-                                //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
-                                //nextChannelNumber = chans.ItemNumber(nextChannelId);
                                 SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber + 1}", false, fromMessageBase: true);
                                 chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                                 threadQ.Clear();
@@ -108,8 +106,6 @@ namespace miniBBS.Commands
                                 int nextChannelNumber = currentChannelNumber.Value - 1;
                                 if (nextChannelNumber < 0)
                                     nextChannelNumber = chans.Count - 1;
-                                //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
-                                //nextChannelNumber = chans.ItemNumber(nextChannelId);
                                 SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber + 1}", false, fromMessageBase: true);
                                 chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                                 threadQ.Clear();
@@ -162,21 +158,6 @@ namespace miniBBS.Commands
                         case 'b':
                         case 'B':
                             PrevThread();
-                            //{
-                            //    int loops = chat.ResponseToId.HasValue ? 2 : 1;
-                            //    var newChat = chat;
-                            //    for (int i = 0; i < loops; i++)
-                            //    {
-                            //        newChat = session.Chats.Values.LastOrDefault(x => x.Id < newChat.Id && !x.ResponseToId.HasValue);
-                            //    }
-                            //    if (newChat != null)
-                            //    {
-                            //        chat = newChat;
-                            //        WriteMessage(session, ref chat);
-                            //    }
-                            //    else
-                            //        session.Io.Error("No earlier threads, use ] to advance to next channel.");
-                            //}
                             break;
                         case 'p':
                         case 'P':
@@ -313,7 +294,7 @@ namespace miniBBS.Commands
             return true;
         }
 
-        private static void PostMessage(BbsSession session, PostChatFlags flags)
+        public static void PostMessage(BbsSession session, PostChatFlags flags)
         {
             var editor = DI.Get<ITextEditor>();
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))

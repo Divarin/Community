@@ -109,6 +109,8 @@ namespace miniBBS
                     return;
                 }
 
+                SysopScreen.SetLastConnectionIp(ip);
+
                 if (sessionsList.Sessions.Count(s => !string.IsNullOrWhiteSpace(s.IpAddress) && s.IpAddress.Equals(ip)) > Constants.MaxSessionsPerIpAddress)
                 {
                     DI.Get<ILogger>().Log(session, $"Too many connections from {session?.IpAddress}.");
@@ -385,7 +387,9 @@ namespace miniBBS
             var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
             
-            var chanNum = chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
+            var chanNum = 
+                string.IsNullOrWhiteSpace(session?.Channel?.Name) ? -1 :
+                chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
 
             var prompt = 
                 $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
@@ -394,7 +398,7 @@ namespace miniBBS
                 UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
                 $"{count}" +
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
-                $"{chanNum}:{session.Channel.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
+                $"{chanNum}:{session?.Channel?.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
 
             session.Io.Output(prompt);
             session.Io.SetForeground(ConsoleColor.White);
@@ -549,9 +553,15 @@ namespace miniBBS
                         ?.Where(s => message.User.Id == s.User?.Id)
                         ?.Count();
 
-                    string msg = $"{Environment.NewLine}{message.User.Name}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(message.IsLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
+                    string msg = $"{Environment.NewLine}{message.User.Name} has {(message.IsLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
                     if (!string.IsNullOrWhiteSpace(message.LogoutMessage))
                         msg += $" saying \"{message.LogoutMessage}\"";
+
+                    if (sessionsForThisUser > 1)
+                    {
+                        var s = message.IsLogin ? sessionsForThisUser : sessionsForThisUser - 1;
+                        msg += $"{Environment.NewLine}{Constants.Spaceholder.Repeat(3)}{message.User.Name} is logged in with {s} session(s).";
+                    }
 
                     session.Io.OutputLine(msg);
                 }
@@ -893,6 +903,20 @@ namespace miniBBS
                 case "/edit":
                 case "/s":
                     EditMessage.Execute(session, string.Join(" ", parts.Skip(1)));
+                    return;
+                case "/p":
+                case "/post":
+                    {
+                        var _c = session.Io.Ask("(N)ew Message, (R)esponse to last message, (Q)uit");
+                        PostChatFlags _flags;
+                        if (_c == 'N')
+                            _flags = PostChatFlags.IsNewTopic;
+                        else if (_c == 'R')
+                            _flags = PostChatFlags.None;
+                        else
+                            return;
+                        Msg.PostMessage(session, _flags);
+                    }
                     return;
                 case "/rere":
                     EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());

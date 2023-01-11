@@ -29,7 +29,10 @@ namespace miniBBS.Commands
                     toBeDeleted = session.Chats.Values.LastOrDefault(c => c.FromUserId == session.User.Id);
 
                 if (toBeDeleted == null)
-                    session.Io.OutputLine("Messagee not found in this channel.");
+                {
+                    session.Io.OutputLine("Message not found in this channel.");
+                    return;
+                }
 
                 bool canDelete =
                     session.User.Access.HasFlag(AccessFlag.Administrator) ||
