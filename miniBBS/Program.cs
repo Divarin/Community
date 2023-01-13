@@ -902,7 +902,7 @@ namespace miniBBS
                 case "/typo":
                 case "/edit":
                 case "/s":
-                    EditMessage.Execute(session, string.Join(" ", parts.Skip(1)));
+                    EditMessage.Execute(session, string.Join(" ", parts.Skip(1)), useLineEditor: "/edit".Equals(command, StringComparison.CurrentCultureIgnoreCase));
                     return;
                 case "/p":
                 case "/post":
