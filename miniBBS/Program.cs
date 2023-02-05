@@ -284,7 +284,11 @@ namespace miniBBS
                 Thread.Sleep(1000);
             }
 
-            var startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
+            var metaRepo = DI.GetRepository<Metadata>();
+            var startupMode = session.User.GetStartupMode(metaRepo);
+            OneTimeQuestions.Execute(session);
+            startupMode = session.User.GetStartupMode(metaRepo);
+            session.LoadChatHeaderFormat(metaRepo);
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
@@ -306,11 +310,7 @@ namespace miniBBS
                 {
                     throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
                 }
-
             }
-
-            OneTimeQuestions.Execute(session);
-            startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
 
             if (startupMode == LoginStartupMode.MainMenu)
             {
@@ -324,6 +324,8 @@ namespace miniBBS
             }
 
             session.CurrentLocation = Module.Chat;
+            
+            ListChannels.ShowTotalUnread(session);
             session.Io.OutputLine("Press Enter/Return to read next message.");
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
@@ -1080,9 +1082,6 @@ namespace miniBBS
                 case "/goodbye":
                 case "/bye":
                 case "/me":
-                case "/online":
-                case "/onl":
-                case "/on":
                     Emote.Execute(session, parts);
                     return;
                 case "/whisper":

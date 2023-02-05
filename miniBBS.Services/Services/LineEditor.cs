@@ -24,6 +24,7 @@ namespace miniBBS.Services.Services
             session.DoNotDisturb = true;
             List<string> lines = null;
             _parameters = parameters;
+            var originalColor = session.Io.GetForeground();
 
             try
             {
@@ -38,16 +39,21 @@ namespace miniBBS.Services.Services
 
                 var cmdResult = CommandResult.None;
 
+                session.Io.SetForeground(ConsoleColor.Magenta);
                 session.Io.OutputLine($"Mutiny Community Line Editor.  Type '/?' on a blank line for help.");
                 if (!string.IsNullOrWhiteSpace(parameters?.Filename))
-                    session.Io.OutputLine($"Now Editing: {parameters.Filename}");
+                    session.Io.OutputLine($"Now Editing: {parameters.Filename.Color(ConsoleColor.Yellow)}");
                 session.Io.OutputLine($" {'-'.Repeat(session.Cols - 3)} ");
 
                 if (lines.Count > 0)
                 {
-                    session.Io.OutputLine($"{lines.Count} line(s) loaded, use '/l' to list.");
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
+                    {
+                        session.Io.OutputLine($"{lines.Count} line(s) loaded, use '/l' to list.");
+                    }
                 }
 
+                session.Io.SetForeground(ConsoleColor.White);
                 while (!cmdResult.HasFlag(CommandResult.ExitEditor))
                 {
                     var line = session.Io.InputLine();
@@ -89,6 +95,7 @@ namespace miniBBS.Services.Services
             finally
             {
                 session.DoNotDisturb = wasDnd;
+                session.Io.SetForeground(originalColor);
             }
         }
 

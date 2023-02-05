@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "4.11a - 2023.01.13";
+        public const string Version = "4.13a - 2023.02.05";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -32,6 +32,10 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const string DefaultChatHeaderFormat = "[%mn%:%y%-%mm%-%dd% %hh%:%min%] <%un%> (re:%re%)";
+
+        public const int MaxEmoteLength = 44; // 4 for "/me ", 40 for the emote itself
 
         public const int TutorLogins = 10;
 
@@ -119,7 +123,8 @@ namespace miniBBS.Core
             InputHandlingFlag.InterceptSingleCharacterCommand | 
             InputHandlingFlag.UseLastLine | 
             InputHandlingFlag.DoNotEchoNewlines | 
-            InputHandlingFlag.AllowCtrlEnterToAddNewLine;
+            InputHandlingFlag.AllowCtrlEnterToAddNewLine |
+            InputHandlingFlag.MaxLengthIfEmote;
 
         public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 5;

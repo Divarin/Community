@@ -88,17 +88,19 @@ namespace miniBBS.Basic.Models
             return value;
         }
 
-        private IDictionary<string, string> _globals = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
+        private readonly IDictionary<string, string> _globals = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
         private IDictionary<string, Func<string>> EnvironmentVariables { get; set; }
         
         public Data Data { get; set; }
         public IList<Function> Functions { get; private set; }
 
-        private Stack<IScoped> _scopedStack = new Stack<IScoped>();
-        private IDictionary<string, string> _environmentVariableValues = new Dictionary<string, string>();
+        private readonly Stack<IScoped> _scopedStack = new Stack<IScoped>();
+        private readonly IDictionary<string, string> _environmentVariableValues = new Dictionary<string, string>();
 
         public void SetEnvironmentVariable(string name, string value)
         {
+            if (!EnvironmentVariables.ContainsKey(name))
+                EnvironmentVariables[name] = () => _environmentVariableValues[name];
             _environmentVariableValues[name] = value;
         }
 

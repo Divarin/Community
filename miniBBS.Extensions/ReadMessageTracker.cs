@@ -105,7 +105,7 @@ namespace miniBBS.Extensions
         {
             Metadata meta = GetReadsMetaFromDatabase(session, di.GetRepository<Metadata>());
 
-            if (meta != null && meta.TryGetDataAs(out HashSet<int> set))
+            if (meta != null && meta.TryGetDataAs<HashSet<int>>(out HashSet<int> set))
             {
                 session.Items[SessionItem.ReadMessages] = set;
                 return set;
@@ -133,5 +133,80 @@ namespace miniBBS.Extensions
             session.Items[SessionItem.ReadMessages] = set;
             return set;
         }
+
+        /// <summary>
+        /// "1-5,7,9,11-13" => 1,2,3,4,5,7,9,11,12,13
+        /// </summary>
+        //private static HashSet<int> Deconsolidate(string ranges)
+        //{
+        //    var result = new HashSet<int>();
+        //    if (string.IsNullOrWhiteSpace(ranges))
+        //        return result;
+
+        //    if (ranges.StartsWith("["))
+        //        ranges = ranges.Substring(1);
+        //    if (ranges.EndsWith("]"))
+        //        ranges = ranges.Substring(0, ranges.Length - 1);
+            
+        //    var segments = ranges.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        //    foreach (var segment in segments)
+        //    {
+        //        if (int.TryParse(segment, out int n))
+        //            result.Add(n);
+        //        else
+        //        {
+        //            var pair = segment.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+        //            if (pair.Length == 2 && int.TryParse(pair[0], out int n1) && int.TryParse(pair[1], out int n2))
+        //            {
+        //                for (int i = n1; i <= n2; i++)
+        //                    result.Add(i);
+        //            }
+        //        }
+        //    }
+
+        //    return result;
+        //}
+
+        /// <summary>
+        /// 1,2,3,4,5,7,9,11,12,13 => "1-5,7,9,11-13"
+        /// </summary>
+        //private static string Consolidate(HashSet<int> set)
+        //{
+        //    var min = set.Min();
+        //    var max = set.Max();
+
+        //    int? rangeLast = null;
+        //    int? rangeStart = null;
+        //    int? rangeEnd = null;
+
+        //    var builder = new StringBuilder();
+
+        //    for (int i=min; i < max; i++)
+        //    {
+        //        if (!set.Contains(i)) 
+        //            continue;
+        //        if (!rangeLast.HasValue)
+        //            rangeStart = rangeLast = i;
+        //        else if (i == rangeLast.Value + 1)
+        //            rangeEnd = rangeLast = i;
+        //        else
+        //        {
+        //            // end of range (or single)
+        //            if (rangeEnd.HasValue) // range
+        //                builder.Append($"{rangeStart}-{rangeEnd}");
+        //            else // single
+        //                builder.Append($"{rangeStart}");
+        //            rangeEnd = null;
+
+        //            rangeStart = rangeLast = i;
+
+        //            builder.Append(",");
+        //        }
+        //    }
+
+        //    builder.Append(max.ToString());
+
+        //    return builder.ToString();
+        //}
     }
 }

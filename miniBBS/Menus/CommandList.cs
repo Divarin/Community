@@ -34,7 +34,7 @@ namespace miniBBS.Menus
             new Cmd("/ipban",31), new Cmd("/pp",32), new Cmd("/keepalive",32), new Cmd("/ping",32), new Cmd("/ss", 32), new Cmd("/newuser",33), 
             new Cmd("/wave",34), new Cmd("/poke",34), new Cmd("/smile",34), new Cmd("/frown",34), new Cmd("/wink",34), new Cmd("/nod",34), 
             new Cmd("/fairwell",35), new Cmd("/farewell",35), new Cmd("/goodbye",35), new Cmd("/bye",35), new Cmd("/me",35), 
-            new Cmd("/online",35), new Cmd("/onl",35), new Cmd("/on",35),  new Cmd("/roll",36), 
+            new Cmd("/roll",36), 
             new Cmd("/random",36), new Cmd("/rnd",36), new Cmd("/dice",36), new Cmd("/die",36), new Cmd("/mail",37), new Cmd("/email",37), 
             new Cmd("/e-mail",37), new Cmd("/feedback",37), new Cmd("/texts",38), new Cmd("/textz",38), new Cmd("/text",38), new Cmd("/txt",38), 
             new Cmd("/file",38), new Cmd("/files",38), new Cmd("/filez",38), new Cmd("/myfiles",38), new Cmd("/textread",39), new Cmd("/tr",39), 

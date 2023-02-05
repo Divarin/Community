@@ -6,6 +6,7 @@
         LastWhisperFromUserId,
         IgnoreList,
         ShownTutorMessages,
-        ReadMessages
+        ReadMessages,
+        ChatHeaderFormat
     }
 }

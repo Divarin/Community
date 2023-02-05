@@ -70,13 +70,17 @@ namespace miniBBS.Commands
                             break;
                         case "send":
                             if (!string.IsNullOrWhiteSpace(arg))
+                            {
                                 SendMail(session, arg.Trim());
+                                mails = GetMails(session);
+                            }
                             else
                                 Error(session, "Please provide who the send the mail to: /mail send jimbob");
                             command = null;
                             break;
                         case "feedback":
                             SendMail(session, Constants.SysopName);
+                            mails = GetMails(session);
                             command = null;
                             break;
                         default:
@@ -180,28 +184,18 @@ namespace miniBBS.Commands
                     Error(session, "Aborted!");
                     return;
                 }
-                session.Io.OutputLine("Type your message below.  On a blank line type /s to send or /a to abort.");
-                session.Io.SetForeground(ConsoleColor.White);
-                StringBuilder builder = new StringBuilder();
-                do
+
+                var lineEditor = DI.Get<ITextEditor>();
+                lineEditor.OnSave = _body =>
                 {
-                    string line = session.Io.InputLine();
-                    if ("/s".Equals(line, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        SendMail(session, toId, subject, builder.ToString());
-                        session.Io.SetForeground(ConsoleColor.Yellow);
-                        session.Io.OutputLine("Mail sent!");
-                        session.Messager.Publish(session, new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
-                        break;
-                    }
-                    else if ("/a".Equals(line, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        Error(session, "Aborted!");
-                        break;
-                    }
-                    else
-                        builder.AppendLine(line);
-                } while (true);
+                    SendMail(session, toId, subject, _body);
+                    session.Messager.Publish(session, new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
+                    return "Mail sent!";
+                };
+                lineEditor.EditText(session, new LineEditorParameters
+                {
+                    QuitOnSave = true
+                });
             }
         }
 
@@ -339,7 +333,8 @@ namespace miniBBS.Commands
         }
         private static void DeleteMail(BbsSession session, Core.Models.Data.Mail mail)
         {
-            if ('Y' == session.Io.Ask($"Are you sure you want to delete this mail:{Environment.NewLine}From: {session.Username(mail.FromUserId)}, To: {session.Username(mail.ToUserId)}{Environment.NewLine}Subject: {mail.Subject}{Environment.NewLine}Delete?"))
+            session.Io.OutputLine($"Are you sure you want to delete this mail:{Environment.NewLine}From: {session.Username(mail.FromUserId)}, To: {session.Username(mail.ToUserId)}{Environment.NewLine}Subject: {mail.Subject}");
+            if ('Y' == session.Io.Ask("Delete?"))
             {
                 var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
                 mailRepo.Delete(mail);

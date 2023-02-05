@@ -49,7 +49,10 @@ namespace miniBBS.Commands
 
                 if (session.User.Access.HasFlag(AccessFlag.Administrator))
                 {
-                    var metas = DI.GetRepository<Metadata>().Get(m => m.UserId, user.Id);
+                    var metas = DI.GetRepository<Metadata>()
+                        .Get(m => m.UserId, user.Id)
+                        .Where(m => m.Type != MetadataType.ReadMessages);
+
                     foreach (var meta in metas)
                         builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");
                 }

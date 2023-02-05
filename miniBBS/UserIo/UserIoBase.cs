@@ -429,11 +429,11 @@ namespace miniBBS.UserIo
         {
             session.LastReadMessageNumberWhenStartedTyping = null;
 
-            Action EndInput = () =>
+            void EndInput()
             {
                 IsInputting = false;
                 ShowDelayedNotifications();
-            };
+            }
 
             try
             {
@@ -552,15 +552,27 @@ namespace miniBBS.UserIo
                     if (data.Length == 0)
                         continue; // only contained backspace(s)
 
-                    string echo = handlingFlag.HasFlag(InputHandlingFlag.PasswordInput) ? "*".Repeat(data.Length) : data;
-                    
-                    if (includedNewLine || !handlingFlag.HasFlag(InputHandlingFlag.DoNotEchoNewlines) || echo != Environment.NewLine)
-                        StreamOutput(session, echo);
+                    if (handlingFlag.HasFlag(InputHandlingFlag.MaxLengthIfEmote) &&
+                        lineBuilder.Length > Constants.MaxEmoteLength &&
+                        lineBuilder.Length >= 3 &&
+                        lineBuilder[0] == '/' &&
+                        char.ToUpper(lineBuilder[1]) == 'M' &&
+                        char.ToUpper(lineBuilder[2]) == 'E')
+                    {
+                        // don't append because we're limiting input length
+                    }
+                    else
+                    {
+                        string echo = handlingFlag.HasFlag(InputHandlingFlag.PasswordInput) ? "*".Repeat(data.Length) : data;
 
-                    if (echo == "\r")
-                        StreamOutput(session, "\n");
+                        if (includedNewLine || !handlingFlag.HasFlag(InputHandlingFlag.DoNotEchoNewlines) || echo != Environment.NewLine)
+                            StreamOutput(session, echo);
 
-                    lineBuilder.Append(data);
+                        if (echo == "\r")
+                            StreamOutput(session, "\n");
+
+                        lineBuilder.Append(data);
+                    }
 
                     if (lineBuilder.Length > 2 && lineBuilder.ToString().EndsWith("+++"))
                         return "/o"; // force logout

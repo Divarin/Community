@@ -50,7 +50,7 @@ namespace miniBBS.Commands
                     return;
                 }
 
-                Action<string> commitEdit = _text =>
+                void commitEdit(string _text)
                 {
                     string message = string.Join(Environment.NewLine, new[]
 {
@@ -66,7 +66,7 @@ namespace miniBBS.Commands
                     {
                         OnReceive = (s) => s.Chats[toBeEdited.Id].Message = _text
                     });
-                };
+                }
 
                 string newMessage = string.Empty;
                 if (useLineEditor)

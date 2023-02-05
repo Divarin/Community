@@ -81,15 +81,42 @@ namespace miniBBS.Extensions
             }
             else
             {
-                line = string.Join("", new[]
-                {
-                    $"{clr(ConsoleColor.Cyan)}[{clr(ConsoleColor.White)}{chatNum}{clr(ConsoleColor.White)}:",
-                    $"{clr(ConsoleColor.Blue)}{chat.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}",
-                    $"{clr(ConsoleColor.Cyan)}] <",
-                    $"{clr(ConsoleColor.Yellow)}{username}{clr(ConsoleColor.Cyan)}>",
-                    $"{clr(ConsoleColor.DarkGray)} (re:{reNum}) ",
-                    $"{clr(ConsoleColor.Green)}{chat.Message}{endClr()}"
-                });
+                var date = chat.DateUtc.AddHours(session.TimeZone);
+                var headerFormat = session.Items.ContainsKey(SessionItem.ChatHeaderFormat) ? session.Items[SessionItem.ChatHeaderFormat] as string : Constants.DefaultChatHeaderFormat;
+                var header = headerFormat
+                    .Replace("%mn%", chatNum?.ToString().Color(ConsoleColor.White))
+                    .Replace("%re%", reNum.Color(ConsoleColor.DarkGray))
+                    .Replace("%yy%", $"{date:yyyy}".Color(ConsoleColor.Blue))
+                    .Replace("%y%", $"{date:yy}".Color(ConsoleColor.Blue))
+                    .Replace("%mm%", $"{date:MM}".Color(ConsoleColor.Blue))
+                    .Replace("%m%", $"{date.Month}".Color(ConsoleColor.Blue))
+                    .Replace("%dd%", $"{date:dd}".Color(ConsoleColor.Blue))
+                    .Replace("%d%", $"{date.Day}".Color(ConsoleColor.Blue))
+                    .Replace("%hh%", $"{date:HH}".Color(ConsoleColor.Blue))
+                    .Replace("%h%", $"{date.Hour}".Color(ConsoleColor.Blue))
+                    .Replace("%min%", $"{date:mm}".Color(ConsoleColor.Blue))
+                    .Replace("%un%", username.Color(ConsoleColor.Yellow))
+                    .Replace("[", "[".Color(ConsoleColor.Cyan))
+                    .Replace("]", "]".Color(ConsoleColor.Cyan))
+                    .Replace("<", "<".Color(ConsoleColor.Cyan))
+                    .Replace(">", ">".Color(ConsoleColor.Cyan))
+                    .Replace("(re:", "(re:".Color(ConsoleColor.DarkGray))
+                    .Replace(")", ")".Color(ConsoleColor.DarkGray))
+                    .Replace("%nl%", Environment.NewLine);
+
+                if (!header.EndsWith(Environment.NewLine))
+                    header += " ";
+
+                line = header + chat.Message.Color(ConsoleColor.Green);
+                //line = string.Join("", new[]
+                //{
+                //    $"{clr(ConsoleColor.Cyan)}[{clr(ConsoleColor.White)}{chatNum}",
+                //    $"{clr(ConsoleColor.DarkGray)} (re:{reNum}) ",
+                //    $"{clr(ConsoleColor.White)}:",
+                //    $"{clr(ConsoleColor.Blue)}{chat.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}",
+                //    $"{clr(ConsoleColor.Cyan)}] <{clr(ConsoleColor.Yellow)}{username}{clr(ConsoleColor.Cyan)}>",
+                //    $"{clr(ConsoleColor.Green)}{chat.Message}{endClr()}"
+                //});
             }
             
             if (flags.HasFlag(ChatWriteFlags.LiveMessageNotification))
