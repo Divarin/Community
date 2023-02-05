@@ -16,8 +16,28 @@ namespace miniBBS.Commands
             var repo = DI.GetRepository<Metadata>();
             if (true != args?.Any())
                 ShowLastSeenUser(session, repo);
+            else if (args.Length == 1 && int.TryParse(args[0], out int count) && count > 0 && count <= 100)
+                ShowLastNUsers(session, repo, count);
             else
                 ShowUsers(session, repo, args);
+        }
+
+        private static void ShowLastNUsers(BbsSession session, IRepository<Metadata> repo, int count)
+        {
+            var last = repo.Get(x => x.Type, MetadataType.SeenData)
+                ?.Where(x => x.DateAddedUtc.HasValue)
+                ?.OrderByDescending(x => x.DateAddedUtc.Value)
+                ?.Take(count);
+
+            var data = last
+                .Select(m => new
+                {
+                    UserId = m.UserId.Value,
+                    Data = JsonConvert.DeserializeObject<SeenData>(m.Data)
+                });
+
+            foreach (var d in data)
+                d.Data.Show(session, d.UserId);
         }
 
         private static void ShowLastSeenUser(BbsSession session, IRepository<Metadata> repo)

@@ -7,6 +7,7 @@
         SeenData,
         LoginStartupMode,
         UserChatWebVisibility,
-        ReadMessages
+        ReadMessages,
+        ChatHeaderFormat
     }
 }

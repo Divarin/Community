@@ -10,6 +10,11 @@
         /// <summary>
         /// Prints ".", (backspace)
         /// </summary>
-        Invisible
+        Invisible,
+
+        /// <summary>
+        /// Prints 3-7 newlines, then 5-10 spaces, then [Mutiny Community (timestamp)]
+        /// </summary>
+        ScreenSaver
     }
 }

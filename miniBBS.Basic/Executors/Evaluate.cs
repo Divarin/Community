@@ -23,7 +23,8 @@ namespace miniBBS.Basic.Executors
             "CHR$", "ASC", "LEFT$", "RIGHT$", "MID$", "REPLACE$", "INSTR", "LEN", "TAB", "ABS", "UC$", "LC$",
             "COUNT", "NL$", "ISWORD", 
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
-            "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$"
+            "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
+            "GUID$"
         };
 
         private static readonly char[] _logicalOperators = new char[]
@@ -433,24 +434,25 @@ namespace miniBBS.Basic.Executors
                             }
                             break;
                         case "str$": value = $"{Constants.Basic.Quote}{value}{Constants.Basic.Quote}"; break;
+                        case "guid$":
+                            {
+                                var parts = value.Split('\t')?.Select(x => x.Trim())?.ToArray();
+                                var guid = Guid.NewGuid().ToString();
+                                if (parts?.Length == 1 && int.TryParse(parts[0], out int v) && v > 0 && v <= 32)
+                                    guid = new string(guid.Replace("-", "").Take(v).ToArray());
+                                value = $"{Constants.Basic.Quote}{guid}{Constants.Basic.Quote}";
+                            }
+                            break;
                         case "left$":
                             {
                                 var parts = value.Split('\t')?.Select(x => x.Trim())?.ToArray();
                                 if (parts?.Length != 2)
                                     throw new RuntimeException("invalid input for left$() function");
 
-                                int count;
-                                if (!int.TryParse(parts[1], out count) || count < 1)
+                                if (!int.TryParse(parts[1], out int count) || count < 1)
                                     throw new RuntimeException("invalid input for left$() function");
 
                                 parts[0] = parts[0].Detokenize(pkg.StringValues);
-                                //if (parts[0].StartsWith("¿[") || parts[0].EndsWith("]¿"))
-                                //{
-                                //    parts[0] = parts[0].Substring(2);
-                                //    parts[0] = parts[0].Substring(0, parts[0].Length - 2);
-                                //    ulong token = ulong.Parse(parts[0]);
-                                //    parts[0] = stringValues[token];
-                                //}
 
                                 if (count < 0)
                                     throw new RuntimeException("invalid input for left$() function");

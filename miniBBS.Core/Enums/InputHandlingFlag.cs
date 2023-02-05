@@ -38,6 +38,11 @@ namespace miniBBS.Core.Enums
         /// <summary>
         /// For enter text into chat, allow CTRL+ENTER to add a blank line in the text without submitting the text
         /// </summary>
-        AllowCtrlEnterToAddNewLine = 32
+        AllowCtrlEnterToAddNewLine = 32,
+
+        /// <summary>
+        /// If the line appears to be an emote (starts with /me) then limit the input to Constants.MaxEmoteLength
+        /// </summary>
+        MaxLengthIfEmote = 64
     }
 }

@@ -14,6 +14,7 @@ namespace miniBBS.Core.Models.Control
     {
         private bool _disposed = false;
         private readonly ISessionsList _sessionsList;
+        private static readonly Random _random = new Random((int)DateTime.Now.Ticks % int.MaxValue);
 
         public BbsSession(ISessionsList sessionsList)
         {
@@ -185,17 +186,23 @@ namespace miniBBS.Core.Models.Control
                     lastPing = DateTime.Now;
                     if (!session.Io.IsInputting && !session.NoPingPong)
                     {
-                        if (session.PingType == PingPongType.Full)
+                        switch (session.PingType)
                         {
-                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
-                            {
-                                session.Io.OutputLine($"{Environment.NewLine}Ping? Pong!");
-                            }
-                        }
-                        else
-                        {
-                            session.Io.Output(' ');
-                            session.Io.OutputBackspace();
+                            case PingPongType.Full:
+                                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
+                                    session.Io.OutputLine($"{Environment.NewLine}Ping? Pong!");
+                                break;
+                            case PingPongType.Invisible:
+                                session.Io.Output(' ');
+                                session.Io.OutputBackspace();
+                                break;
+                            case PingPongType.ScreenSaver:
+                                session.Io.Output(Repeat(Environment.NewLine, _random.Next(3, 8)));
+                                session.Io.Output(Repeat(" ", _random.Next(5, session.Cols-31)));
+                                session.Io.Output($"[Mutiny Community ({DateTime.UtcNow.AddHours(session.TimeZone):HH:mm:ss})]");
+                                session.Io.Output(Repeat(Environment.NewLine, _random.Next(3, 8)));
+                                session.Io.Output(Repeat(" ", _random.Next(5, session.Cols - 1)));
+                                break;
                         }
                         session.OnPingPong?.Invoke();
                     }
@@ -286,6 +293,15 @@ namespace miniBBS.Core.Models.Control
                         return;
                 }
             } while (true);
+        }
+
+        private static string Repeat(string str, int count)
+        {
+            var arr = new string[count];
+            for (int i = 0; i < count; i++)
+                arr[i] = str;
+            var repeated = string.Join("", arr);
+            return repeated;
         }
 
     }

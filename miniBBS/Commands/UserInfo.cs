@@ -46,10 +46,16 @@ namespace miniBBS.Commands
                 builder.AppendLine($"Moderator of : {moderatorOf}");
                 builder.AppendLine($"Time Zone    : {user.Timezone}");
                 builder.AppendLine($"Terminal     : {user.Cols} x {user.Rows}  {user.Emulation}");
-                
-                var metas = DI.GetRepository<Metadata>().Get(m => m.UserId, user.Id);
-                foreach (var meta in metas)
-                    builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");
+
+                if (session.User.Access.HasFlag(AccessFlag.Administrator))
+                {
+                    var metas = DI.GetRepository<Metadata>()
+                        .Get(m => m.UserId, user.Id)
+                        .Where(m => m.Type != MetadataType.ReadMessages);
+
+                    foreach (var meta in metas)
+                        builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");
+                }
 
                 session.Io.OutputLine(builder.ToString());
 

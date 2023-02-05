@@ -10,8 +10,36 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, string[] args)
         {
+            if (!FindTargetUser(session, args, out int? targetUserId))
+                return;
+
             string emote = $"{GetEmoteString(session, args[0])}";
-            int? targetUserId = null;
+
+            if (targetUserId.HasValue)
+                emote += $" {session.Usernames[targetUserId.Value]}";
+            else if ("/me".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
+                emote += " " + string.Join(" ", args.Skip(1));
+            else
+                emote += " the channel";
+
+            var emoteMessage = new EmoteMessage(session.Id, session.User.Id, session.Channel.Id, targetUserId, emote);
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                session.Io.OutputLine(emote);
+            }
+
+            session.Messager.Publish(session, emoteMessage);
+        }
+
+        /// <summary>
+        /// Tries to find the <paramref name="targetUserId"/>.  Returns false if something went wrong and processing the command should abort 
+        /// otherwise returns true, even if the target User ID is not populated.
+        /// </summary>
+        private static bool FindTargetUser(BbsSession session, string[] args, out int? targetUserId)
+        {
+            targetUserId = null;
+
             bool isOnlineMsg =
                 "/online".Equals(args[0], StringComparison.CurrentCultureIgnoreCase) ||
                 "/onl".Equals(args[0], StringComparison.CurrentCultureIgnoreCase) ||
@@ -22,7 +50,7 @@ namespace miniBBS.Commands
             {
                 string targetUserName = args[1].Trim();
                 var targetUser = session.Usernames.FirstOrDefault(u => u.Value.Equals(targetUserName, StringComparison.CurrentCultureIgnoreCase));
-                
+
                 if (targetUser.Value != null)
                     targetUserId = targetUser.Key;
                 else
@@ -38,25 +66,11 @@ namespace miniBBS.Commands
                     {
                         session.Io.OutputLine($"{targetUserName} is not online or in this channel at this time.");
                     }
-                    return;
+                    return false;
                 }
             }
 
-            if (targetUserId.HasValue)
-                emote += $" {session.Usernames[targetUserId.Value]}";
-            else if (isOnlineMsg)
-                emote += " " + string.Join(" ", args.Skip(1));
-            else
-                emote += " the channel";
-
-            var emoteMessage = new EmoteMessage(session.Id, session.User.Id, session.Channel.Id, targetUserId, emote);
-
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-            {
-                session.Io.OutputLine(emote);
-            }
-
-            session.Messager.Publish(session, emoteMessage);
+            return true;
         }
 
         private static bool ValidateTargetUser(int channelId, int? targetUserId)
@@ -87,10 +101,6 @@ namespace miniBBS.Commands
                 case "/goodbye":
                 case "/bye":
                     return $"* {session.User.Name} bids goodbye to";
-                case "/online":
-                case "/onl":
-                case "/on":
-                    return $"[Not Logged] <{session.User.Name}>";
                 case "/me": return $"* {session.User.Name}";
                 default: return $"* {session.User.Name} {command.Substring(1)}";
             }

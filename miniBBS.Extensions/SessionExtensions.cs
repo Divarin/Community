@@ -1,8 +1,8 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Extensions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -28,6 +28,22 @@ namespace miniBBS.Extensions
         {
             var username = session.Username(userId);
             return username != null && session.IsIgnoring(username);
+        }
+
+        public static void LoadChatHeaderFormat(this BbsSession session, IRepository<Metadata> metaRepo)
+        {
+            var meta = metaRepo.Get(new Dictionary<string, object>
+                {
+                    {nameof(Metadata.UserId), session.User.Id},
+                    {nameof(Metadata.Type), MetadataType.ChatHeaderFormat}
+                })?.PruneAllButMostRecent(metaRepo); ;
+
+            string headerFormat = Constants.DefaultChatHeaderFormat;
+            
+            if (!string.IsNullOrWhiteSpace(meta?.Data))
+                headerFormat = meta.Data;
+
+            session.Items[SessionItem.ChatHeaderFormat] = headerFormat;
         }
 
         public static void RecordSeenData(this BbsSession session, IRepository<Metadata> metaRepo)
@@ -67,5 +83,7 @@ namespace miniBBS.Extensions
         {
             return session?.Usernames?.GetOrDefault(userId, "Unknown") ?? "Unknown";
         }
+
+        
     }
 }

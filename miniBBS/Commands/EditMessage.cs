@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -14,13 +15,16 @@ namespace miniBBS.Commands
 {
     public static class EditMessage
     {
-        public static void Execute(BbsSession session, string line)
+        public static void Execute(BbsSession session, string line, bool useLineEditor = false)
         {
             string[] args = SplitArguments(line).ToArray();
 
+            if (useLineEditor && true == args?.Length > 1)
+                useLineEditor = false;
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
             {
-                if (args?.Length < 2)
+                if (!useLineEditor && args?.Length < 2)
                 {
                     ShowUsage(session);
                     return;
@@ -46,43 +50,65 @@ namespace miniBBS.Commands
                     return;
                 }
 
-                int searchArgIndex = args.Length >= 3 ? 1 : 0;
-                int replaceArgIndex = searchArgIndex + 1;
-                string search = args.Length > searchArgIndex ? args[searchArgIndex] : null;
-                string replace = args.Length > replaceArgIndex ? args[replaceArgIndex] : null;
-
-                if (string.IsNullOrWhiteSpace(search) || string.IsNullOrWhiteSpace(replace))
-                {
-                    ShowUsage(session);
-                    return;
-                }
-
-                string oldMessage = toBeEdited.Message;
-                string newMessage = toBeEdited.Message.Replace(search, replace);
-                session.Io.SetForeground(ConsoleColor.White);
-                string highlightedNewMessage = oldMessage.Replace(search, UserIoExtensions.WrapInColor(replace, ConsoleColor.Green));
-                session.Io.OutputLine(highlightedNewMessage);
-                session.Io.SetForeground(ConsoleColor.Red);
-                session.Io.Output("Make this edit? ");
-                var k = session.Io.InputKey();
-                session.Io.OutputLine();
-                if (k == 'y' || k == 'Y')
+                void commitEdit(string _text)
                 {
                     string message = string.Join(Environment.NewLine, new[]
-                    {
+{
                         $"{session.User.Name} edited message # {session.Chats.ItemNumber(toBeEdited.Id)} in channel {session.Channel.Name}",
                         "The message now reads:",
-                        newMessage
+                        _text
                     }); ;
 
-                    toBeEdited.Message = newMessage;
+                    toBeEdited.Message = _text;
                     session.Io.OutputLine("Done.");
                     DI.GetRepository<Chat>().Update(toBeEdited);
                     session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message)
                     {
-                        OnReceive = (s) => s.Chats[toBeEdited.Id].Message = newMessage
+                        OnReceive = (s) => s.Chats[toBeEdited.Id].Message = _text
                     });
                 }
+
+                string newMessage = string.Empty;
+                if (useLineEditor)
+                {
+                    var editor = DI.Get<ITextEditor>();
+                    editor.OnSave = _body =>
+                    {
+                        commitEdit(_body);
+                        return string.Empty;
+                    };
+                    editor.EditText(session, new LineEditorParameters
+                    {
+                        PreloadedBody = toBeEdited.Message,
+                        QuitOnSave = true
+                    });
+                }
+                else
+                {
+                    int searchArgIndex = args.Length >= 3 ? 1 : 0;
+                    int replaceArgIndex = searchArgIndex + 1;
+                    string search = args.Length > searchArgIndex ? args[searchArgIndex] : null;
+                    string replace = args.Length > replaceArgIndex ? args[replaceArgIndex] : null;
+
+                    if (string.IsNullOrWhiteSpace(search) || string.IsNullOrWhiteSpace(replace))
+                    {
+                        ShowUsage(session);
+                        return;
+                    }
+
+                    string oldMessage = toBeEdited.Message;
+                    newMessage = toBeEdited.Message.Replace(search, replace);
+                    session.Io.SetForeground(ConsoleColor.White);
+                    string highlightedNewMessage = oldMessage.Replace(search, UserIoExtensions.WrapInColor(replace, ConsoleColor.Green));
+                    session.Io.OutputLine(highlightedNewMessage);
+                    session.Io.SetForeground(ConsoleColor.Red);
+                    session.Io.Output("Make this edit? ");
+                    var k = session.Io.InputKey();
+                    session.Io.OutputLine();
+                    if (k == 'y' || k == 'Y')
+                        commitEdit(newMessage);
+                }
+                
             }
         }
 
@@ -336,7 +362,7 @@ namespace miniBBS.Commands
 
             int n = -1;
             string msgNum = null;
-            if (args.Length >= 3 && int.TryParse(args[0], out int _))
+            if (args.Length >= 1 && int.TryParse(args[0], out int _))
             {
                 msgNum = args[0];
                 args = args.Skip(1).ToArray();
@@ -358,8 +384,10 @@ namespace miniBBS.Commands
         {
             string msg = string.Join(Environment.NewLine, new[]
             {
-                "Usage 1 (edit last chat)     : /edit \"(search)\" \"(replace)\"",
-                "Usage 2 (edit specific chat) : /edit # \"(search)\" \"(replace)\"",
+                "Usage 1 (edit last chat)     : /typo \"(search)\" \"(replace)\"",
+                "Usage 2 (edit specific chat) : /typo # \"(search)\" \"(replace)\"",
+                "Usage 3 (edit last chat with line editor) : /edit",
+                "Usage 4 (edit specific hat with line editor) : /edit 123",
                 "Where # = the chat message number.",
                 "Alternatively the quotes can be omitted if neither the search nor replace contain spaces.  If *either* the search or " +
                 "the replace terms contain one or more spaces then *both* must be wrapped in quotes."

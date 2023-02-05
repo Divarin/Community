@@ -3,6 +3,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,6 +13,7 @@ namespace miniBBS.Services.GlobalCommands
     public static class SysopScreen
     {
         private static ISessionsList _sessionsList;
+        private static readonly ConcurrentDictionary<string, int> _ips = new ConcurrentDictionary<string, int>();
         const int _numSessionsToList = 16;
         private static readonly string _blankLine = ' '.Repeat(80);
         private enum Col
@@ -110,6 +112,14 @@ namespace miniBBS.Services.GlobalCommands
             Console.WriteLine("Location".PadRight(_colWidths[(int)Col.CurrentLocation]));
         }
 
+        public static void SetLastConnectionIp(string ip)
+        {
+            if (!_ips.ContainsKey(ip))
+                _ips[ip] = 1;
+            else
+                _ips[ip]++;
+        }
+
         private static void DrawLoop()
         {
             while (true)
@@ -147,7 +157,7 @@ namespace miniBBS.Services.GlobalCommands
 
                 var flags = $"{(session.DoNotDisturb ? "D" : " ")}{(session.Afk ? "A" : " ")}";
                 Console.Write(flags.PadRight(_colWidths[(int)Col.Flags]));
-                Console.Write((session.User?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.Username]));
+                Console.Write((session.User?.Name ?? session.IpAddress).PadRight(_colWidths[(int)Col.Username]));
                 Console.Write((session.Channel?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.ChannelName]));
                 Console.Write($"{session.SessionStartUtc.ToLocalTime():MM-dd HH:mm}".PadRight(_colWidths[(int)Col.SessionStart]));
                 string idle = $"{Math.Min(99, session.IdleTime.Days)}d {session.IdleTime.Hours}h {session.IdleTime.Minutes}m";
@@ -164,21 +174,26 @@ namespace miniBBS.Services.GlobalCommands
 
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($" (L)og entries: {_logMessages.Count} | (C)lear Logs | (U)sers called: {_logins.Count}  ");
+            
+            Console.Write($" (I)ssues: {_logMessages.Count} | (C)lear Issues | (L)ogins: {_logins.Count} ({_logins.Select(l => l.Username).Distinct().Count()} users) | I(P)s ");
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true);
                 switch (key.Key)
                 {
-                    case ConsoleKey.L:
+                    case ConsoleKey.I:
                         DisplayLogs();
                         RedrawFromStart();
                         break;
                     case ConsoleKey.C:
                         _logMessages.Clear();
                         break;
-                    case ConsoleKey.U:
+                    case ConsoleKey.L:
                         DisplayLogins();
+                        RedrawFromStart();
+                        break;
+                    case ConsoleKey.P:
+                        ShowTopIpConnections();
                         RedrawFromStart();
                         break;
                 }
@@ -186,6 +201,25 @@ namespace miniBBS.Services.GlobalCommands
 
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        private static void ShowTopIpConnections()
+        {
+            var ips = _ips
+                .OrderByDescending(x => x.Value)
+                .Take(15)
+                .Select(x => $"{x.Key} ({x.Value})")
+                .ToList();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.Clear();
+
+            foreach (var ip in ips)
+                Console.WriteLine(ip);
+
+            Console.WriteLine("press any key");
+            Console.ReadKey();
         }
 
         private static void DisplayLogs()

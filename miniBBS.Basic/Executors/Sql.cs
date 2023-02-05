@@ -169,6 +169,8 @@ namespace miniBBS.Basic.Executors
                             _variables.SetEnvironmentVariable("QCOUNT", set.Tables[0].Rows.Count.ToString());
                             return set.Tables[0];
                         }
+                        else
+                            _variables.SetEnvironmentVariable("QCOUNT", "0");
                     }
                 }
 

@@ -12,7 +12,7 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine("Type '/bell off' to disable all bell sounds.");
                 session.Io.OutputLine("Type '/bell on' to enable bell sounds when someone connects or posts a message.");
-                session.Io.OutputLine("Type '/bell jimbob' to enable bull sounds when jimbob connects or posts a message.");
+                session.Io.OutputLine("Type '/bell jimbob' to enable bell sounds when jimbob connects or posts a message.");
                 session.Io.OutputLine("(Obviously, replace 'jimbob' with the user you actually want)");
                 Test(session);
             }

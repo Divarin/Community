@@ -43,7 +43,8 @@ namespace miniBBS.UserIo
             {145, new byte[] { 27,91,65 } }, // up cursor
             {17, new byte[] { 27,91,66 } }, // down cursor
             {157, new byte[] { 27,91,68 } }, // left cursor
-            {29, new byte[] { 27,91,67 } }, // right cursor
+            //{29, new byte[] { 27,91,67 } }, // right cursor
+            {29, new byte[] { 32 } }, // right cursor = space
             {19, new byte[] { 0} }, // home
             {147, new byte[] { 0} }, // clear
             {20, new byte[] { 8 } }, // replace DEL with backspace

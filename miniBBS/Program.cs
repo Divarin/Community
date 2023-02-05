@@ -65,15 +65,15 @@ namespace miniBBS
             {
                 try
                 {
-                    TcpClientFactory clientFactory = new TcpClientFactory(listener);
+                    var clientFactory = new TcpClientFactory(listener);
                     clientFactory.AwaitConnection();
                     while (clientFactory.Client == null)
                     {
                         Thread.Sleep(25);
                     }
-                    TcpClient client = clientFactory.Client;
-                    ParameterizedThreadStart threadStart = new ParameterizedThreadStart(BeginConnection);
-                    Thread thread = new Thread(threadStart);
+                    var client = clientFactory.Client;
+                    var threadStart = new ParameterizedThreadStart(BeginConnection);
+                    var thread = new Thread(threadStart);
                     thread.Start(new NodeParams
                     {
                         Client = client,
@@ -101,13 +101,15 @@ namespace miniBBS
 
                 var client = nodeParams.Client;
                 var sysControl = nodeParams.SysControl;
-
+                
                 var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
                 if (true == _ipBans?.Any(x => Commands.IpBan.FitsMask(ip, x)))
                 {
-                    Console.WriteLine($"Banned ip {ip} rejected.");
+                    _logger?.Log(null, $"Banned ip {ip} rejected.", LoggingOptions.ToConsole);
                     return;
                 }
+
+                SysopScreen.SetLastConnectionIp(ip);
 
                 if (sessionsList.Sessions.Count(s => !string.IsNullOrWhiteSpace(s.IpAddress) && s.IpAddress.Equals(ip)) > Constants.MaxSessionsPerIpAddress)
                 {
@@ -189,7 +191,7 @@ namespace miniBBS
                     x.Message.Contains("Unable to read data from the transport connection") ||
                     x.Message.Contains("Unable to write data to the transport connection")))
                 {
-                    _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                    _logger.Log(session, $"{DateTime.Now} - {ex.Message}{Environment.NewLine}{ex.StackTrace}", LoggingOptions.ToConsole | LoggingOptions.ToDatabase);
                 }
             }
             finally
@@ -282,7 +284,11 @@ namespace miniBBS
                 Thread.Sleep(1000);
             }
 
-            var startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
+            var metaRepo = DI.GetRepository<Metadata>();
+            var startupMode = session.User.GetStartupMode(metaRepo);
+            OneTimeQuestions.Execute(session);
+            startupMode = session.User.GetStartupMode(metaRepo);
+            session.LoadChatHeaderFormat(metaRepo);
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
@@ -304,11 +310,7 @@ namespace miniBBS
                 {
                     throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
                 }
-
             }
-
-            OneTimeQuestions.Execute(session);
-            startupMode = session.User.GetStartupMode(DI.GetRepository<Metadata>());
 
             if (startupMode == LoginStartupMode.MainMenu)
             {
@@ -322,6 +324,8 @@ namespace miniBBS
             }
 
             session.CurrentLocation = Module.Chat;
+            
+            ListChannels.ShowTotalUnread(session);
             session.Io.OutputLine("Press Enter/Return to read next message.");
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
@@ -385,7 +389,9 @@ namespace miniBBS
             var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
             
-            var chanNum = chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
+            var chanNum = 
+                string.IsNullOrWhiteSpace(session?.Channel?.Name) ? -1 :
+                chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
 
             var prompt = 
                 $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
@@ -394,7 +400,7 @@ namespace miniBBS
                 UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
                 $"{count}" +
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
-                $"{chanNum}:{session.Channel.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
+                $"{chanNum}:{session?.Channel?.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
 
             session.Io.Output(prompt);
             session.Io.SetForeground(ConsoleColor.White);
@@ -549,9 +555,15 @@ namespace miniBBS
                         ?.Where(s => message.User.Id == s.User?.Id)
                         ?.Count();
 
-                    string msg = $"{Environment.NewLine}{message.User.Name}{(sessionsForThisUser > 1 ? $" ({sessionsForThisUser})" : "")} has {(message.IsLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
+                    string msg = $"{Environment.NewLine}{message.User.Name} has {(message.IsLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
                     if (!string.IsNullOrWhiteSpace(message.LogoutMessage))
                         msg += $" saying \"{message.LogoutMessage}\"";
+
+                    if (sessionsForThisUser > 1)
+                    {
+                        var s = message.IsLogin ? sessionsForThisUser : sessionsForThisUser - 1;
+                        msg += $"{Environment.NewLine}{Constants.Spaceholder.Repeat(3)}{message.User.Name} is logged in with {s} session(s).";
+                    }
 
                     session.Io.OutputLine(msg);
                 }
@@ -892,7 +904,21 @@ namespace miniBBS
                 case "/typo":
                 case "/edit":
                 case "/s":
-                    EditMessage.Execute(session, string.Join(" ", parts.Skip(1)));
+                    EditMessage.Execute(session, string.Join(" ", parts.Skip(1)), useLineEditor: "/edit".Equals(command, StringComparison.CurrentCultureIgnoreCase));
+                    return;
+                case "/p":
+                case "/post":
+                    {
+                        var _c = session.Io.Ask("(N)ew Message, (R)esponse to last message, (Q)uit");
+                        PostChatFlags _flags;
+                        if (_c == 'N')
+                            _flags = PostChatFlags.IsNewTopic;
+                        else if (_c == 'R')
+                            _flags = PostChatFlags.None;
+                        else
+                            return;
+                        Msg.PostMessage(session, _flags);
+                    }
                     return;
                 case "/rere":
                     EditMessage.ReassignReNumber(session, parts.Skip(1).ToArray());
@@ -1030,6 +1056,18 @@ namespace miniBBS
                             session.StartPingPong(0, silently: false);
                     }
                     return;
+                case "/ss":
+                    if (session.PingType == PingPongType.Invisible)
+                    {
+                        session.PingType = PingPongType.ScreenSaver;
+                        session.Io.Error("Screen saver enabled");
+                    }
+                    else
+                    {
+                        session.PingType = PingPongType.Invisible;
+                        session.Io.Error("Screen saver disabled");
+                    }
+                    return;
                 case "/newuser":
                     ReadFile.Execute(session, Constants.Files.NewUser);
                     return;
@@ -1044,9 +1082,6 @@ namespace miniBBS
                 case "/goodbye":
                 case "/bye":
                 case "/me":
-                case "/online":
-                case "/onl":
-                case "/on":
                     Emote.Execute(session, parts);
                     return;
                 case "/whisper":

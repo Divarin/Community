@@ -20,6 +20,7 @@ namespace miniBBS.Menus
             $"To post a message simply {_clr("type it", ConsoleColor.Green)} as you would in a chat session.",
             $"While writing your message if you want to abort without backspacing over the whole message you can press {_clr("CTRL-C", ConsoleColor.Green)}.",
             $"{Constants.Spaceholder}",
+            $"{_clr("/post", ConsoleColor.Green)} : Use the line editor to write a message, this allows for more advanced editing and lets you break up your posts into multiple paragraphs.",
             $"{_clr("/dnd", ConsoleColor.Green)} : Toggle Do Not Disturb mode.",
             $"{_clr("/d", ConsoleColor.Green)} : Delete the last message that you typed.",
             $"{_clr("/d (msg #)", ConsoleColor.Green)} : Deletes the given message number.",

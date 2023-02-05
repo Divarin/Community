@@ -27,8 +27,6 @@ namespace miniBBS.Commands
             var prevPrompt = session.ShowPrompt;
             session.ShowPrompt = () => Prompt(session);
 
-            Tutor.Execute(session, _warning);
-
             try
             {
                 SetMessagePointer.SetToFirstUnreadMessage(session);
@@ -92,8 +90,6 @@ namespace miniBBS.Commands
                                 int nextChannelNumber = currentChannelNumber.Value + 1;
                                 if (nextChannelNumber >= chans.Count)
                                     nextChannelNumber = 0;
-                                //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.First().Key;
-                                //nextChannelNumber = chans.ItemNumber(nextChannelId);
                                 SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber + 1}", false, fromMessageBase: true);
                                 chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                                 threadQ.Clear();
@@ -108,8 +104,6 @@ namespace miniBBS.Commands
                                 int nextChannelNumber = currentChannelNumber.Value - 1;
                                 if (nextChannelNumber < 0)
                                     nextChannelNumber = chans.Count - 1;
-                                //var nextChannelId = chans.ItemKey(nextChannelNumber.Value) ?? chans.Last().Key;
-                                //nextChannelNumber = chans.ItemNumber(nextChannelId);
                                 SwitchOrMakeChannel.Execute(session, $"{nextChannelNumber + 1}", false, fromMessageBase: true);
                                 chat = ShowNextMessage.Execute(session, _chatWriteFlags);
                                 threadQ.Clear();
@@ -118,26 +112,13 @@ namespace miniBBS.Commands
                         case (char)13:
                         case '>':
                         case '.':
-                            if (threadQ.Count > 0)
-                            {
-                                chat = threadQ.Dequeue();
+                            chat = GetNextChatInThread(session, chat, threadQ);
+                            if (chat != null)
                                 WriteMessage(session, ref chat);
-                            }
                             else
                             {
-                                var newChats = session.Chats.Values.Where(x => x.Id > chat.Id && x.ResponseToId == chat.Id).ToList();
-                                if (newChats.Count == 0)
-                                {
-                                    session.Io.Error("You have reached the end of this thread, going (F)orward to the next...");
-                                    NextThread();
-                                }
-                                else
-                                {
-                                    chat = newChats.First();
-                                    WriteMessage(session, ref chat);
-                                    for (int i = 1; i < newChats.Count; i++)
-                                        threadQ.Enqueue(newChats[i]);
-                                }
+                                session.Io.Error("You have reached the end of this thread, going (F)orward to the next...");
+                                NextThread();
                             }
                             break;
                         case '<':
@@ -162,21 +143,6 @@ namespace miniBBS.Commands
                         case 'b':
                         case 'B':
                             PrevThread();
-                            //{
-                            //    int loops = chat.ResponseToId.HasValue ? 2 : 1;
-                            //    var newChat = chat;
-                            //    for (int i = 0; i < loops; i++)
-                            //    {
-                            //        newChat = session.Chats.Values.LastOrDefault(x => x.Id < newChat.Id && !x.ResponseToId.HasValue);
-                            //    }
-                            //    if (newChat != null)
-                            //    {
-                            //        chat = newChat;
-                            //        WriteMessage(session, ref chat);
-                            //    }
-                            //    else
-                            //        session.Io.Error("No earlier threads, use ] to advance to next channel.");
-                            //}
                             break;
                         case 'p':
                         case 'P':
@@ -227,6 +193,28 @@ namespace miniBBS.Commands
             }
         }
 
+        private static Chat GetNextChatInThread(BbsSession session, Chat prevChat, Queue<Chat> threadQ)
+        {
+            Chat result = null;
+
+            if (threadQ.Count > 0)
+                result = threadQ.Dequeue();
+            else
+                result = session.Chats.Values.Where(x => x.Id > prevChat.Id && x.ResponseToId == prevChat.Id)?.FirstOrDefault();
+
+            if (result != null)
+            {
+                var responses = session.Chats.Values.Where(x => x.Id > result.Id && x.ResponseToId == result.Id)?.ToList();
+                if (true == responses?.Any())
+                {
+                    foreach (var response in responses)
+                        threadQ.Enqueue(response);
+                }
+            }
+
+            return result;
+        }
+
         private static void FindThreadStart(BbsSession session, ref Chat chat)
         {
             while (chat.ResponseToId.HasValue && session.Chats.ContainsKey(chat.ResponseToId.Value))
@@ -251,15 +239,30 @@ namespace miniBBS.Commands
             return int.Parse(str);
         }
 
+        private static bool _startAtCurrent = true;
+        private static bool _showUnreadOnly = true;
+        private static bool _showThreadStartsOnly = true;
+
         private static void ListMessages(BbsSession session, int startingId)
         {
+            if (!SetListOptions(session, startingId))
+                return;
+
             var builder = new StringBuilder();
-            builder.AppendLine("--- Listing start of new threads ---");
-            builder.AppendLine("(Unread message threads only)".Color(ConsoleColor.DarkGray));
+            builder.AppendLine("--- Listing Messages ---");
 
-            var readIds = session.ReadChatIds(DI.Get<IDependencyResolver>());
+            IEnumerable<KeyValuePair<int, Chat>> chats = session.Chats;
+            if (_startAtCurrent)
+                chats = chats.Where(c => c.Key >= startingId);
+            if (_showUnreadOnly)
+            {
+                var readIds = session.ReadChatIds(DI.Get<IDependencyResolver>());
+                chats = chats.Where(c => !readIds.Contains(c.Key));
+            }
+            if (_showThreadStartsOnly)
+                chats = chats.Where(c => c.Value.ResponseToId == null);
 
-            foreach (var c in session.Chats.Where(c => !readIds.Contains(c.Key) && c.Value.ResponseToId == null))
+            foreach (var c in chats)
                 builder.AppendLine(IndexBy.FormatLine(session, c.Value));
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -270,7 +273,35 @@ namespace miniBBS.Commands
             session.Io.OutputLine("To change to a specific message, just type the message number.".Color(ConsoleColor.White));
         }
 
-        private static void PostMessage(BbsSession session, PostChatFlags flags)
+        private static bool SetListOptions(BbsSession session, int currentMessageId)
+        {
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                bool exitMenu = false;
+                var currentMessageNum = session.Chats.ItemNumber(currentMessageId);
+                while (!exitMenu)
+                {
+                    session.Io.OutputLine("** List Messages Options **");
+                    session.Io.OutputLine("A) Start at : " + $"{(_startAtCurrent ? $"Current Message (>= {currentMessageNum})" : "First Message (>= 0)")}".Color(ConsoleColor.Yellow));
+                    session.Io.OutputLine("B) Show unread messages only : " + $"{_showUnreadOnly}".Color(ConsoleColor.Yellow));
+                    session.Io.OutputLine("C) Show only starts of threads : " + $"{_showThreadStartsOnly}".Color(ConsoleColor.Yellow));
+                    session.Io.OutputLine("ENTER) List Messages".Color(ConsoleColor.Green));
+                    session.Io.OutputLine("Q) Quit");
+                    var k = session.Io.Ask("List Messages");
+                    switch (k)
+                    {
+                        case 'A': _startAtCurrent = !_startAtCurrent; break;
+                        case 'B': _showUnreadOnly = !_showUnreadOnly; break;
+                        case 'C': _showThreadStartsOnly = !_showThreadStartsOnly; break;
+                        case 'Q': return false;
+                        default: exitMenu = true; break;
+                    }
+                }
+            }
+            return true;
+        }
+
+        public static void PostMessage(BbsSession session, PostChatFlags flags)
         {
             var editor = DI.Get<ITextEditor>();
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -356,15 +387,5 @@ namespace miniBBS.Commands
             Environment.NewLine + 
             "Q".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Quit Msg Bases".Color(ConsoleColor.White);
 
-        private const string _warning =
-            "The 'Message Base' is an alternate view of the Chat Rooms.  These messages are actually chat room messages.  Threading is accomplished by use of 're:' numbers (see help on 'content' for more info).  " +
-            "This view is not perfect it's a best attempt at formatting chat room messages in a traditional BBS message base style.  You are free to post and respond to old messages as you can in chat " +
-            "(If you want to respond to Jimbob's post, Jimbob doesn't have to be line in order to see it, he'll see it when he comes back, even if he's using the chat view) " +
-            "\r\n\r\n" +
-            "This 'Message Base' view is not perfect and there are sometimes breaks in threads when a chat message gets deleted.  Also some of the earlier messages were added before " +
-            "threading was possible so they show up as separate threads." +
-            "\r\n\r\n" +
-            "In other words, to get the most out of Mutiny Community, it is encouraged that you use that Chat mode instead of the Message Base mode.  Still you're welcome to use the Message Base format but consider yourself " +
-            "warned that you may be missing out on some of the messages.";
     }
 }

@@ -8,19 +8,19 @@ namespace miniBBS.Commands
 {
     public static class MainMenu
     {
-        private static Func<string, ConsoleColor, string> _clr = (txt, clr) => UserIoExtensions.WrapInColor(txt, clr);
+        private static readonly Func<string, ConsoleColor, string> _clr = (txt, clr) => UserIoExtensions.WrapInColor(txt, clr);
 
         private static readonly string[] _menu = new[]
         {
             $"{_clr("***", ConsoleColor.Yellow)} {_clr("Mutiny Community Main Menu", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
-            $"{_clr("M", ConsoleColor.Green)}) Message Boards",
+            $"{_clr("M", ConsoleColor.Green)}) Messages",
             $"{_clr("C", ConsoleColor.Green)}) Chat Rooms",
             $"{_clr("E", ConsoleColor.Green)}) E-Mail",
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
             $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
             $"{_clr("G", ConsoleColor.Green)}) Games",
             $"{_clr("O", ConsoleColor.Green)}) Logoff",
-            $"{_clr("L", ConsoleColor.Green)}) Learn how to do MUCH MORE with Community!"
+            $"{_clr("L", ConsoleColor.Green)}) Learn how to do more with Community!"
         };
 
         private const string _learn =
@@ -48,7 +48,7 @@ namespace miniBBS.Commands
         /// </summary>
         public static bool Execute(BbsSession session)
         {
-            Action Pause = () =>
+            void Pause()
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 {
@@ -56,7 +56,7 @@ namespace miniBBS.Commands
                     session.Io.InputKey();
                     session.Io.OutputLine();
                 }
-            };
+            }
 
             var originalLocation = session.CurrentLocation;
             var originalDnd = session.DoNotDisturb;
@@ -76,9 +76,11 @@ namespace miniBBS.Commands
                         switch (char.ToUpper(key.Value))
                         {
                             case 'M':
+                                Tutor.Execute(session, "The Message base and the Chat rooms contain the same messages.  The Message base formats these into a message base style but because most of the messages were entered using that chat rooms, and about half of those were during real-time chats you might find the chat room interface better.");
                                 Msg.Execute(session);
                                 break;
                             case 'C':
+                                Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
                                 session.Io.Error("Use '/main' to return to main menu.");
                                 return true;
                             case 'E':
