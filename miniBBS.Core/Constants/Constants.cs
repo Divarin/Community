@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "4.13a - 2023.02.05";
+        public const string Version = "4.14 - 2023.02.24";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -51,7 +51,7 @@ namespace miniBBS.Core
         
         public const int MaxFileBackups = 9;
 
-        public const string local_TextFileRootDirectory = @"C:\work\textfiles\textfiles\";
+        public const string local_TextFileRootDirectory = @"C:\code\textfiles\";
         public const string local_UploadDirectory = @"c:\work\";
 
         public static readonly string[] IllegalUsernames = new[]

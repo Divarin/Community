@@ -99,7 +99,7 @@ namespace miniBBS.Extensions
                     else if (c == 13)
                         end = i;
 
-                    int len = end - start + 1;
+                    int len = end - start;
                     string substring = str.Substring(start, len);                    
 
                     if (!string.IsNullOrWhiteSpace(substring))
