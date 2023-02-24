@@ -258,7 +258,11 @@ namespace miniBBS.UserIo
                 if (actualTextLength > session.Cols)
                 {
                     // handle wordwrap and pause
-                    var lines = text.SplitAndWrap(session, flags).ToList();
+
+                    List<string> lines = flags.HasFlag(OutputHandlingFlag.NoWordWrap) ? 
+                        new List<string>() { text } :
+                        text.SplitAndWrap(session, flags).ToList();
+
                     // if the last line is just a newline and the line before that also ends with a newline then omit the last line
                     // this is because splitAndWrap added an extra newline as a side-effect
                     if (lines.Count >= 2 && lines.Last().Equals(Environment.NewLine) && lines[lines.Count - 2].EndsWith(Environment.NewLine))
@@ -566,7 +570,7 @@ namespace miniBBS.UserIo
                         string echo = handlingFlag.HasFlag(InputHandlingFlag.PasswordInput) ? "*".Repeat(data.Length) : data;
 
                         if (includedNewLine || !handlingFlag.HasFlag(InputHandlingFlag.DoNotEchoNewlines) || echo != Environment.NewLine)
-                            StreamOutput(session, echo);
+                            StreamOutput(session, echo, OutputHandlingFlag.NoWordWrap);
 
                         if (echo == "\r")
                             StreamOutput(session, "\n");

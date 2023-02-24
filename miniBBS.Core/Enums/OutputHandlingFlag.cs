@@ -8,6 +8,7 @@ namespace miniBBS.Core.Enums
         None = 0,
         Nonstop = 1,
         DoNotTrimStart = 2,
-        PauseAtEnd = 4
+        PauseAtEnd = 4,
+        NoWordWrap = 8
     }
 }
