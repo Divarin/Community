@@ -387,7 +387,7 @@ namespace miniBBS.Commands
                 "Usage 1 (edit last chat)     : /typo \"(search)\" \"(replace)\"",
                 "Usage 2 (edit specific chat) : /typo # \"(search)\" \"(replace)\"",
                 "Usage 3 (edit last chat with line editor) : /edit",
-                "Usage 4 (edit specific hat with line editor) : /edit 123",
+                "Usage 4 (edit specific chat with line editor) : /edit 123",
                 "Where # = the chat message number.",
                 "Alternatively the quotes can be omitted if neither the search nor replace contain spaces.  If *either* the search or " +
                 "the replace terms contain one or more spaces then *both* must be wrapped in quotes."

@@ -13,8 +13,8 @@ namespace miniBBS.Commands
         private static readonly string[] _menu = new[]
         {
             $"{_clr("***", ConsoleColor.Yellow)} {_clr("Mutiny Community Main Menu", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
-            $"{_clr("M", ConsoleColor.Green)}) Messages",
-            $"{_clr("C", ConsoleColor.Green)}) Chat Rooms",
+            $"{_clr("M", ConsoleColor.Green)}) Message Bases (AKA Chat Rooms)",
+            $"{_clr("C", ConsoleColor.Green)}) Chat Rooms (AKA Message Bases)",
             $"{_clr("E", ConsoleColor.Green)}) E-Mail",
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
             $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
@@ -76,11 +76,11 @@ namespace miniBBS.Commands
                         switch (char.ToUpper(key.Value))
                         {
                             case 'M':
-                                Tutor.Execute(session, "The Message base and the Chat rooms contain the same messages.  The Message base formats these into a message base style but because most of the messages were entered using that chat rooms, and about half of those were during real-time chats you might find the chat room interface better.");
-                                Msg.Execute(session);
-                                break;
+                                //Tutor.Execute(session, "The Message base and the Chat rooms contain the same messages.  The Message base formats these into a message base style but because most of the messages were entered using that chat rooms, and about half of those were during real-time chats you might find the chat room interface better.");
+                                //Msg.Execute(session);
+                                //break;
                             case 'C':
-                                Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
+                                //Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
                                 session.Io.Error("Use '/main' to return to main menu.");
                                 return true;
                             case 'E':

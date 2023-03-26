@@ -457,7 +457,7 @@ namespace miniBBS.Basic.Executors
                                 if (count < 0)
                                     throw new RuntimeException("invalid input for left$() function");
 
-                                value = parts[0].Substring(0, count);
+                                value = $"{Constants.Basic.Quote}{parts[0].Substring(0, count)}{Constants.Basic.Quote}";
                             }
                             break;
                         case "right$":
@@ -477,7 +477,7 @@ namespace miniBBS.Basic.Executors
                                 if (count >= parts[0].Length)
                                     value = parts[0];
                                 else
-                                    value = parts[0].Substring(parts[0].Length - count);
+                                    value = $"{Constants.Basic.Quote}{parts[0].Substring(parts[0].Length - count)}{Constants.Basic.Quote}";
                             }
                             break;
                         case "mid$":
@@ -506,8 +506,8 @@ namespace miniBBS.Basic.Executors
 
                                 if (start + count > parts[0].Length)
                                     count = parts[0].Length - start;
-                                
-                                value = "\"" + parts[0].Substring(start, count) + "\"";
+
+                                value = $"{Constants.Basic.Quote}{parts[0].Substring(start, count)}{Constants.Basic.Quote}";
                             }
                             break;
                         case "replace$":
