@@ -454,6 +454,18 @@ namespace miniBBS.TextFiles
                         else
                             _session.Io.OutputLine("You may not move/rename files/directories in this directory.");
                         break;
+                    case "copy":
+                    case "cp":
+                        if (parts.Length < 3)
+                            _session.Io.OutputLine($"Usage: {parts[0]} (source filename) (destination filename)");
+                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        {
+                            FileWriter.Copy(_session, _currentLocation, parts[1], parts[2], links);
+                            result = CommandResult.ReadDirectory;
+                        }
+                        else
+                            _session.Io.OutputLine("You may not copy files in this directory.");
+                        break;
                     case "publish":
                     case "pub":
                         if (parts.Length < 2)
@@ -790,18 +802,33 @@ namespace miniBBS.TextFiles
                     link.ActualFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
                     link.ActualFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase);
 
+                var rootDir = StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Parent.Path) + "/";
+
                 ITextEditor basic = new MutantBasic(
-                    StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Parent.Path) + "/",
+                    rootDir,
                     autoStart: true,
                     scriptName: isScript ? link.DisplayedFilename : null,
                     scriptInput: scriptInput,
                     isDebugging: debugging);
 
-                basic.EditText(_session, new LineEditorParameters
+                var isLocked = GlobalDependencyResolver.Default.Get<ISessionsList>()
+                    .Sessions
+                    .Any(s => s.Items.TryGetValue(SessionItem.BasicLock, out var lockName)
+                        && lockName is string
+                        && $"{rootDir}{link.DisplayedFilename}".Equals(lockName as string, StringComparison.CurrentCultureIgnoreCase));
+
+                if (isLocked)
                 {
-                    Filename = link.DisplayedFilename,
-                    PreloadedBody = body
-                });
+                    _session.Io.Error("Sorry that program is in use by another session.");
+                }
+                else
+                {
+                    basic.EditText(_session, new LineEditorParameters
+                    {
+                        Filename = link.DisplayedFilename,
+                        PreloadedBody = body
+                    });
+                }
             }
             finally
             {
@@ -992,7 +1019,10 @@ namespace miniBBS.TextFiles
                 .Select(f => f.ToUpper())
                 .ToArray();
 
-            if (flags.HasFlag(FilterFlags.Filename) && orFilters.Any(f => link.DisplayedFilename.ToUpper().Contains(f)))
+            if (flags.HasFlag(FilterFlags.Filename) && orFilters.Any(f =>
+            {
+                return link.DisplayedFilename.ToUpper().Contains(f) || MatchesWildcard(link.DisplayedFilename, f);
+            }))
                 return true;
 
             if (flags.HasFlag(FilterFlags.Description) && orFilters.Any(f => link.Description.ToUpper().Contains(f)))
@@ -1023,12 +1053,33 @@ namespace miniBBS.TextFiles
             return false;
         }
 
+        private bool MatchesWildcard(string filename, string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter) || string.IsNullOrWhiteSpace(filename) || !filter.Contains("*"))
+                return false;
+
+            filename = filename.ToLower();
+            filter = filter.ToLower();
+
+            var parts = filter.Split(new char[] { '*' }, StringSplitOptions.RemoveEmptyEntries);
+            int pos = 0;            
+            
+            foreach (var part in parts)
+            {
+                pos = filename.IndexOf(part, pos);
+                if (pos < 0)
+                    return false;
+            }
+
+            return true;
+        }
+
         private void ShowPrompt()
         {
             using (_session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
             {
                 _session.Io.OutputLine();
-                _session.Io.Output($"[FILES] {Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{_currentLocation.Path}{Constants.InlineColorizer}-1{Constants.InlineColorizer}> ");
+                _session.Io.Output($"{Constants.Inverser}[FILES]{Constants.InlineColorizer} {(int)ConsoleColor.Yellow}{Constants.InlineColorizer}{_currentLocation.Path}{Constants.InlineColorizer}-1{Constants.InlineColorizer}>{Constants.Inverser} ");
             }
         }
 

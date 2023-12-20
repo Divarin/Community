@@ -20,28 +20,39 @@ namespace miniBBS.Basic.Executors
         {
             int count = ParseCount(args, variables);
             string str = session.Io.Right.Repeat(count);
-            session.Io.Output(str);
+            var bytes = str.Select(b => (byte)b).ToArray();
+            session.Io.OutputRaw(bytes);
         }
 
         public static void Left(BbsSession session, string args, Variables variables)
         {
             int count = ParseCount(args, variables);
             string str = session.Io.Left.Repeat(count);
-            session.Io.Output(str);
+            var bytes = str.Select(b => (byte)b).ToArray();
+            session.Io.OutputRaw(bytes);
         }
 
         public static void Down(BbsSession session, string args, Variables variables)
         {
             int count = ParseCount(args, variables);
             string str = session.Io.Down.Repeat(count);
-            session.Io.Output(str);
+            var bytes = str.Select(b => (byte)b).ToArray();
+            session.Io.OutputRaw(bytes);
         }
 
         public static void Up(BbsSession session, string args, Variables variables)
         {
-            int count = ParseCount(args, variables);
-            string str = session.Io.Up.Repeat(count);
-            session.Io.Output(str);
+            var count = ParseCount(args, variables);
+            var str = session.Io.Up.Repeat(count);
+            var bytes = str.Select(b => (byte)b).ToArray();
+            session.Io.OutputRaw(bytes);
+        }
+
+        public static void Home(BbsSession session)
+        {
+            var str = session.Io.Home;
+            var bytes = str.Select(b => (byte)b).ToArray();
+            session.Io.OutputRaw(bytes);
         }
 
         private static void ParsePosition(string line, Variables variables, out int x, out int y)

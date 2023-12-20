@@ -13,7 +13,7 @@ namespace miniBBS.Extensions
 
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                io.Output($"{question}: ");
+                io.Output($"{Constants.Inverser}{question}:{Constants.Inverser} ");
                 var result = io.InputKey();
                 io.OutputLine();
                 return char.ToUpper(result ?? (char)0);
@@ -26,7 +26,7 @@ namespace miniBBS.Extensions
                 return;
 
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                io.OutputLine(message);
+                io.OutputLine($"{Constants.Inverser}{message}{Constants.Inverser}");
         }
 
         public static string WrapInColor(string message, ConsoleColor color)
@@ -41,7 +41,7 @@ namespace miniBBS.Extensions
 
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
             {
-                io.Output("[Press Any Key]");
+                io.Output($"{Constants.Inverser}[Press Any Key]{Constants.Inverser}");
                 io.InputKey();
                 io.OutputLine();
             }

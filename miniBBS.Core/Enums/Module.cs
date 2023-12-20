@@ -18,6 +18,8 @@
         BasicInterpreter,
         SqlUi,
         Polls,
-        MessageBase
+        MessageBase,
+        BulletinBoard,
+        NullSpace
     }
 }

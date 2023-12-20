@@ -22,7 +22,7 @@ namespace miniBBS.Menus
             $"{Constants.Spaceholder}",
             "The emotes available at this time are: /wave, /smile, /frown, /wink, /nod, /poke, /goodbye, /me, and /online",
             $"{Constants.Spaceholder}",
-            $"/me allows you to use an arbitrary emote like '/me dances in the moonlight'.  This is limited to {Constants.MaxEmoteLength-4} characters."
+            $"/me allows you to use an arbitrary emote like '/me dances in the moonlight'.  This is limited to {Constants.MaxInputLength-4} characters."
         };
         public static void Show(BbsSession session)
         {

@@ -117,6 +117,13 @@ namespace miniBBS.Commands
                     session.UserRepo.Update(user);
                     session.Io.Error($"{user.Name} is no longer banned!");
                     break;
+                case "del":
+                    if ('Y' == session.Io.Ask($"Delete '{user.Name}'? This cannot be undone!"))
+                    {
+                        session.UserRepo.Delete(user);
+                        session.Io.Error($"User '{user.Name}' deleted.");
+                    }
+                    break;
                 case "ips":
                     var userLogs = DI.GetRepository<LogEntry>().Get(l => l.UserId, user.Id)
                         ?.Where(l => l.Message.Contains("has logged in"))
@@ -146,6 +153,7 @@ namespace miniBBS.Commands
             builder.AppendLine("user (username) ban - removes user's MayLogin access flag");
             builder.AppendLine("user (username) unban - adds user's MayLogin access flag");
             builder.AppendLine("user (username) ips - find all IPs the user has logged in with");
+            builder.AppendLine("user (username) del - delete user, with confirmation");
             builder.AppendLine("ip - Lists banned IPs");
             builder.AppendLine("ip ban (ip) - adds ip (or mask) to IP ban list");
             builder.AppendLine("ip unban (ip) - removes ip (or mask) from IP ban list");

@@ -49,7 +49,7 @@ namespace miniBBS.Commands
 
             if (session.CurrentLocation == Module.MainMenu)
             {
-                session.Io.Output($"Enter program # : ".Color(ConsoleColor.White));
+                session.Io.Output($"{Constants.Inverser}Enter program # :{Constants.Inverser} ".Color(ConsoleColor.White));
                 var inp = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= gamesList.Count)

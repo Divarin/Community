@@ -24,7 +24,7 @@ namespace miniBBS.Basic.Executors
             "COUNT", "NL$", "ISWORD", 
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
             "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
-            "GUID$"
+            "GUID$", "SECONDS"
         };
 
         private static readonly char[] _logicalOperators = new char[]
@@ -38,6 +38,9 @@ namespace miniBBS.Basic.Executors
 
         public static string Execute(string statement, Variables variables)        
         {
+            if (string.IsNullOrWhiteSpace(statement))
+                return statement;
+
             var pkg = new ExecutionPackage
             {
                 OriginalStatement = statement,
@@ -443,6 +446,15 @@ namespace miniBBS.Basic.Executors
                                 value = $"{Constants.Basic.Quote}{guid}{Constants.Basic.Quote}";
                             }
                             break;
+                        case "seconds":
+                            {
+                                var parts = value.Split('\t')?.Select(x => x.Trim())?.ToArray();
+                                if (parts.Length == 2 && 
+                                    DateTime.TryParse(parts[0].Detokenize(pkg.StringValues), out var dt1) && 
+                                    DateTime.TryParse(parts[1].Detokenize(pkg.StringValues), out var dt2))
+                                    value = (dt2 - dt1).TotalSeconds.ToString();
+                            }
+                            break;
                         case "left$":
                             {
                                 var parts = value.Split('\t')?.Select(x => x.Trim())?.ToArray();
@@ -457,7 +469,7 @@ namespace miniBBS.Basic.Executors
                                 if (count < 0)
                                     throw new RuntimeException("invalid input for left$() function");
 
-                                value = parts[0].Substring(0, count);
+                                value = $"{Constants.Basic.Quote}{parts[0].Substring(0, count)}{Constants.Basic.Quote}";
                             }
                             break;
                         case "right$":
@@ -477,7 +489,7 @@ namespace miniBBS.Basic.Executors
                                 if (count >= parts[0].Length)
                                     value = parts[0];
                                 else
-                                    value = parts[0].Substring(parts[0].Length - count);
+                                    value = $"{Constants.Basic.Quote}{parts[0].Substring(parts[0].Length - count)}{Constants.Basic.Quote}";
                             }
                             break;
                         case "mid$":
@@ -506,8 +518,8 @@ namespace miniBBS.Basic.Executors
 
                                 if (start + count > parts[0].Length)
                                     count = parts[0].Length - start;
-                                
-                                value = "\"" + parts[0].Substring(start, count) + "\"";
+
+                                value = $"{Constants.Basic.Quote}{parts[0].Substring(start, count)}{Constants.Basic.Quote}";
                             }
                             break;
                         case "replace$":
@@ -587,8 +599,7 @@ namespace miniBBS.Basic.Executors
                         case "val":
                             {
                                 value = value.Detokenize(pkg.StringValues);
-                                double d;
-                                if (double.TryParse(value, out d))
+                                if (double.TryParse(value, out double d))
                                     value = d.ToString();
                                 else
                                     value = "0";
@@ -613,8 +624,7 @@ namespace miniBBS.Basic.Executors
                             break;
                         case "abs":
                             {
-                                double d;
-                                if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out d))
+                                if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out double d))
                                     throw new RuntimeException("type mismatch");
                                 value = Math.Abs(d).ToString();
                             }

@@ -7,6 +7,6 @@ namespace miniBBS.Core.Interfaces
     /// </summary>
     public interface ISqlUi
     {
-        void Execute(BbsSession session, string databaseFilename);
+        void Execute(BbsSession session, string rootDir, string databaseFilename);
     }
 }

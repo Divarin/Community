@@ -18,7 +18,7 @@ namespace miniBBS.Commands
         private const int _defaultRows = 24;
         private const int _defaultCols = 80;
 
-        public static void Execute(BbsSession session, bool? cbmDetectedThroughDel = null)
+        public static void Execute(BbsSession session, TerminalEmulation? detectedEmulation = null)
         {
             var originalLocation = session.CurrentLocation;
             session.CurrentLocation = Module.ConfigureEmulation;
@@ -28,16 +28,9 @@ namespace miniBBS.Commands
                 session.Rows = session.User.Rows;
                 session.Cols = session.User.Cols;
                 
-                var detEmu = session.Io.EmulationType;
-
-                // this should only take effect on initial login, 
-                // not when using /term command
-                if (cbmDetectedThroughDel.HasValue)
-                    detEmu = cbmDetectedThroughDel.Value ? TerminalEmulation.Cbm : TerminalEmulation.Ascii;
-
-                if (session.User.TotalLogons == 1 && AskAnsi(session))
+                if (!detectedEmulation.HasValue && session.User.TotalLogons == 1 && AskAnsi(session))
                 {
-                    detEmu = session.User.Emulation = TerminalEmulation.Ansi;
+                    detectedEmulation = session.User.Emulation = TerminalEmulation.Ansi;
                 }
                 
                 var lastEmu = session.User.Emulation;
@@ -51,7 +44,15 @@ namespace miniBBS.Commands
                 lastCols = session.Cols;
                 lastRows = session.Rows;
 
-                var emulation = detEmu == TerminalEmulation.Cbm ? detEmu : lastEmu;
+                var emulation = detectedEmulation.HasValue ? detectedEmulation.Value : lastEmu;
+                
+                if ((emulation == TerminalEmulation.Cbm && detectedEmulation != TerminalEmulation.Cbm) ||
+                    (emulation == TerminalEmulation.Atascii && detectedEmulation != TerminalEmulation.Atascii))
+                {
+                    // 'emulation' set to cbm or atascii due to 'lastEmu' but neither were auto-detected this time
+                    // so revert to Ascii.
+                    emulation = TerminalEmulation.Ascii;
+                }
 
                 var cols = lastCols;
                 var rows = lastRows;
@@ -63,6 +64,7 @@ namespace miniBBS.Commands
                         case TerminalEmulation.Ascii: session.Io = new Ascii(session); break;
                         case TerminalEmulation.Ansi: session.Io = new ANSI(session); break;
                         case TerminalEmulation.Cbm: session.Io = new Cbm(session); break;
+                        case TerminalEmulation.Atascii: session.Io = new Atascii(session); break;
                     }
                     session.User.Rows = rows >= _minRows ? rows : session.Rows;
                     session.User.Cols = cols >= _minCols ? cols : session.Cols;
@@ -72,8 +74,16 @@ namespace miniBBS.Commands
                 };
 
                 ApplySettings();
-
                 var userPresets = LoadUserPresets(session.User.Id);
+
+                Action<int> ApplyPreset = presetNum =>
+                {
+                    var settings = userPresets[presetNum];
+                    cols = settings.Cols;
+                    rows = settings.Rows;
+                    emulation = settings.Emulation;
+                    ApplySettings();
+                };
 
                 while (true)
                 {
@@ -87,14 +97,19 @@ namespace miniBBS.Commands
                     session.Io.OutputLine("S) 80c std : 80c, 24r");
                     session.Io.OutputLine("T) 40c std : 40c, 24r");
                     session.Io.OutputLine("X) Experiment");
-                    if (userPresets?.Count < 9)
-                        session.Io.OutputLine("V) Save Preset");
-                    if (true == userPresets?.Any())
-                        session.Io.OutputLine("D) Delete Preset");
-                    for (int i=0; i < userPresets.Count; i++)
+                    if (userPresets?.Count >= 9)
+                        session.Io.OutputLine("P) Presets");
+                    else
                     {
-                        var up = userPresets[i];
-                        session.Io.OutputLine($"{i + 1}) {up.Name} : {up.Cols}c, {up.Rows}r, {up.Emulation}");
+                        if (userPresets?.Count < 9)
+                            session.Io.OutputLine("V) Save Preset");
+                        if (true == userPresets?.Any())
+                            session.Io.OutputLine("D) Delete Preset");
+                        for (int i = 0; i < userPresets.Count; i++)
+                        {
+                            var up = userPresets[i];
+                            session.Io.OutputLine($"{i + 1}) {up.Name} : {up.Cols}c, {up.Rows}r, {up.Emulation}");
+                        }
                     }
                     session.Io.Output("Enter = Continue > ");
                     var chr = session.Io.InputKey();
@@ -124,13 +139,16 @@ namespace miniBBS.Commands
                         case 'e':
                         case 'E':
                             {
-                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}Emulation [{1}] : ", Environment.NewLine, detEmu.ToString()));
+                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}4 = ATASCII (CBM){0}Emulation [{1}] : ", 
+                                    Environment.NewLine, 
+                                    emulation.ToString()));
                                 char? s = session.Io.InputKey();
                                 switch (s)
                                 {
                                     case '1': emulation = TerminalEmulation.Ascii; break;
                                     case '2': emulation = TerminalEmulation.Ansi; break;
                                     case '3': emulation = TerminalEmulation.Cbm; break;
+                                    case '4': emulation = TerminalEmulation.Atascii; break;
                                 }
                             }
                             ApplySettings();
@@ -180,20 +198,32 @@ namespace miniBBS.Commands
                             break;
                         case 'v':
                         case 'V':
-                            SavePreset(session, ref userPresets);
+                            if (userPresets?.Count < 9) SavePreset(session, ref userPresets);
                             break;
                         case 'd':
                         case 'D':
-                            DeletePreset(session, ref userPresets);
+                            if (userPresets?.Count < 9) DeletePreset(session, ref userPresets);
+                            break;
+                        case 'p':
+                        case 'P':
+                            if (userPresets?.Count >= 9)
+                            {
+                                var exitMenu = PresetMenu(session, ref userPresets, ApplyPreset);
+                                if (exitMenu)
+                                {
+                                    session.Io.OutputLine();
+                                    ApplySettings();
+                                    session.UserRepo.Update(session.User);
+                                    return;
+                                }
+                            }
                             break;
                         default:
-                            if (chr != null && int.TryParse(chr.Value.ToString(), out int n) && true == userPresets?.Any() && n >= 1 && n <= userPresets.Count)
+                            if (userPresets?.Count < 9 &&
+                                chr != null && int.TryParse(chr.Value.ToString(), out int n) && 
+                                true == userPresets?.Any() && n >= 1 && n <= userPresets.Count)
                             {
-                                var settings = userPresets[n - 1];
-                                cols = settings.Cols;
-                                rows = settings.Rows;
-                                emulation = settings.Emulation;
-                                ApplySettings();
+                                ApplyPreset(n - 1);
                                 break;
                             }
                             else
@@ -212,33 +242,73 @@ namespace miniBBS.Commands
             }
         }
 
+        private static bool PresetMenu(BbsSession session, ref List<TerminalSettings> userPresets, Action<int> ApplyPreset)
+        {
+            while (true)
+            {
+                for (int i = 0; i < userPresets.Count; i++)
+                {
+                    var up = userPresets[i];
+                    session.Io.OutputLine($"{i + 1}) {up.Name} : {up.Cols}c, {up.Rows}r, {up.Emulation}");
+                }
+                session.Io.OutputLine("V) Save Preset");
+                session.Io.OutputLine("D) Delete Preset");
+                session.Io.OutputLine("Q) Previous Menu");
+                session.Io.Output("Term Setup Presets > ");
+                var line = session.Io.InputLine();
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+                if (line.StartsWith("Q", StringComparison.CurrentCultureIgnoreCase))
+                    return false;
+                if (line.StartsWith("V", StringComparison.CurrentCultureIgnoreCase))
+                    SavePreset(session, ref userPresets);
+                else if (line.StartsWith("D", StringComparison.CurrentCultureIgnoreCase))
+                    DeletePreset(session, ref userPresets);
+                else if (int.TryParse(line, out int n) && n >= 1 && n <= userPresets.Count)
+                {
+                    ApplyPreset(n - 1);
+                    return true;
+                }
+            }
+        }
+
         private static void DeletePreset(BbsSession session, ref List<TerminalSettings> userPresets)
         {
-            var k = session.Io.Ask("Delete which preset #");
-            if (int.TryParse(k.ToString(), out int n))
+            int n;
+            if (userPresets.Count <= 9)
             {
-                if (n >= 1 && n <= userPresets.Count)
+                var k = session.Io.Ask("Delete which preset #");
+                int.TryParse(k.ToString(), out n);
+            }
+            else
+            {
+                session.Io.Output("Delete which preset #: ");
+                var line = session.Io.InputLine();
+                session.Io.OutputLine();
+                int.TryParse(line, out n);
+            }
+
+            if (n >= 1 && n <= userPresets.Count)
+            {
+                var toBeDeleted = userPresets[n - 1];
+                userPresets.RemoveAt(n - 1);
+                var repo = DI.GetRepository<Metadata>();
+                if (toBeDeleted.Id.HasValue)
                 {
-                    var toBeDeleted = userPresets[n - 1];
-                    userPresets.RemoveAt(n - 1);
-                    var repo = DI.GetRepository<Metadata>();
-                    if (toBeDeleted.Id.HasValue)
-                    {
-                        var meta = repo.Get(toBeDeleted.Id.Value);
-                        if (meta != null)
-                            repo.Delete(meta);
-                    }
+                    var meta = repo.Get(toBeDeleted.Id.Value);
+                    if (meta != null)
+                        repo.Delete(meta);
                 }
             }
         }
 
         private static void SavePreset(BbsSession session, ref List<TerminalSettings> userPresets)
         {
-            if (userPresets.Count >= 9)
-            {
-                session.Io.Error("You already have too many presets, try (D)eleting one.");
-                return;
-            }
+            //if (userPresets.Count >= 9)
+            //{
+            //    session.Io.Error("You already have too many presets, try (D)eleting one.");
+            //    return;
+            //}
 
             session.Io.OutputLine("Current settings:");
             session.Io.OutputLine($"Columns: {session.User.Cols}");

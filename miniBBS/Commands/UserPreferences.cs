@@ -34,10 +34,11 @@ namespace miniBBS.Commands
                     session.Io.OutputLine("1) Terminal Setup");
                     session.Io.OutputLine($"2) Login Startup Mode: {mode.FriendlyName()}");
                     session.Io.OutputLine("3) Chat Header Format");
+                    session.Io.OutputLine("4) Cross-Channel Notifications");
                     session.Io.OutputLine("Q) Quit");
                 }
 
-                session.Io.Output("[PREFS] : ".Color(ConsoleColor.White));
+                session.Io.Output($"{Constants.Inverser}[PREFS] :{Constants.Inverser} ".Color(ConsoleColor.White));
                 var inp = session.Io.InputKey();
                 session.Io.OutputLine();
                 switch (inp)
@@ -63,11 +64,96 @@ namespace miniBBS.Commands
                         metaRepo.InsertOrUpdate(headerFormatMeta);
                         session.Items[SessionItem.ChatHeaderFormat] = headerFormat;
                         break;
+                    case '4':
+                        SetCrossChannelNotifications(session, metaRepo);
+                        break;
                     default:
                         exitLoop = true;
                         break;
                 }
             } while (!exitLoop);
+        }
+
+        private static void SetCrossChannelNotifications(BbsSession session, IRepository<Metadata> metaRepo)
+        {
+            var xChanMeta = GetMeta(session, metaRepo, MetadataType.CrossChannelNotifications);
+            if (string.IsNullOrWhiteSpace(xChanMeta?.Data) || !Enum.TryParse(xChanMeta.Data, out CrossChannelNotificationMode xChanMode))
+                xChanMode = Constants.DefaultCrossChannelNotificationMode;
+
+            if (xChanMeta == null)
+            {
+                xChanMeta = new Metadata
+                {
+                    UserId = session.User.Id,
+                    DateAddedUtc = DateTime.UtcNow,
+                    Type = MetadataType.CrossChannelNotifications,
+                    Data = Constants.DefaultCrossChannelNotificationMode.ToString()
+                };
+            }
+
+            var exitLoop = false;
+
+            Action<CrossChannelNotificationMode> Toggle = m =>
+            {
+                if (xChanMode.HasFlag(m))
+                    xChanMode &= ~m;
+                else
+                    xChanMode |= m;
+            };
+
+            Func<int, string, bool, string> FormatLine = (lineNum, str, cnd) =>
+            {
+                var tf = cnd ? "TRUE ".Color(ConsoleColor.Green) : "FALSE".Color(ConsoleColor.Red);
+                return $"{lineNum}) {tf} {str}";
+            };
+
+            do
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
+                {
+                    var builder = new StringBuilder();
+                    builder.AppendLine("Notifications about new posts in other channels while you are online:".Color(ConsoleColor.Cyan));
+                    builder.AppendLine(FormatLine(1, "None", xChanMode == 0));
+                    builder.AppendLine(FormatLine(2, "Is RE: one of your posts", xChanMode.HasFlag(CrossChannelNotificationMode.PostIsInResponseToMyMessage)));
+                    builder.AppendLine(FormatLine(3, "Mentions you", xChanMode.HasFlag(CrossChannelNotificationMode.PostMentionsMe)));
+                    builder.AppendLine(FormatLine(4, "Any posts", xChanMode.HasFlag(CrossChannelNotificationMode.Any)));
+                    builder.AppendLine(FormatLine(5, "Only 1 per channel", xChanMode.HasFlag(CrossChannelNotificationMode.OncePerChannel)));
+                    builder.AppendLine($"D) Revert to default");
+                    builder.AppendLine($"Q) Quit");
+                    session.Io.Output(builder.ToString());
+
+                    var k = session.Io.Ask("Cross-Channel Notifications".Color(ConsoleColor.Yellow));
+                    switch (k)
+                    {
+                        case '1':
+                            session.Io.OutputLine("If 'None' then never receive a notification about new posts in other channels while you are online.".Color(ConsoleColor.DarkGray));
+                            xChanMode = 0; 
+                            break;
+                        case '2':
+                            session.Io.OutputLine("If the new post is in response to a one of your posts.".Color(ConsoleColor.DarkGray));
+                            Toggle(CrossChannelNotificationMode.PostIsInResponseToMyMessage); 
+                            break;
+                        case '3':
+                            session.Io.OutputLine("If the new post contains your username.".Color(ConsoleColor.DarkGray));
+                            Toggle(CrossChannelNotificationMode.PostMentionsMe);
+                            break;
+                        case '4':
+                            session.Io.OutputLine("Any posts regardless of #2 or #3.".Color(ConsoleColor.DarkGray));
+                            Toggle(CrossChannelNotificationMode.Any);
+                            break;
+                        case '5':
+                            session.Io.OutputLine("Will only receive one notification even if multiple posts are made.  This resets if you go to that channel and then leave it.".Color(ConsoleColor.DarkGray));
+                            Toggle(CrossChannelNotificationMode.OncePerChannel);
+                            break;
+                        case 'd': case 'D': xChanMode = Constants.DefaultCrossChannelNotificationMode; break;
+                        case 'q': case 'Q': exitLoop = true; break;
+                    }
+                }
+            } while (!exitLoop);
+
+            session.Items[SessionItem.CrossChannelNotificationMode] = xChanMode;
+            xChanMeta.Data = xChanMode.ToString();
+            metaRepo.Update(xChanMeta);
         }
 
         private static string GetNewMessageHeaderFormat(BbsSession session, string headerFormat)

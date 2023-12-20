@@ -5,6 +5,7 @@ namespace miniBBS.Interfaces
 {
     public interface IUserIo
     {
+        string NewLine { get; }
         void OutputRaw(params byte[] bytes);
         void Output(char c);
         void Output(string s, OutputHandlingFlag flags = OutputHandlingFlag.None);
@@ -52,11 +53,25 @@ namespace miniBBS.Interfaces
         void Flush();
 
         #region KeyPolling
+        bool IsPollingKeys { get; }
         char? GetPolledKey();
         void PollKey();
         void ClearPolledKey();
         void AbortPollKey();
         long GetPolledTicks();
         #endregion
+
+        byte[] GetBytes(string text);
+        string TransformText(string text);
+
+        /// <summary>
+        /// For CBM mode only, switches to uppercase character set
+        /// </summary>
+        void SetUpper();
+
+        /// <summary>
+        /// For CBM mode only, switches to lowercase character set
+        /// </summary>
+        void SetLower();
     }
 }

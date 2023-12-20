@@ -23,9 +23,16 @@ namespace miniBBS.Basic.Executors
             line = Evaluate.Execute(line, variables);
 
             if (newlineAfter)
-                session.Io.OutputLine(line);
-            else
-                session.Io.Output(line);
+                line += session.Io.NewLine;
+
+            line = session.Io.TransformText(line);
+            var bytes = session.Io.GetBytes(line);
+            session.Io.OutputRaw(bytes);
+
+            //if (newlineAfter)
+            //    session.Io.OutputLine(line);
+            //else
+            //    session.Io.Output(line);
         }
 
         public static void BroadcastToChannel(BbsSession session, string line, Variables variables)

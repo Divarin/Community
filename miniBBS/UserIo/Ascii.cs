@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace miniBBS.UserIo
 {
@@ -65,7 +66,7 @@ namespace miniBBS.UserIo
             {
                 if (c == Constants.InlineColorizer)
                     inColorCode = !inColorCode;
-                else if (!inColorCode)
+                else if (c != Constants.Inverser && !inColorCode)
                 {
                     chrs.Add(c);
                     actualTextLength++;
@@ -74,5 +75,6 @@ namespace miniBBS.UserIo
 
             return new string(chrs.ToArray());
         }
+
     }
 }

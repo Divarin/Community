@@ -124,7 +124,7 @@ namespace miniBBS.Commands
                         case '<':
                         case ',':
                             threadQ.Clear();
-                            if (chat.ResponseToId.HasValue && session.Chats.ContainsKey(chat.ResponseToId.Value))
+                            if (chat?.ResponseToId != null && session.Chats.ContainsKey(chat.ResponseToId.Value))
                             {
                                 SetMessagePointer.Execute(session, chat.ResponseToId.Value, reverse: true);
                                 chat = session.Chats[chat.ResponseToId.Value];
@@ -199,12 +199,12 @@ namespace miniBBS.Commands
 
             if (threadQ.Count > 0)
                 result = threadQ.Dequeue();
-            else
-                result = session.Chats.Values.Where(x => x.Id > prevChat.Id && x.ResponseToId == prevChat.Id)?.FirstOrDefault();
+            else if (prevChat != null)
+                result = session.Chats?.Values.Where(x => x.Id > prevChat.Id && x.ResponseToId == prevChat.Id)?.FirstOrDefault();
 
             if (result != null)
             {
-                var responses = session.Chats.Values.Where(x => x.Id > result.Id && x.ResponseToId == result.Id)?.ToList();
+                var responses = session.Chats?.Values?.Where(x => x?.Id > result?.Id && x?.ResponseToId == result?.Id)?.ToList();
                 if (true == responses?.Any())
                 {
                     foreach (var response in responses)
@@ -328,6 +328,15 @@ namespace miniBBS.Commands
         {
             if (string.IsNullOrWhiteSpace(command))
                 return;
+
+            if (command.StartsWith("/ch", StringComparison.CurrentCultureIgnoreCase) &&
+                command.Length > 3 &&
+                int.TryParse(command.Substring(3).Trim(), out var chanNum))
+            {
+                SwitchOrMakeChannel.Execute(session, chanNum.ToString(), false, true);
+                return;
+            }
+
             switch (command.ToLower())
             {
                 case "/textread":

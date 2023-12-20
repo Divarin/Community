@@ -141,7 +141,10 @@ namespace miniBBS.TextFiles
                 {
                     _editLocks.TryAdd(lockKey, session.User.Name);
                     if (editor is ISqlUi)
-                        (editor as ISqlUi).Execute(session, StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, currentLocation.Path, link.Path));
+                        (editor as ISqlUi).Execute(
+                            session,
+                            StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Parent.Path) + "/",
+                            StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, currentLocation.Path, link.Path));
                     else
                         editor.EditText(session, new LineEditorParameters
                         {
@@ -267,6 +270,47 @@ namespace miniBBS.TextFiles
                 link.DisplayedFilename = destName;
                 IndexUpdater.UpdateIndex(currentLocation, link, delete: false);
 
+            }
+        }
+
+        public static void Copy(BbsSession session, Link currentLocation, string linkNameOrNum, string destName, IList<Link> links)
+        {
+            if (string.IsNullOrWhiteSpace(linkNameOrNum))
+                return;
+
+            if (!ValidateFileOrDirectoryName(destName))
+            {
+                session.Io.OutputLine($"Invalid destination name '{destName}'.");
+                return;
+            }
+
+            Link link;
+            if (int.TryParse(linkNameOrNum, out int n) && n >= 1 && n <= links.Count)
+                link = links[n - 1];
+            else
+                link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(linkNameOrNum, StringComparison.CurrentCultureIgnoreCase));
+
+            if (link == null)
+                session.Io.OutputLine("File or Directory not found.");
+            else
+            {
+                string src = link.IsDirectory ?
+                    $"{Constants.TextFileRootDirectory}{link.Path}" :
+                    $"{Constants.TextFileRootDirectory}{currentLocation.Path}{link.Path}";
+
+                string dst = $"{Constants.TextFileRootDirectory}{currentLocation.Path}{destName}";
+
+                if (File.Exists(dst) || Directory.Exists(dst))
+                    session.Io.OutputLine($"A file or directory by the name of {destName} already exists.");
+                else if (link.IsDirectory)
+                {
+                    session.Io.Error("Cannot copy a directory.");
+                }
+                else
+                {
+                    File.Copy(src, dst);
+                    session.Io.OutputLine($"Copied file '{link.DisplayedFilename}' to '{destName}'.");
+                }
             }
         }
 

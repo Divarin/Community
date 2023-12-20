@@ -108,7 +108,7 @@ namespace miniBBS.Commands
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                session.Io.OutputLine(" *** E-Mail ***");
+                session.Io.OutputLine($"{Constants.Inverser} *** E-Mail ***{Constants.Inverser}");
                 session.Io.SetForeground(ConsoleColor.Yellow);
                 session.Io.OutputLine("L".Color(ConsoleColor.Green) + $") List your mail (+read & delete)");
                 session.Io.OutputLine("O".Color(ConsoleColor.Green) + $") List outgoing (sent) mails");
@@ -170,9 +170,9 @@ namespace miniBBS.Commands
                 }
 
                 if (!string.IsNullOrWhiteSpace(subject))
-                    session.Io.Output($"Subject (ENTER='{subject}'): ");
+                    session.Io.Output($"{Constants.Inverser}Subject (ENTER='{subject}'):{Constants.Inverser} ");
                 else
-                    session.Io.Output("Subject: ");
+                    session.Io.Output($"{Constants.Inverser}Subject:{Constants.Inverser} ");
 
                 var newSubject = session.Io.InputLine();
                 if (!string.IsNullOrWhiteSpace(newSubject))
@@ -239,10 +239,10 @@ namespace miniBBS.Commands
                 var to = session.Usernames.ContainsKey(mail.ToUserId) ? session.Usernames[mail.ToUserId] : "Unknown " + mail.ToUserId.ToString();
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
-                session.Io.OutputLine($"Sent    : {mail.SentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}");
-                session.Io.OutputLine($"From    : {from}");
-                session.Io.OutputLine($"To      : {to}");
-                session.Io.OutputLine($"Subject : {mail.Subject}");
+                session.Io.OutputLine($"{Constants.Inverser}Sent    :{Constants.Inverser} {mail.SentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}");
+                session.Io.OutputLine($"{Constants.Inverser}From    :{Constants.Inverser} {from}");
+                session.Io.OutputLine($"{Constants.Inverser}To      :{Constants.Inverser} {to}");
+                session.Io.OutputLine($"{Constants.Inverser}Subject :{Constants.Inverser} {mail.Subject}");
                 session.Io.SetForeground(ConsoleColor.Green);
                 session.Io.OutputLine(" --------- ");
                 session.Io.SetForeground(ConsoleColor.White);
@@ -255,7 +255,7 @@ namespace miniBBS.Commands
                 }
 
                 session.Io.SetForeground(ConsoleColor.Yellow);
-                session.Io.Output($"{(mail.ToUserId == session.User.Id ? "(R)eply, " : "")}(D)elete, (ENTER)=Continue");
+                session.Io.Output($"{Constants.Inverser}{(mail.ToUserId == session.User.Id ? "(R)eply, " : "")}(D)elete, (ENTER)=Continue{Constants.Inverser}: ");
                 var k = session.Io.InputKey();
                 session.Io.OutputLine();
                 if (k.HasValue)
@@ -289,7 +289,7 @@ namespace miniBBS.Commands
                     }
                     session.Io.OutputLine(builder.ToString());
                     session.Io.SetForeground(ConsoleColor.Yellow);
-                    session.Io.Output("# to read or ENTER=quit: ");
+                    session.Io.Output($"{Constants.Inverser}# to read or ENTER=quit:{Constants.Inverser} ");
                     var inp = session.Io.InputLine();
                     session.Io.OutputLine();
                     if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= mails.Count)
@@ -324,7 +324,7 @@ namespace miniBBS.Commands
 
                 session.Io.OutputLine(builder.ToString());
                 session.Io.SetForeground(ConsoleColor.Yellow);
-                session.Io.Output("# to read or ENTER=quit: ");
+                session.Io.Output($"{Constants.Inverser}# to read or ENTER=quit:{Constants.Inverser} ");
                 var inp = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= sentMails.Count)
@@ -368,7 +368,7 @@ namespace miniBBS.Commands
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
-                session.Io.OutputLine("Mail subsystem usage:");
+                session.Io.OutputLine($"{Constants.Inverser}Mail subsystem usage:{Constants.Inverser}");
                 session.Io.OutputLine("/mail list        : Lists your mail.");
                 session.Io.OutputLine("/mail list sent   : Lists mail you've sent.");
                 session.Io.OutputLine("/mail read n      : Reads message #n.");

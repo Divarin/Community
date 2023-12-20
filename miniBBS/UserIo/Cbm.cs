@@ -4,7 +4,6 @@ using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace miniBBS.UserIo
 {
@@ -51,7 +50,45 @@ namespace miniBBS.UserIo
             {148, new byte[] { 0} }, // insert
             {92, new byte[] { (byte)'£'} }, // british pound
             {94, new byte[] { (byte)'^'} }, // up arrow (not up cursor, the *arrow*),
-            {141, new byte[] { (byte)10} }, // shift+enter = newline (ctrl+enter on PC)
+            {141, new byte[] { 10 } }, // shift+enter = newline (ctrl+enter on PC)
+            {221, new[] { (byte)'|'} },
+        };
+
+        const byte _revOn = 18;
+        const byte _revOff = 146;
+        const byte _toUpper = 142;
+        const byte _toLower = 14;
+
+        private static readonly IDictionary<byte, byte[]> _asciiToCbm = new Dictionary<byte, byte[]>
+        {
+            // 142 to uppercase, // 14 to lowercase
+            // 18 rev on, // 146 rev off
+            {3, new byte[] { 0x73 } }, // heart
+            {4, new byte[] { 0x7a } }, // diamond
+            {5, new byte[] { 0x78 } }, // club
+            {6, new byte[] { 0x61 } }, // spade
+            {16, new byte[] { 0x3c } }, // triangle pointing right (>)
+            {17, new byte[] { 0x5f } }, // triangle pointing left
+            {24, new byte[] { 0x5e } }, // up arrow
+            {25, new byte[] { 0x56 } }, // down arrow (V)
+            {27, new byte[] { 0x5f } }, // left arrow
+            {26, new byte[] { 0x3c } }, // right arrow (>)
+            {219, new byte[] { _revOn, 32, _revOff } }, // full block (inverse space)
+            {220, new byte[] { 0xa2 } }, // lower block
+            {221, new byte[] { 0xa1 } }, // left block
+            {222, new byte[] { _revOn, 0xa1, _revOff } }, // right block (inverse left block)
+            {223, new byte[] { _revOn, 0xa2, _revOff } }, // upper block (invserse lower block)
+            {218, new byte[] { 0xb0 } }, // top/left border
+            {196, new byte[] { 0xC3 } }, // horizontal line
+            {191, new byte[] { 0xae } }, // top/right border
+            {179, new byte[] { 0xC2 } }, // vertical line
+            {192, new byte[] { 0xad } }, // bottom/left border
+            {217, new byte[] { 0xbd } }, // bottom/right border
+            {195, new byte[] { 0xab } }, // left 'T'
+            {180, new byte[] { 0xb3 } }, // right 'T'
+            {194, new byte[] { 0xb2 } }, // top 'T'
+            {193, new byte[] { 0xb1 } }, // bottom 'T'
+            {197, new byte[] { 0x7b } }, // '+' bordering char
         };
 
         public Cbm(BbsSession session)
@@ -66,17 +103,17 @@ namespace miniBBS.UserIo
 
         public override string Reversed => $"{(char)18}";
 
-        public override string Up => string.Empty;
+        public override string Up => $"{(char)145}";
 
-        public override string Down => string.Empty;
+        public override string Down => $"{(char)17}";
 
-        public override string Left => string.Empty;
+        public override string Left => $"{(char)157}";
 
-        public override string Right => string.Empty;
+        public override string Right => $"{(char)29}";
 
-        public override string Home => string.Empty;
+        public override string Home => $"{(char)19}";
 
-        public override string Clear => string.Empty;
+        public override string Clear => $"{(char)147}";
 
         public override void ClearLine()
         {
@@ -85,7 +122,7 @@ namespace miniBBS.UserIo
 
         public override void ClearScreen()
         {
-            
+            OutputRaw(new[] { (byte)147 });
         }
 
         public override void SetPosition(int x, int y)
@@ -125,27 +162,29 @@ namespace miniBBS.UserIo
             if (_currentForeground != color)
             {
                 _currentForeground = color;
+                byte b = 0;
                 switch (color)
                 {
-                    case ConsoleColor.Black: StreamOutput(_session, (char)144); break;
-                    case ConsoleColor.White: StreamOutput(_session, (char)5); break;
-                    case ConsoleColor.Red: StreamOutput(_session, (char)150); break;
-                    case ConsoleColor.Cyan: StreamOutput(_session, (char)159); break;
-                    case ConsoleColor.Magenta: StreamOutput(_session, (char)156); break;
-                    case ConsoleColor.Green: StreamOutput(_session, (char)153); break;
-                    case ConsoleColor.Blue: StreamOutput(_session, (char)154); break;
-                    case ConsoleColor.Yellow: StreamOutput(_session, (char)158); break;
-                    case ConsoleColor.DarkYellow: StreamOutput(_session, (char)149); break;
-                    case ConsoleColor.DarkRed: StreamOutput(_session, (char)28); break;
-                    case ConsoleColor.DarkGray: StreamOutput(_session, (char)151); break;
-                    case ConsoleColor.Gray: StreamOutput(_session, (char)152); break;
-                    case ConsoleColor.DarkGreen: StreamOutput(_session, (char)30); break;
-                    case ConsoleColor.DarkBlue: StreamOutput(_session, (char)31); break;
+                    case ConsoleColor.Black: b = 144; break;
+                    case ConsoleColor.White: b = 5; break;
+                    case ConsoleColor.Red: b = 150; break;
+                    case ConsoleColor.Cyan: b = 159; break;
+                    case ConsoleColor.Magenta: b = 156; break;
+                    case ConsoleColor.Green: b = 153; break;
+                    case ConsoleColor.Blue: b = 154; break;
+                    case ConsoleColor.Yellow: b = 158; break;
+                    case ConsoleColor.DarkYellow: b = 149; break;
+                    case ConsoleColor.DarkRed: b = 28; break;
+                    case ConsoleColor.DarkGray: b = 151; break;
+                    case ConsoleColor.Gray: b = 152; break;
+                    case ConsoleColor.DarkGreen: b = 30; break;
+                    case ConsoleColor.DarkBlue: b = 31; break;
                 }
+                OutputRaw(new[] { b });
             }
         }
 
-        private byte[] _colorBytes = new byte[]
+        private readonly byte[] _colorBytes = new byte[]
         {
             144, 31, 30, 159, 28, 156, 158, 152, 151, 154, 153, 159, 150, 156, 158, 5
         };
@@ -171,6 +210,25 @@ namespace miniBBS.UserIo
             base.Output((char)8);
         }
 
+        //public override char? GetPolledKey()
+        //{
+        //    var c = base.GetPolledKey();
+        //    if (c.HasValue && c >= 'A' - 1 && c <= 'Z' - 1)
+        //        c = (char)(c+2);
+        //    //if (c.HasValue)
+        //    //    c = char.IsUpper(c.Value) ? char.ToLower(c.Value) : char.ToUpper(c.Value);
+        //    return c;
+        //}
+
+        protected override string GetString(byte[] bytes) =>
+            new string(bytes.Select(c => (char)c).ToArray());
+
+        protected override string GetString(byte[] bytes, int index, int count)
+        {
+            var arr = bytes.Select(c => (char)c).ToArray();
+            return new string(arr, index, count);
+        }
+
         public override char? InputKey()
         {
             var c = base.InputKey();
@@ -187,23 +245,31 @@ namespace miniBBS.UserIo
         /// <summary>
         /// Does any kind of special transforms needed for this emulation type
         /// </summary>
-        protected override string TransformText(string text)
+        public override string TransformText(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return text;
 
-            char[] arr = new char[text.Length];
+            var chrs = new List<char>();
 
             for (int i=0; i < text.Length; i++)
             {
                 char c = text[i];
-                if (char.IsUpper(c))
-                    arr[i] = char.ToLower(c);
+                if (c == Constants.Inverser)
+                    continue;
+                if (_asciiToCbm.TryGetValue((byte)c, out var b))
+                    chrs.AddRange(b.Select(x => (char)x));
+                else if (c == 8)
+                    chrs.Add((char)20); // backspace
+                else if (char.IsUpper(c))
+                    chrs.Add(char.ToLower(c));
                 else
-                    arr[i] = char.ToUpper(c);
+                    chrs.Add(char.ToUpper(c));
             }
 
+            var arr = chrs.ToArray();
             text = new string(arr, 0, arr.Length);
+
             return text;
         }
 
@@ -279,9 +345,9 @@ namespace miniBBS.UserIo
             return line;
         }
 
-        protected override byte[] GetBytes(string text)
+        public override byte[] GetBytes(string text)
         {
-            byte[] bytes = Encoding.ASCII.GetBytes(text);
+            byte[] bytes = text.Select(b => (byte)b).ToArray();// Encoding.ASCII.GetBytes(text);
             
             // look for and replace inline color codes
             int p = text.IndexOf(Constants.InlineColorizer);
@@ -310,6 +376,16 @@ namespace miniBBS.UserIo
                 .ToArray();
 
             return bytes;
+        }
+
+        public override void SetUpper()
+        {
+            _session.Io.OutputRaw(_toUpper);
+        }
+
+        public override void SetLower()
+        {
+            _session.Io.OutputRaw(_toLower);
         }
     }
 }
