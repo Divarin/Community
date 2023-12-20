@@ -56,6 +56,7 @@
     <Compile Include="Executors\Data.cs" />
     <Compile Include="Executors\Edit.cs" />
     <Compile Include="Executors\Evaluate.cs" />
+    <Compile Include="Executors\Find.cs" />
     <Compile Include="Executors\For.cs" />
     <Compile Include="Executors\Function.cs" />
     <Compile Include="Executors\Get.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="Executors\Renum.cs" />
     <Compile Include="Executors\Rnd.cs" />
     <Compile Include="Executors\Scoped.cs" />
+    <Compile Include="Executors\ShowFile.cs" />
     <Compile Include="Executors\Sql.cs" />
     <Compile Include="Executors\Sqr.cs" />
     <Compile Include="Executors\Words.cs" />

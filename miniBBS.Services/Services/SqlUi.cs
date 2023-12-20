@@ -1,10 +1,13 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.IO;
+using System.Linq;
 
 namespace miniBBS.Services.Services
 {
@@ -12,10 +15,12 @@ namespace miniBBS.Services.Services
     {
         private static BbsSession _session;
         private string _databaseFilename;
+        private string _rootDir;
 
-        public void Execute(BbsSession session, string databaseFilename)
+        public void Execute(BbsSession session, string rootDir, string databaseFilename)
         {
             _session = session;
+            _rootDir = rootDir;
             _databaseFilename = databaseFilename;
 
             var originalLocation = _session.CurrentLocation;
@@ -39,7 +44,7 @@ namespace miniBBS.Services.Services
 
         public void EditText(BbsSession session, LineEditorParameters parameters = null)
         {
-            Execute(session, parameters?.Filename);
+            Execute(session, _rootDir, parameters?.Filename);
         }
 
         private void ShowPrompt()
@@ -90,6 +95,12 @@ namespace miniBBS.Services.Services
                     case "quit":
                     case "exit":
                         return true;
+                    case "run":
+                        if (parts.Length >= 2)
+                            RunScript(parts[1]);
+                        else
+                            _session.Io.Error("Usage: run scriptfile.sql");
+                        break;
                     default:
                         {
                             var table = Query(command);
@@ -108,6 +119,34 @@ namespace miniBBS.Services.Services
             }
 
             return false;
+        }
+
+        private void RunScript(string filename)
+        {
+            filename = new string(filename.Where(c =>
+                char.IsLetterOrDigit(c)
+                || c == '.'
+                || c == '_'
+                || c == '-').ToArray());
+
+            if (!File.Exists(_rootDir + filename))
+                filename += ".sql";
+
+            if (!File.Exists(_rootDir + filename))
+            {
+                _session.Io.Error($"Unable to find file '{filename}'.");
+                return;
+            }
+
+            filename = _rootDir + filename;
+
+            using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            using (var reader = new StreamReader(stream))
+            {
+                var contents = reader.ReadToEnd();
+                _session.Io.OutputLine(contents);
+                ExecuteCommand(contents);
+            }
         }
 
         private DataTable Query(string sql)
@@ -178,9 +217,11 @@ namespace miniBBS.Services.Services
         {
             "tables : lists tables",
             "columns (tablename) : lists the columns for the given table",
+            "run (scriptfile) : execute the SQL stored in a .sql file",
             "quit : exits SQL User Interface",
             "Anything else ... Runs the SQL statement"
         });
+        
 
         public Func<string, string> OnSave { get; set; }
     }

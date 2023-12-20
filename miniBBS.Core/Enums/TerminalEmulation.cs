@@ -4,6 +4,7 @@
     {
         Ascii,
         Ansi,
-        Cbm
+        Cbm,
+        Atascii
     }
 }

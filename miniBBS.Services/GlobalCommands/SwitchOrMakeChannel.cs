@@ -4,6 +4,7 @@ using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Extensions;
 using miniBBS.Services.Persistence;
 using System;
 using System.Collections.Generic;
@@ -13,25 +14,17 @@ namespace miniBBS.Services.GlobalCommands
 {
     public static class SwitchOrMakeChannel
     {
-        private static readonly string[] _invalidChannelNames = new[]
-        {
-            "del"
-        };
-
         public static bool Execute(BbsSession session, string channelNameOrNumber, bool allowMakeNewChannel, bool fromMessageBase = false)
         {
             bool invalidChannelName = 
                 channelNameOrNumber == null || 
                 channelNameOrNumber.Any(c => char.IsWhiteSpace(c)) || 
                 channelNameOrNumber.Length > Constants.MaxChannelNameLength || 
-                _invalidChannelNames.Contains(channelNameOrNumber, StringComparer.CurrentCultureIgnoreCase);
+                Constants.InvalidChannelNames.Contains(channelNameOrNumber, StringComparer.CurrentCultureIgnoreCase);
             
             if (invalidChannelName)
             {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                {
-                    session.Io.OutputLine($"Invalid channel name, must not include any whitespace characters and cannot be longer than {Constants.MaxChannelNameLength} characters.");
-                }
+                session.Io.Error($"Invalid channel name, must not include any whitespace characters and cannot be longer than {Constants.MaxChannelNameLength} characters.");
                 return false;
             }
 
@@ -46,6 +39,15 @@ namespace miniBBS.Services.GlobalCommands
 
             if (channel == null)
                 return false;
+
+            if (session.Items.ContainsKey(SessionItem.CrossChannelNotificationReceivedChannels))
+            {
+                var list = session.Items[SessionItem.CrossChannelNotificationReceivedChannels] as List<int>;
+                if (true == list?.Contains(channel.Id))
+                {
+                    list.Remove(channel.Id);
+                }
+            }
 
             var ucFlag = session.UcFlagRepo.Get(new Dictionary<string, object>
             {
@@ -136,6 +138,9 @@ namespace miniBBS.Services.GlobalCommands
                 }
                 return null;
             }
+
+            if ('Y' != session.Io.Ask($"Create new channel, '{channelName}'"))
+                return null;
 
             var logger = GlobalDependencyResolver.Default.Get<ILogger>();
             var channel = channelRepo.Insert(new Channel

@@ -99,6 +99,8 @@ namespace miniBBS.UserIo
 
             foreach (var c in line)
             {
+                if (c == Constants.Inverser)
+                    continue;
                 if (c == Constants.InlineColorizer)
                 {
                     inCode = !inCode;

@@ -36,7 +36,7 @@ namespace miniBBS.Extensions
                 {
                     {nameof(Metadata.UserId), session.User.Id},
                     {nameof(Metadata.Type), MetadataType.ChatHeaderFormat}
-                })?.PruneAllButMostRecent(metaRepo); ;
+                })?.PruneAllButMostRecent(metaRepo);
 
             string headerFormat = Constants.DefaultChatHeaderFormat;
             
@@ -44,6 +44,36 @@ namespace miniBBS.Extensions
                 headerFormat = meta.Data;
 
             session.Items[SessionItem.ChatHeaderFormat] = headerFormat;
+        }
+
+        public static CrossChannelNotificationMode GetCrossChannelNotificationMode(this BbsSession session, IRepository<Metadata> metaRepo)
+        {
+            var xchanmode = Constants.DefaultCrossChannelNotificationMode;
+
+            if (!session.Items.ContainsKey(SessionItem.CrossChannelNotificationMode))
+            {
+                var meta = metaRepo.Get(new Dictionary<string, object>
+                {
+                    {nameof(Metadata.UserId), session.User.Id},
+                    {nameof(Metadata.Type), MetadataType.CrossChannelNotifications}
+                })?.PruneAllButMostRecent(metaRepo);
+                if (meta == null)
+                {
+                    meta = new Metadata
+                    {
+                        UserId = session.User.Id,
+                        Data = xchanmode.ToString(),
+                        DateAddedUtc = DateTime.UtcNow,
+                        Type = MetadataType.CrossChannelNotifications
+                    };
+                    metaRepo.Insert(meta);
+                }
+                if (Enum.TryParse(meta.Data, out CrossChannelNotificationMode x))
+                    xchanmode = x;
+                session.Items[SessionItem.CrossChannelNotificationMode] = xchanmode;
+            }
+
+            return (CrossChannelNotificationMode)session.Items[SessionItem.CrossChannelNotificationMode];
         }
 
         public static void RecordSeenData(this BbsSession session, IRepository<Metadata> metaRepo)

@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalCommands\AddToChatLog.cs" />
+    <Compile Include="GlobalCommands\Debug.cs" />
     <Compile Include="GlobalCommands\GetChannel.cs" />
     <Compile Include="GlobalCommands\ListChannels.cs" />
     <Compile Include="GlobalCommands\ParseRange.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Services\Compressor.cs" />
     <Compile Include="Services\LineEditor.cs" />
     <Compile Include="Services\Logger.cs" />
+    <Compile Include="Services\MaintDowntimeAnnouncer.cs" />
     <Compile Include="Services\Messager.cs" />
     <Compile Include="Services\SessionsList.cs" />
     <Compile Include="Services\SqlUi.cs" />

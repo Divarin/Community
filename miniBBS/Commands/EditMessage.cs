@@ -36,17 +36,15 @@ namespace miniBBS.Commands
                     session.Io.OutputLine("Messagee not found in this channel.");
 
                 bool canUpdate =
-                    session.User.Access.HasFlag(AccessFlag.Administrator) ||
-                    session.User.Access.HasFlag(AccessFlag.GlobalModerator) ||
-                    session.UcFlag.Flags.HasFlag(UCFlag.Moderator) ||
-                    (
-                        toBeEdited.FromUserId == session.User.Id &&
-                        (DateTime.UtcNow - toBeEdited.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable
-                    );
+                    session.User.Access.HasFlag(AccessFlag.Administrator)
+                    // || session.User.Access.HasFlag(AccessFlag.GlobalModerator)
+                    // || session.UcFlag.Flags.HasFlag(UCFlag.Moderator)
+                    || (toBeEdited.FromUserId == session.User.Id &&
+                       (DateTime.UtcNow - toBeEdited.DateUtc).TotalMinutes <= Constants.MinutesUntilMessageIsUndeletable);
 
                 if (!canUpdate)
                 {
-                    session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minutes) or you aren't a moderator.");
+                    session.Io.OutputLine($"Cannot edit message.  It's either too old (more than {Constants.MinutesUntilMessageIsUndeletable} minutes) or it's not your message.");
                     return;
                 }
 
@@ -102,10 +100,8 @@ namespace miniBBS.Commands
                     string highlightedNewMessage = oldMessage.Replace(search, UserIoExtensions.WrapInColor(replace, ConsoleColor.Green));
                     session.Io.OutputLine(highlightedNewMessage);
                     session.Io.SetForeground(ConsoleColor.Red);
-                    session.Io.Output("Make this edit? ");
-                    var k = session.Io.InputKey();
-                    session.Io.OutputLine();
-                    if (k == 'y' || k == 'Y')
+                    var k = session.Io.Ask("Make this edit? ");
+                    if (k == 'Y')
                         commitEdit(newMessage);
                 }
                 

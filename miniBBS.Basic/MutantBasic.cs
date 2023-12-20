@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace miniBBS.Basic
 {
@@ -21,14 +22,16 @@ namespace miniBBS.Basic
     {
         private BbsSession _session;
         private string _loadedData;
+        private LineEditorParameters _parameters;
         private string _rootDirectory;
         private bool _autoStart;
         private readonly bool _isScript;
         private readonly string _scriptName;
         private readonly string _scriptInput;
         private readonly bool _isDebugging;
-        private const string _version = "2.3";
-        public static bool _debug = false;
+        private const string _version = "2.6";
+        private static bool _debug = false;
+        private bool _prompt = false;
 
         public Func<string, string> OnSave { get; set; }
 
@@ -46,6 +49,7 @@ namespace miniBBS.Basic
         {
             _session = session;
             _loadedData = parameters?.PreloadedBody;
+            _parameters = parameters;
             Start();
         }
 
@@ -66,6 +70,7 @@ namespace miniBBS.Basic
             } 
             finally
             {
+                _session.Io.AbortPollKey();
                 _session.CurrentLocation = originalLocation;
             }
         }
@@ -116,9 +121,9 @@ namespace miniBBS.Basic
                 }
                 else
                 {
-                    _session.Io.Output("] ");
+                    if (_prompt)
+                        _session.Io.Output("] ");
                     line = _session.Io.InputLine();
-                    _session.Io.OutputLine();
                     if (string.IsNullOrEmpty(line))
                         continue;
                     pline = GetProgramLine(line);
@@ -168,15 +173,21 @@ namespace miniBBS.Basic
                 else if (line.StartsWith("list", StringComparison.CurrentCultureIgnoreCase))
                 {
                     var range = Range.Parse(line.Substring(4), variables);
-
-                    foreach (var l in progLines)
-                    {
-                        if (range[0].HasValue && l.Key < range[0].Value)
-                            continue;
-                        if (range[1].HasValue && l.Key > range[1].Value)
-                            continue;
-                        _session.Io.OutputLine($"{l.Key} {l.Value}");
-                    }
+                    ListProgram(progLines, range, continuous: false);
+                }
+                else if (line.StartsWith("clist", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    var range = Range.Parse(line.Substring(5), variables);
+                    ListProgram(progLines, range, continuous: true);
+                }
+                else if (line.StartsWith("lI"))
+                {
+                    var range = Range.Parse(line.Substring(2), variables);
+                    ListProgram(progLines, range, continuous: false);
+                }
+                else if (line.StartsWith("prompt", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _prompt = !_prompt;
                 }
                 else if (line.StartsWith("run", StringComparison.CurrentCultureIgnoreCase) && true == progLines?.Any())
                 {
@@ -190,13 +201,34 @@ namespace miniBBS.Basic
                     finally
                     {
                         _session.CurrentLocation = _previousLocation;
+                        _session.Io.SetLower();
+                        if (_session.Items.ContainsKey(SessionItem.BasicLock))
+                            _session.Items.Remove(SessionItem.BasicLock);
                     }
                 }
-                else if (line.Equals("new", StringComparison.CurrentCultureIgnoreCase))
+                else if (line.StartsWith("new", StringComparison.CurrentCultureIgnoreCase))
                 {
-                    _loadedData = string.Empty;
-                    progLines = ProgramData.Deserialize(_loadedData);
-                    variables = new Variables(GetEnvironmentVaraibles(_session.User));
+                    var range = Range.Parse(line.Substring(3), variables)
+                        ?.Where(x => x.HasValue)
+                        ?.Select(x => x.Value)
+                        ?.ToArray();
+                    if (range?.Length == 1)
+                    {
+                        if (progLines.ContainsKey(range[0]))
+                            progLines.Remove(range[0]);
+                    }
+                    else if (range?.Length == 2)
+                    {
+                        for (var i = range[1]; i >= range[0]; i--)
+                            if (progLines.ContainsKey(i))
+                                progLines.Remove(i);
+                    }
+                    else
+                    {
+                        _loadedData = string.Empty;
+                        progLines = ProgramData.Deserialize(_loadedData);
+                        variables = new Variables(GetEnvironmentVaraibles(_session.User));
+                    }
                 }
                 else if (line.StartsWith("rem", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -246,6 +278,10 @@ namespace miniBBS.Basic
                     foreach (var key in variables.Keys)
                         _session.Io.OutputLine($"{key} = {variables[key]}");
                 }
+                else if (line.Equals("labels", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    ListLabels(progLines);
+                }
                 else if ("save".Equals(line, StringComparison.CurrentCultureIgnoreCase) || "/s".Equals(line, StringComparison.CurrentCultureIgnoreCase))
                 {
                     _loadedData = ProgramData.Serialize(progLines);
@@ -271,18 +307,7 @@ namespace miniBBS.Basic
                 else if (line.StartsWith("find ", StringComparison.CurrentCultureIgnoreCase))
                 {
                     string term = line.Substring(5)?.Replace("\"", "")?.Trim()?.ToLower();
-                    if (string.IsNullOrWhiteSpace(term))
-                        _session.Io.OutputLine("What am I looking for?");
-                    else
-                    {
-                        var lines = progLines
-                            ?.Where(l => l.Value.ToLower().Contains(term));
-                        if (true == lines?.Any())
-                        {
-                            foreach (var l in lines)
-                                _session.Io.OutputLine($"{l.Key} {l.Value}");
-                        }
-                    }
+                    Find.Execute(_session, term, progLines);
                 }
                 else if (line.StartsWith("edit ", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -314,8 +339,44 @@ namespace miniBBS.Basic
             }
         }
 
+        private void ListLabels(SortedList<int, string> progLines)
+        {
+            var builder = new StringBuilder();
+            foreach (var line in progLines)
+            {
+                if (line.Value.StartsWith("!"))
+                    builder.AppendLine($"{line.Key} {line.Value}");
+            }
+            _session.Io.Output(builder.ToString());
+        }
+
+        private void ListProgram(SortedList<int, string> progLines, int?[] range, bool continuous)
+        {
+            var builder = new StringBuilder();
+            foreach (var l in progLines)
+            {
+                if (range[0].HasValue && l.Key < range[0].Value)
+                    continue;
+                if (range[1].HasValue && l.Key > range[1].Value)
+                    continue;
+                var line = $"{l.Key} {l.Value}";
+                if (continuous)
+                    _session.Io.OutputLine(line);
+                else
+                    builder.AppendLine(line);
+            }
+            if (!continuous)
+                _session.Io.Output(builder.ToString());
+        }
+
         private void Run(ref SortedList<int, string> progLines, ref Variables variables, string line)
         {
+            if (progLines == null || progLines.Count < 1)
+            {
+                _session.Io.OutputLine("No program in memory");
+                return;
+            }
+
             StatementPointer sp = new StatementPointer();
             StatementPointer lastLine = new StatementPointer();
             {
@@ -330,8 +391,9 @@ namespace miniBBS.Basic
             variables.Labels = FindLabels(progLines);
             _session.Io.AbortPollKey();
             _session.Io.ClearPolledKey();
-
-            if (!_isScript)
+            
+            var shouldPollKeys = !_isScript && !"polloff".Equals(progLines.Values.First(), StringComparison.CurrentCultureIgnoreCase);
+            if (shouldPollKeys)
                 _session.Io.PollKey();
 
             int lastLineNumber = -1;
@@ -405,7 +467,7 @@ namespace miniBBS.Basic
             if (!_isScript)
             {
                 _session.Io.AbortPollKey();
-                _session.Io.OutputLine($"Program run complete, you may need to press a key to clear the input stream buffer.");
+                _session.Io.OutputLine($"Program run complete{(_session.Io.IsPollingKeys ? ", press any key" : "")}.");
             }
         }
 
@@ -464,7 +526,7 @@ namespace miniBBS.Basic
                 else
                 {
                     builder.Append(c);
-                    if (c == '?' && !inQuotes && i < line.Length - 1 && line[i + 1] != ' ')
+                    if (c == '?' && !inQuotes && i < line.Length - 1 && line[i + 1] != ' ' && line[i + 1] != '?')
                         builder.Append(' ');
                 }
             }
@@ -573,6 +635,8 @@ namespace miniBBS.Basic
             else
                 nextSp = new StatementPointer { LineNumber = fromSp.LineNumber + 1, StatementNumber = 0 };
 
+            statement = statement.TrimStart();
+
             if (statement.StartsWith("!"))
                 return nextSp; // skip label
 
@@ -594,9 +658,16 @@ namespace miniBBS.Basic
             {
                 switch (command.ToLower())
                 {
+                    case "lock":
+                        _session.Items[SessionItem.BasicLock] = $"{_rootDirectory}{_parameters?.Filename}";
+                        break;
                     case "?":
+                    case "??":
+                    case "debug":
                     case "print":
                     case "uprint":
+                        if (!_debug && (command.Equals("debug", StringComparison.CurrentCultureIgnoreCase) || command.Equals("??")))
+                            break;
                         if (_isScript)
                         {
                             if ("uprint".Equals(command, StringComparison.CurrentCultureIgnoreCase))
@@ -732,7 +803,16 @@ namespace miniBBS.Basic
                         _session.Io.ClearScreen();
                         break;
                     case "clr":
-                        variables.Clear();
+                        if (!string.IsNullOrWhiteSpace(args))
+                        {
+                            foreach (var arg in args.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                                variables.Remove(arg);
+                        }
+                        else
+                            variables.Clear();
+                        break;
+                    case "home":
+                        Position.Home(_session);
                         break;
                     case "position":
                         Position.Execute(_session, args, variables);
@@ -748,6 +828,12 @@ namespace miniBBS.Basic
                         break;
                     case "right":
                         Position.Right(_session, args, variables);
+                        break;
+                    case "petsciiupper":
+                        _session.Io.SetUpper();
+                        break;
+                    case "petsciilower":
+                        _session.Io.SetLower();
                         break;
                     case "randomize":
                         Rnd.SetSeed(args, variables);
@@ -793,6 +879,15 @@ namespace miniBBS.Basic
                         break;
                     case "resetnextword":
                         Words.ResetNextWord();
+                        break;
+                    case "wait":
+                        {
+                            if (!string.IsNullOrWhiteSpace(args) && int.TryParse(args, out var delay) && delay > 0 && delay < 60000)
+                                Thread.Sleep(delay);
+                        }
+                        break;
+                    case "showfile":
+                        ShowFile.Execute(_session, _rootDirectory, args, variables);
                         break;
                     default:
                         if (statement.Contains('=') && !statement.StartsWith("LET"))

@@ -15,6 +15,11 @@
         /// <summary>
         /// Prints 3-7 newlines, then 5-10 spaces, then [Mutiny Community (timestamp)]
         /// </summary>
-        ScreenSaver
+        ScreenSaver,
+
+        /// <summary>
+        /// Replays an old chat message
+        /// </summary>
+        Replay
     }
 }

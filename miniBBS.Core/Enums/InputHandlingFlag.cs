@@ -41,8 +41,18 @@ namespace miniBBS.Core.Enums
         AllowCtrlEnterToAddNewLine = 32,
 
         /// <summary>
-        /// If the line appears to be an emote (starts with /me) then limit the input to Constants.MaxEmoteLength
+        /// If the line appears to be an emote (starts with /me) then limit the input to Constants.MaxInputLength
         /// </summary>
-        MaxLengthIfEmote = 64
+        MaxLengthIfEmote = 64,
+        
+        /// <summary>
+        /// Fixes the input to a maximum length (Constants.MaxInputLength)
+        /// </summary>
+        MaxLength = 128,
+
+        /// <summary>
+        /// Returns as soon as the user has typed one character
+        /// </summary>
+        ReturnFirstCharacterOnly = 256,
     }
 }

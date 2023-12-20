@@ -12,11 +12,11 @@ namespace miniBBS.Basic.Executors
             if (!string.IsNullOrWhiteSpace(p.Question))
                 session.Io.Output(p.Question);
 
-            session.Io.Output("? ");
+            //session.Io.Output("? ");
             string inp = session.Io.InputLine();
             session.Io.OutputLine();
-            if (string.IsNullOrWhiteSpace(inp))
-                return;
+            if (inp == null)
+                inp = "";
 
             var values = inp.Split(',');
 
@@ -24,14 +24,12 @@ namespace miniBBS.Basic.Executors
             {
                 string varb = p.VariableNames[i];
                 string value = values[i];
-                if (string.IsNullOrWhiteSpace(value) && variables.ContainsKey(varb))
-                    variables.Remove(varb);
-                else if (varb.EndsWith("$"))
+
+                if (varb.EndsWith("$"))
                     variables[varb] = "\"" + value + "\"";
                 else
-                    variables[varb] = Evaluate.Execute(value, variables);
+                    variables[varb] = value;
             }
-
         }
 
         private static InputParameters ParseInputParameters(string line, Variables variables)

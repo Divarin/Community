@@ -70,7 +70,7 @@ namespace miniBBS.Commands
                 .ToArray();
 
             session.Io.SetForeground(ConsoleColor.Magenta);
-            session.Io.OutputLine("*** Live-Chat Calendar ***");
+            session.Io.OutputLine($"{Constants.Inverser}*** Live-Chat Calendar ***{Constants.Inverser}");
             session.Io.SetForeground(ConsoleColor.Cyan);
             session.Io.OutputLine($"Calendar entries are deleted after {Constants.MaxCalendarItemDays} days unless the owner renews them.");
             session.Io.SetForeground(ConsoleColor.Blue);
@@ -97,7 +97,7 @@ namespace miniBBS.Commands
             session.Io.OutputLine(builder.ToString());
 
             session.Io.SetForeground(ConsoleColor.Yellow);
-            session.Io.Output("[Calendar] > ");
+            session.Io.Output($"{Constants.Inverser}[Calendar] >{Constants.Inverser} ");
             var k = session.Io.InputKey();
             session.Io.OutputLine();
 
@@ -169,7 +169,7 @@ namespace miniBBS.Commands
                 }
                 item.EventTime = when;
 
-                session.Io.Output("Enter channel name or number, or enter for no channel in particular: ");
+                session.Io.Output($"{Constants.Inverser}Enter channel name or number, or enter for no channel in particular:{Constants.Inverser} ");
                 var chan = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!string.IsNullOrWhiteSpace(chan))
@@ -186,7 +186,7 @@ namespace miniBBS.Commands
                     }
                 }
 
-                session.Io.Output("Enter topic to be discussed, or enter for no topic in particular: ");
+                session.Io.Output($"{Constants.Inverser}Enter topic to be discussed, or enter for no topic in particular:{Constants.Inverser} ");
                 var topic = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!string.IsNullOrWhiteSpace(topic))

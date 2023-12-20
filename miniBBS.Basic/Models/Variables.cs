@@ -153,15 +153,29 @@ namespace miniBBS.Basic.Models
             return stateData;
         }
 
-        public void SetState(string stateData)
+        public void SetState(string stateData, params string[] varsToLoad)
         {
             var json = GlobalDependencyResolver.Default.Get<ICompressor>().Decompress(stateData);
-            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);            
+            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             foreach (var v in dict)
-                _globals[v.Key] = v.Value;
+            {
+                var loadThisState = true != varsToLoad?.Any() ||
+                    varsToLoad.Any(x =>
+                    {
+                        if (x.Contains('('))
+                            x = x.Substring(0, x.IndexOf('('));
+                        var v1 = v.Key;
+                        if (v1.Contains('('))
+                            v1 = v1.Substring(0, v1.IndexOf('('));
+                        return x.Equals(v1, StringComparison.CurrentCultureIgnoreCase);
+                    });
+                
+                if (loadThisState)
+                    _globals[v.Key] = v.Value;
+            }
         }
 
-        private string EvaluateArrayExpressions(string key)
+        public string EvaluateArrayExpressions(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
                 return key;

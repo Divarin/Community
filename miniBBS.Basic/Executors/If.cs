@@ -53,11 +53,13 @@ namespace miniBBS.Basic.Executors
             if (condition.StartsWith("defined ", StringComparison.CurrentCultureIgnoreCase))
             {
                 variableName = condition.Substring(8).Replace(" ", "");
+                variableName = variables.EvaluateArrayExpressions(variableName);
                 return variables.Keys.Any(k => k.Equals(variableName, StringComparison.CurrentCultureIgnoreCase));
             }
             else if (condition.StartsWith("not defined ", StringComparison.CurrentCultureIgnoreCase))
             {
                 variableName = condition.Substring(12).Trim();
+                variableName = variables.EvaluateArrayExpressions(variableName);
                 return !variables.Keys.Any(k => k.Equals(variableName, StringComparison.CurrentCultureIgnoreCase));
             }
 

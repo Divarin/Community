@@ -66,6 +66,7 @@
     <Compile Include="Constants\Constants.cs" />
     <Compile Include="Enums\AccessFlag.cs" />
     <Compile Include="Enums\ChatWriteFlags.cs" />
+    <Compile Include="Enums\CrossChannelNotificationMode.cs" />
     <Compile Include="Enums\FilesLaunchFlags.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\LoggingOptions.cs" />
@@ -110,6 +111,7 @@
     <Compile Include="Models\Control\UserPreference.cs" />
     <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Data\Blurb.cs" />
+    <Compile Include="Models\Data\Bulletin.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
     <Compile Include="Models\Data\LogEntry.cs" />
@@ -128,6 +130,7 @@
     <Compile Include="Models\Messages\ChannelPostMessage.cs" />
     <Compile Include="Models\Messages\EmoteMessage.cs" />
     <Compile Include="Models\Messages\GlobalMessage.cs" />
+    <Compile Include="Models\Messages\NullSpaceMessage.cs" />
     <Compile Include="Models\Messages\UserLoginOrOutMessage.cs" />
     <Compile Include="Models\Messages\UserMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

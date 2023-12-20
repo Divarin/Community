@@ -148,16 +148,17 @@ namespace miniBBS
                             session.Io.OutputLine("Sorry the system is currently in maintenence mode, only system administators may log in at this time.  Please try again later.");
                         else
                         {
-                            TermSetup.Execute(session, cbmDetectedThroughDel: session.Io.EmulationType == TerminalEmulation.Cbm);
-                            ShowNotifications(session);
-
-                            int unreadMail = Commands.Mail.CountUnread(session);
-                            if (unreadMail > 0)
+                            TerminalEmulation? detectedEmulation = null;
+                            if (session.Io.EmulationType == TerminalEmulation.Cbm || session.Io.EmulationType == TerminalEmulation.Atascii)
                             {
-                                session.Io.Error($"You have {unreadMail} unread mails.  Use '/mail' to read your mail.");
-                                Thread.Sleep(3000);
+                                detectedEmulation = session.Io.EmulationType;
+                                session.Cols = 40;
                             }
 
+                            TermSetup.Execute(session, detectedEmulation);
+
+                            session.Io.OutputLine("Mutiny".Color(ConsoleColor.Red) + " Community".Color(ConsoleColor.Cyan) + $" Version {Constants.Version}.".Color(ConsoleColor.Yellow));
+                            
                             try
                             {
                                 SysopScreen.BeginLogin(session);
@@ -214,7 +215,7 @@ namespace miniBBS
             }
         }
 
-        private static void ShowNotifications(BbsSession session)
+        private static bool ShowNotifications(BbsSession session)
         {
             var notifications = DI.Get<INotificationHandler>().GetNotifications(session.User.Id);
             if (true == notifications?.Any())
@@ -228,7 +229,10 @@ namespace miniBBS
                     string text = string.Join(Environment.NewLine, notifications.Select(n => $"{n.DateSentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm} {n.Message}"));
                     session.Io.OutputLine(text);
                 }
+                return true;
             }
+
+            return false;
         }
 
         private static void RunSession(BbsSession session)
@@ -276,7 +280,6 @@ namespace miniBBS
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
                 session.StartPingPong(Constants.DefaultPingPongDelayMin);
-                session.Io.OutputLine($"Welcome to Mutiny Community version {Constants.Version}.");
                 session.Io.OutputLine("Type '/?' for help (DON'T FORGET THE SLASH!!!!).");
                 Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
@@ -312,6 +315,8 @@ namespace miniBBS
                 }
             }
 
+            ShowLoginNotifications(session, startupMode);
+
             if (startupMode == LoginStartupMode.MainMenu)
             {
                 session.CurrentLocation = Module.MainMenu;
@@ -324,7 +329,8 @@ namespace miniBBS
             }
 
             session.CurrentLocation = Module.Chat;
-            
+
+            Polls.ShowCountOfNewSinceLastCall(session);            
             ListChannels.ShowTotalUnread(session);
             session.Io.OutputLine("Press Enter/Return to read next message.");
 
@@ -381,6 +387,34 @@ namespace miniBBS
             }
         }
 
+        private static void ShowLoginNotifications(BbsSession session, LoginStartupMode startupMode)
+        {
+            var anyNotifications = ShowNotifications(session);
+
+            int unreadMail = Commands.Mail.CountUnread(session);
+            if (unreadMail > 0)
+            {
+                session.Io.Error($"You have {unreadMail} unread mails." +
+                    (startupMode == LoginStartupMode.ChatRooms ?
+                    "Use '/mail' to read your mail." :
+                    "Use E to read your mail."));
+                anyNotifications = true;
+            }
+
+            int unreadBulletins = Bulletins.CountUnread(session);
+            if (unreadBulletins > 0)
+            {
+                session.Io.Error($"There are {unreadBulletins} unread messages on the Bulletin Board.  " +
+                    (startupMode == LoginStartupMode.ChatRooms ? 
+                    "Use '/b' to read the boards." :
+                    "Use M to read the boards."));
+                anyNotifications = true;
+            }
+
+            if (anyNotifications)
+                Thread.Sleep(3000);
+        }
+
         private static void Prompt(BbsSession session)
         {
             session.Io.SetForeground(ConsoleColor.Cyan);
@@ -394,13 +428,15 @@ namespace miniBBS
                 chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
 
             var prompt = 
+                $"{Constants.Inverser}" +
                 $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
                 UserIoExtensions.WrapInColor(lastRead.ToString(), lastRead == count ? ConsoleColor.Cyan : ConsoleColor.Magenta) +
                 UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
                 $"{count}" +
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
-                $"{chanNum}:{session?.Channel?.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
+                $"{chanNum}:{session?.Channel?.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)}" +
+                $"{Constants.Inverser} " ;
 
             session.Io.Output(prompt);
             session.Io.SetForeground(ConsoleColor.White);
@@ -412,13 +448,29 @@ namespace miniBBS
         /// </summary>
         private static void NotifyNewPost(Chat chat, BbsSession session)
         {
-            if (chat == null || chat.ChannelId != session.Channel.Id || session.IsIgnoring(chat.FromUserId))
+            if (chat == null || session.IsIgnoring(chat.FromUserId))
                 return;
+
+            if (chat.ChannelId != session.Channel.Id )
+            {
+                if (ShouldNotifyCrossChannelPost(chat, session))
+                {
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                    {
+                        if (!session.Usernames.TryGetValue(chat.FromUserId, out var username))
+                            username = "Unknown User";
+                        var channelName = DI.GetRepository<Channel>().Get(chat.ChannelId).Name.Color(ConsoleColor.Green);
+                        var chanNum = ListChannels.GetChannelList(session).IndexOf(x => x.Id == chat.ChannelId) + 1;
+                        session.Io.OutputLine($"{Environment.NewLine}NOW: {username.Color(ConsoleColor.White)} has posted in {channelName}, use '/ch {chanNum}' to change channels.");
+                        Tutor.Execute(session, "Use '/pref' to change this notification and other preferences.");
+                        session.ShowPrompt();
+                    }
+                }
+                return;
+            }
 
             int lastRead =
                 session.LastMsgPointer ??
-                //session.LastReadMessageNumberWhenStartedTyping ??
-                //session.LastReadMessageNumber ??
                 session.MsgPointer;
 
             bool isAtEndOfMessages = true == session.Chats?.Keys?.Count >= 2 && lastRead == session.Chats.Keys[session.Chats.Keys.Count - 2];
@@ -426,16 +478,12 @@ namespace miniBBS
             Action action = () =>
             {
                 TryBell(session, chat.FromUserId);
-                //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
-                //{
-                //    session.Io.Output($"{Environment.NewLine}Now: ");
                 chat.Write(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.LiveMessageNotification, GlobalDependencyResolver.Default);
                 if (isAtEndOfMessages)
                 {
                     SetMessagePointer.Execute(session, chat.Id);
                     session.LastMsgPointer = session.MsgPointer;
                 }
-                //}
             };
 
             if (session.DoNotDisturb)
@@ -447,6 +495,75 @@ namespace miniBBS
                 action();
                 session.ShowPrompt();
             }
+        }
+
+        private static bool ShouldNotifyCrossChannelPost(Chat chat, BbsSession session)
+        {
+            if (session.DoNotDisturb)
+                return false;
+
+            var xchanmode = session.GetCrossChannelNotificationMode(DI.GetRepository<Metadata>());
+            if (xchanmode == CrossChannelNotificationMode.None)
+                return false;
+
+            if (!session.User.Access.HasFlag(AccessFlag.Administrator) &&
+                !session.User.Access.HasFlag(AccessFlag.GlobalModerator))
+            {
+                // check: is channel the message came from is invite only
+                // and if so does this user have an invite
+                var channel = DI.GetRepository<Channel>().Get(chat.ChannelId);
+                if (true == channel?.RequiresInvite)
+                {
+                    var ucFlag = session.UcFlagRepo.Get(new Dictionary<string, object>
+                    {
+                        {nameof(UserChannelFlag.ChannelId), channel.Id},
+                        {nameof(UserChannelFlag.UserId), session.User.Id}
+                    })?.FirstOrDefault() ?? new UserChannelFlag
+                    {
+                        ChannelId = channel.Id,
+                        UserId = session.User.Id
+                    };
+                    if (true != ucFlag?.Flags.HasFlag(UCFlag.Moderator) &&
+                        true != ucFlag?.Flags.HasFlag(UCFlag.Invited))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if (xchanmode.HasFlag(CrossChannelNotificationMode.OncePerChannel))
+            {
+                if (!session.Items.ContainsKey(SessionItem.CrossChannelNotificationReceivedChannels))
+                {
+                    session.Items[SessionItem.CrossChannelNotificationReceivedChannels] = new List<int>();
+                }
+                var receivedChanIds = session.Items[SessionItem.CrossChannelNotificationReceivedChannels] as List<int>;
+                if (true == receivedChanIds?.Contains(chat.ChannelId))
+                    return false;
+                receivedChanIds?.Add(chat.ChannelId);
+                return true;
+            }
+
+            if (!xchanmode.HasFlag(CrossChannelNotificationMode.Any))
+            {
+                if (xchanmode.HasFlag(CrossChannelNotificationMode.PostMentionsMe) &&
+                    chat.Message.ToLower().Contains(session.User.Name.ToLower()))
+                {
+                    return true;
+                }
+
+                if (xchanmode.HasFlag(CrossChannelNotificationMode.PostIsInResponseToMyMessage) &&
+                    chat.ResponseToId.HasValue)
+                {
+                    var re = DI.GetRepository<Chat>().Get(chat.ResponseToId.Value);
+                    if (re?.FromUserId == session.User.Id)
+                        return true;
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
         private static void TryBell(BbsSession session, int userId)
@@ -630,28 +747,52 @@ namespace miniBBS
                 session.Io = new Cbm(session);
                 session.Cols = 40;
                 session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Green);
-                session.Io.OutputLine("Commodore PETSCII (CBM) mode activated.");
-            }            
+                session.Io.OutputLine("Commodore Color Mode Activated.");
+            } else if (emuTest == (char)126)
+            {
+                session.Io = new Atascii(session);
+                session.Cols = 40;
+                session.Io.OutputLine("Atascii Mode Activated.");
+            }
 
-            session.Io.Output("Who are you?: ");            
-            string username = session.Io.InputLine();
-            session.Io.OutputLine();
-            if (string.IsNullOrWhiteSpace(username))
+            int retries = 4;
+            retryLogin:
+            retries--;
+            if (retries <= 0)
             {
                 session.Io.OutputLine("Well, goodbye then!");
                 return;
             }
+            
+            session.Io.Output("who are you?: ");
+            string username = session.Io.InputLine();
+            session.Io.OutputLine();
+            var newUser = false;
+            if ("new".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.Output($"Welcome new user!{Environment.NewLine}What name do you want to go by?: ");
+                username = session.Io.InputLine();
+                session.Io.OutputLine();
+                newUser = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                retries = 0;
+                goto retryLogin;
+            }
+
             username = username.Trim().ToUpperFirst();
             if (username.Any(c => !char.IsLetter(c)))
             {
                 session.Io.OutputLine("Your username must include only letters.");
-                return;
+                goto retryLogin;
             }
-
+            
             if ("Guest".Equals(username, StringComparison.CurrentCultureIgnoreCase))
             {
                 session.Io.Error("Guest logins not allowed.  All you need to register is to specify a username and a password, I'm not going to ask for your phone number, address, email address, who referred you, you social security number, your favorite flavor of ice cream, etc... We just need to make an account for you to log in with and don't really care about anything personal.");
-                return;
+                goto retryLogin;
             }
 
             var user = userRepo.Get(x => x.Name, username)?.FirstOrDefault();
@@ -664,17 +805,17 @@ namespace miniBBS
                 {
                     session.Io.OutputLine($"Not allowed to use username {username}.  Minimum Length: {Constants.MinUsernameLength}, Maximum Length: {Constants.MaxUsernameLength}, only letters, and some names just aren't allowed at all.");
                     session.Io.Flush();
-                    return;
+                    goto retryLogin;
                 }
 
-                var k = session.Io.Ask("I've never seen you before, you new here?");
-                if (k != 'Y')
-                    return;
+                if (!newUser && session.Io.Ask("I've never seen you before, you new here?") != 'Y')
+                    goto retryLogin;
+                
                 user = RegisterNewUser(session, username, userRepo);
                 session.CurrentLocation = Module.Login;
                 if (user == null)
                     return;
-                k = session.Io.Ask("Do you want to read the new user documentation now?");
+                var k = session.Io.Ask("Do you want to read the new user documentation now?");
                 if (k == 'Y')
                     ReadFile.Execute(session, Constants.Files.NewUser);
                 else
@@ -684,7 +825,7 @@ namespace miniBBS
             }
             else
             {
-                session.Io.Output("Oh yeah? prove it! (password): ");
+                session.Io.Output("oh yeah?  prove it! (password): ");
                 string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
                 if (!DI.Get<IHasher>().VerifyHash(pw, user.PasswordHash))
                 {
@@ -701,6 +842,7 @@ namespace miniBBS
                     session.Io.OutputLine($"You already have {Constants.MaxSessionsPerUser} sessions going at once!");
                     return;
                 }
+
                 session.Io.OutputLine($"Your last logon was at {user.LastLogonUtc} (utc).");
                 user.LastLogonUtc = DateTime.UtcNow;
                 user.TotalLogons++;
@@ -811,7 +953,16 @@ namespace miniBBS
                     }
                     return;
                 case "/msg":
-                    Msg.Execute(session);
+                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
+                        Msg.Execute(session);
+                    else
+                        Bulletins.Execute(session);
+                    return;
+                case "/b":
+                case "/bull":
+                case "/bulletin":
+                case "/bulletins":
+                    Bulletins.Execute(session);
                     return;
                 case "/o":
                 case "/off":
@@ -1050,14 +1201,14 @@ namespace miniBBS
                 case "/keepalive":
                 case "/ping":
                     {
-                        if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
+                        if (parts.Length >= 2 && double.TryParse(parts[1], out double i) && i >= 0.25)
                             session.StartPingPong(i, silently: false);
                         else
                             session.StartPingPong(0, silently: false);
                     }
                     return;
                 case "/ss":
-                    if (session.PingType == PingPongType.Invisible)
+                    if (session.PingType != PingPongType.ScreenSaver)
                     {
                         session.PingType = PingPongType.ScreenSaver;
                         session.Io.Error("Screen saver enabled");
@@ -1066,6 +1217,33 @@ namespace miniBBS
                     {
                         session.PingType = PingPongType.Invisible;
                         session.Io.Error("Screen saver disabled");
+                    }
+                    return;
+                case "/ssreplay":
+                    if (session.PingType != PingPongType.Replay)
+                    {
+                        if (parts.Length >= 2 && int.TryParse(parts[1], out int i))
+                            session.ReplayNum = i;
+                        else
+                            session.ReplayNum = 0;
+                        session.PingType = PingPongType.Replay;
+                        session.Io.Error("Replay mode enabled");
+                        session.OnPingPong = () =>
+                        {
+                            Replay(session);
+                            session.ShowPrompt();
+                        };
+                        Replay(session);
+                    }
+                    else
+                    {
+                        session.PingType = PingPongType.Invisible;
+                        session.Io.Error("Replay mode disabled");
+                        session.OnPingPong = () => 
+                        {
+                            if (session.PingType == PingPongType.Full)
+                                session.ShowPrompt();
+                        };
                     }
                     return;
                 case "/newuser":
@@ -1189,6 +1367,9 @@ namespace miniBBS
                 case "/ur":
                     SetMessagePointer.SetToFirstUnreadMessage(session);
                     return;
+                case "/debug":
+                    Services.GlobalCommands.Debug.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
@@ -1277,6 +1458,12 @@ namespace miniBBS
                     case "del": 
                         DeleteChannel.Execute(session); 
                         break;
+                    case "ren":
+                        RenameChannel.Execute(session);
+                        break;
+                    case "0":
+                        NullSpace.Enter(session);
+                        break;
                     default: 
                         SwitchOrMakeChannel.Execute(session, args[0], allowMakeNewChannel: true); 
                         break;
@@ -1341,6 +1528,41 @@ namespace miniBBS
                 default:
                     Menus.MainMenu.Show(session);
                     break;
+            }
+        }
+
+        private static void Replay(BbsSession session)
+        {
+            if (true != session?.Chats?.Keys?.Any())
+                return;
+
+            int next = session.ReplayNum;
+            if (next < 0 || next >= session.Chats.Keys.Count)
+                next = 0;
+            var key = session.Chats.ItemKey(next);
+            if (!key.HasValue)
+                return;
+            next++;
+            session.ReplayNum = next;
+
+            var chat = session.Chats[key.Value];
+            if (!session.Usernames.ContainsKey(chat.FromUserId))
+            {
+                string un = session.UserRepo.Get(chat.FromUserId)?.Name;
+                if (!string.IsNullOrWhiteSpace(un))
+                    session.Usernames[chat.FromUserId] = un;
+            }
+
+            var flags = ChatWriteFlags.None;
+            var line = chat.GetWriteString(session, flags);
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
+            {
+                line = $"{Environment.NewLine}{Constants.InlineColorizer}{(int)ConsoleColor.Blue}{Constants.InlineColorizer}Replay: {Constants.InlineColorizer}-1{Constants.InlineColorizer}{line}";
+                //session.Io.OutputLine();
+                //session.Io.SetForeground(ConsoleColor.Blue);
+                //session.Io.Output("REPLAY: ");
+
+                session.Io.OutputLine(line, OutputHandlingFlag.Nonstop);
             }
         }
 

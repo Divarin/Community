@@ -7,6 +7,9 @@
         IgnoreList,
         ShownTutorMessages,
         ReadMessages,
-        ChatHeaderFormat
+        ChatHeaderFormat,
+        CrossChannelNotificationMode,
+        CrossChannelNotificationReceivedChannels,
+        BasicLock
     }
 }

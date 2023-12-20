@@ -38,6 +38,23 @@ namespace miniBBS.Commands
             }
         }
 
+        public static void ShowCountOfNewSinceLastCall(BbsSession session)
+        {
+            if (session?.User == null)
+                return;
+
+            var questionRepo = DI.GetRepository<PollQuestion>();
+            var count = questionRepo.Get().Count(p => p.DateAddedUtc >= session.User.LastLogonUtc);
+            if (count > 0)
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                {
+                    var s = count == 1 ? "" : "s";
+                    session.Io.OutputLine($"There are {count} new poll question{s} since your last call, use /polls to view.");
+                }
+            }
+        }
+
         private static bool Menu(BbsSession session, IRepository<PollQuestion> questionRepo, IRepository<PollVote> voteRepo)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
@@ -73,7 +90,7 @@ namespace miniBBS.Commands
                 builder.AppendLine("Q   : Quit");
                 session.Io.Output(builder.ToString());
                 session.Io.SetForeground(ConsoleColor.Yellow);
-                session.Io.Output("[Polls] > ");
+                session.Io.Output($"{Constants.Inverser}[Polls] >{Constants.Inverser} ");
                 var line = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line) || line.StartsWith("q", StringComparison.CurrentCultureIgnoreCase))
@@ -180,7 +197,7 @@ namespace miniBBS.Commands
             }
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
-                session.Io.Output("Enter Question: ");
+                session.Io.Output($"{Constants.Inverser}Enter Question:{Constants.Inverser} ");
                 var q = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(q))
@@ -188,7 +205,7 @@ namespace miniBBS.Commands
                 var answers = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
                 do
                 {
-                    session.Io.Output($"Enter Answer #{answers.Count + 1} (enter=done): ");
+                    session.Io.Output($"{Constants.Inverser}Enter Answer #{answers.Count + 1} (enter=done):{Constants.Inverser} ");
                     var a = session.Io.InputLine();
                     session.Io.OutputLine();
                     if (string.IsNullOrWhiteSpace(a))
@@ -207,7 +224,7 @@ namespace miniBBS.Commands
 
                 var now = DateTime.UtcNow;
                 
-                questionRepo.Insert(new PollQuestion
+                var question = questionRepo.Insert(new PollQuestion
                 {
                     DateAddedUtc = now,
                     Question = q,
@@ -216,6 +233,9 @@ namespace miniBBS.Commands
                 });
 
                 session.Messager.Publish(session, new GlobalMessage(session.Id, $"{session.User.Name} added new poll question: '{q}'{Environment.NewLine}Type /poll from chat prompt to cast your vote!"));
+
+                if ('Y' == session.Io.Ask("Poll question added, do you want to vote on it now?"))
+                    VoteQuestion(session, DI.GetRepository<PollVote>(), question, new List<PollVote>());
             }
         }
 
@@ -262,7 +282,7 @@ namespace miniBBS.Commands
                 builder.AppendLine("V : View results");
                 builder.AppendLine("Q : Quit");
                 session.Io.Output(builder.ToString());
-                session.Io.Output("[Poll Qustion] > ");
+                session.Io.Output($"{Constants.Inverser}[Poll Qustion] >{Constants.Inverser} ");
                 var line = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (string.IsNullOrWhiteSpace(line) || line.StartsWith("q", StringComparison.CurrentCultureIgnoreCase))
@@ -270,7 +290,7 @@ namespace miniBBS.Commands
                 else if (line.StartsWith("a", StringComparison.CurrentCultureIgnoreCase))
                 {
                     // add new option
-                    session.Io.Output("Enter new option: ");
+                    session.Io.Output($"{Constants.Inverser}Enter new option:{Constants.Inverser} ");
                     var opn = session.Io.InputLine();
                     if (!string.IsNullOrWhiteSpace(opn) && true != answers.Any(a => a.Equals(opn, StringComparison.CurrentCultureIgnoreCase)))
                     {

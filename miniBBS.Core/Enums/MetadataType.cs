@@ -8,6 +8,8 @@
         LoginStartupMode,
         UserChatWebVisibility,
         ReadMessages,
-        ChatHeaderFormat
+        ChatHeaderFormat,
+        CrossChannelNotifications,
+        ReadBulletins
     }
 }

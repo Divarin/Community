@@ -9,8 +9,6 @@ namespace miniBBS.Menus
     {
         private static Func<string, ConsoleColor, string> _clr = (str, clr) => UserIoExtensions.WrapInColor(str, clr);
 
-        //    12345678901234567890123456789012345678901234567890123456789012345678901234567890
-        //    1234567890123456789012345678901234567890
         private static readonly string[] _lines = new[]
         {
             $"*** {_clr("Channel Moderator Help", ConsoleColor.Yellow)} ***",
@@ -23,6 +21,7 @@ namespace miniBBS.Menus
             $"{_clr("/ch m", ConsoleColor.Green)} : Lists moderators.",
             $"{_clr("/ch kick (username)", ConsoleColor.Green)} : Kicks (username) out of the channel.",
             $"{_clr("/ch del", ConsoleColor.Green)} : Deletes the current channel.",
+            $"{_clr("/ch ren", ConsoleColor.Green)} : Renames the current channel.",
             $"{_clr("/ch movemsg (ch#) (range)", ConsoleColor.Green)} : Moves one or more messages from current channel to (ch#) (channel name or number).  Use '/ch movemsg' for detailed examples on using this.",
             $"See '{_clr("/? msgs", ConsoleColor.Green)}' help for info on channel messages, deleting etc...",
             $"See '{_clr("/? voice", ConsoleColor.Green)}' help for info on voice: who can talk in the channel.",

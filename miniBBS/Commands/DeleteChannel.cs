@@ -2,12 +2,9 @@
 using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
-using miniBBS.Core.Models.Messages;
 using miniBBS.Services.GlobalCommands;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace miniBBS.Commands
 {
@@ -46,7 +43,7 @@ namespace miniBBS.Commands
                     return;
                 }
 
-                session.Io.Output("Are you sure you want to delete this channel?  This cannot be undone!  If you are certain type 'DELETE': ");
+                session.Io.Output($"{Constants.Inverser}Are you sure you want to delete this channel?  This cannot be undone!  If you are certain type 'DELETE':{Constants.Inverser} ");
                 string d = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!"DELETE".Equals(d, StringComparison.CurrentCultureIgnoreCase))

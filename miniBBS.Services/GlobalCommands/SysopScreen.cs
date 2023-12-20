@@ -157,7 +157,7 @@ namespace miniBBS.Services.GlobalCommands
 
                 var flags = $"{(session.DoNotDisturb ? "D" : " ")}{(session.Afk ? "A" : " ")}";
                 Console.Write(flags.PadRight(_colWidths[(int)Col.Flags]));
-                Console.Write((session.User?.Name ?? session.IpAddress).PadRight(_colWidths[(int)Col.Username]));
+                Console.Write((session.User?.Name ?? session.IpAddress ?? "???").PadRight(_colWidths[(int)Col.Username]));
                 Console.Write((session.Channel?.Name ?? string.Empty).PadRight(_colWidths[(int)Col.ChannelName]));
                 Console.Write($"{session.SessionStartUtc.ToLocalTime():MM-dd HH:mm}".PadRight(_colWidths[(int)Col.SessionStart]));
                 string idle = $"{Math.Min(99, session.IdleTime.Days)}d {session.IdleTime.Hours}h {session.IdleTime.Minutes}m";

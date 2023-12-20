@@ -133,7 +133,7 @@ namespace miniBBS.Core.Models.Control
         public string AfkReason { get; set; }
         public SessionControlFlags ControlFlags { get; set; } = SessionControlFlags.None;
 
-        private int _pingPongTimeMin = 0;
+        private double _pingPongTimeMin = 0;
         private Thread _pingPongThread = null;
         public Action OnPingPong { get; set; }
         public PingPongType PingType { get; set; } = PingPongType.Full;
@@ -149,7 +149,7 @@ namespace miniBBS.Core.Models.Control
         
         public Queue<Action> DndMessages { get; } = new Queue<Action>();
 
-        public void StartPingPong(int delayMinutes, bool silently = true)
+        public void StartPingPong(double delayMinutes, bool silently = true)
         {
             if (!silently)
             {
@@ -174,6 +174,11 @@ namespace miniBBS.Core.Models.Control
         public string LastLine { get; set; }
 
         public IDictionary<SessionItem, object> Items { get; } = new Dictionary<SessionItem, object>();
+        
+        /// <summary>
+        /// When in replay screensaver mode, this is the next message number to replay
+        /// </summary>
+        public int ReplayNum { get; set; }
 
         private static void PingPong(object o)
         {
@@ -203,13 +208,16 @@ namespace miniBBS.Core.Models.Control
                                 session.Io.Output(Repeat(Environment.NewLine, _random.Next(3, 8)));
                                 session.Io.Output(Repeat(" ", _random.Next(5, session.Cols - 1)));
                                 break;
+                            case PingPongType.Replay:
+                                // session.OnPingPong should do this as it can't be implemented in Core
+                                break;
                         }
                         session.OnPingPong?.Invoke();
                     }
                 }
                 else
                 {
-                    var delay = session._pingPongTimeMin * 1000;
+                    var delay = (int)(session._pingPongTimeMin * 1000);
                     if (delay > 0 && delay < int.MaxValue)
                         Thread.Sleep(delay);
                 }

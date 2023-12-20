@@ -4,6 +4,7 @@ using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace miniBBS.Extensions
@@ -28,7 +29,7 @@ namespace miniBBS.Extensions
 
         public static string Repeat(this string str, int count)
         {
-            if (string.IsNullOrWhiteSpace(str) || count == 1)
+            if (str == null || count == 1)
                 return str;
 
             char[] array = new char[str.Length * count];
@@ -66,6 +67,8 @@ namespace miniBBS.Extensions
             int breakIndex = 0;
             bool inAnsiCode = false;
             bool trimStartOfNextLine = false;
+            char enter = session.Io.NewLine?.FirstOrDefault() ?? (char)13;
+            var newline = session.Io.NewLine;
 
             for (int i=0; i < str.Length; i++)
             {
@@ -82,7 +85,7 @@ namespace miniBBS.Extensions
                 else if (!inAnsiCode)
                     col++;
 
-                if (c != 13 && c != 10 && char.IsWhiteSpace(c))
+                if (char.IsWhiteSpace(c) && true != newline?.Any(x => x == c))
                     breakIndex = i;
 
                 // If CBM use Cols-1 because if we print a character on the last column then that will shift the cursor
@@ -91,12 +94,12 @@ namespace miniBBS.Extensions
                 if (session.Io.EmulationType == TerminalEmulation.Cbm)
                     maxCols--;
 
-                if (c == 13 || col >= maxCols || i==str.Length-1)
+                if (c == enter || col >= maxCols || i==str.Length-1)
                 {
                     int end = breakIndex > start ? breakIndex : i;
                     if (i == str.Length - 1)
                         end = str.Length - 1;
-                    else if (c == 13)
+                    else if (c == enter)
                         end = i;
 
                     int len = end - start;
@@ -110,21 +113,21 @@ namespace miniBBS.Extensions
 
                         trimStartOfNextLine = false;
 
-                        if (substring[substring.Length - 1] != 13 && substring[substring.Length - 1] != 10)
+                        if (true != newline.Any(x => x == substring[substring.Length - 1])) // != 13 && substring[substring.Length - 1] != 10)
                         {
                             // adding a newline due to wrapping
-                            substring += Environment.NewLine;
+                            substring += newline;
                             trimStartOfNextLine = true;
                         }
-                        else if (substring[substring.Length - 1] == 13)
+                        else if (substring[substring.Length - 1] == 13 && enter == 13) // don't do this for atascii
                         {
                             // replace just "enter" with proper newline (13 + 10, enter + linefeed)
-                            substring += "\n";
+                            substring = substring.Substring(0, substring.Length-1) + newline;
                         }
-                        if (substring.Length > 2 && substring[0] == 13 && substring[1] == 10)
+                        if (StartsWithNewLine(newline, substring))
                         {
                             // this line starts with a newline, take that off
-                            substring = substring.Substring(2);                            
+                            substring = substring.Substring(newline.Length);                            
                         }
 
                         if (!string.IsNullOrWhiteSpace(substring))
@@ -135,13 +138,27 @@ namespace miniBBS.Extensions
                         }
                     }
                     else 
-                        yield return Environment.NewLine;
+                        yield return session.Io.NewLine;
 
                     start = end;
                     i = start;
                     col = 0;
                 }
             }
+        }
+
+        private static bool StartsWithNewLine(string newline, string substring)
+        {
+            if (substring.Length <= newline.Length)
+                return false;
+
+            for (int i = 0; i < newline.Length; i++)
+            {
+                if (substring[i] != newline[i])
+                    return false;
+            }
+
+            return true;
         }
 
         public static string MaxLength(this string str, int maxLength, bool addElipsis = true)
@@ -235,6 +252,19 @@ namespace miniBBS.Extensions
             return result;
         }
 
+        //public static string UniqueColor(this string str)
+        //{
+        //    if (string.IsNullOrWhiteSpace(str))
+        //        return string.Empty;
+        //    var hash = MD5.Create().ComputeHash(Encoding.ASCII.GetBytes(str));
+        //    var sum = hash.Sum(b => b);
+        //    sum %= 16;
+        //    var color = (ConsoleColor)(sum % 16);
+        //    if (color == ConsoleColor.Black)
+        //        color = ConsoleColor.DarkGray;
+        //    return Color(str, color);
+        //}
+
         public static string Color(this string str, ConsoleColor color)
         {
             if (string.IsNullOrWhiteSpace(str))
@@ -306,5 +336,7 @@ namespace miniBBS.Extensions
             }
             return new string(list.ToArray());
         }
+
+        public static byte[] ToByteArray(this string str) => (str ?? string.Empty).Select(c => (byte)c).ToArray();
     }
 }

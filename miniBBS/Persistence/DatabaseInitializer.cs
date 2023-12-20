@@ -20,6 +20,7 @@ namespace miniBBS.Persistence
                 CreateUsersTable(db);
                 CreateChannelsTable(db);
                 CreateChatTable(db);
+                CreateBulletinsTable(db);
                 CreateUserChannelFlagsTable(db);
                 CreateNotificationsTable(db);
                 CreateCalendarTable(db);
@@ -76,6 +77,15 @@ namespace miniBBS.Persistence
             }
 
             sql = "create index Chat_ChannelId_Idx on Chat (ChannelId)";
+            using (var cmd = new SQLiteCommand(sql, db))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateBulletinsTable(SQLiteConnection db)
+        {
+            var sql = "CREATE TABLE Bulletins (Id integer primary key autoincrement, FromUserId integer not null, ResponseToId integer null, OriginalId integer null, ToUserId integer null, DateUtc TEXT not null, Subject TEXT not null, Message TEXT not null)";
             using (var cmd = new SQLiteCommand(sql, db))
             {
                 cmd.ExecuteNonQuery();

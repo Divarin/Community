@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "4.14c - 2023.03.26";
+        public const string Version = "5.2b - 2023.12.20";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -17,6 +17,9 @@ namespace miniBBS.Core
         public static bool IsLocal { private get; set; } = false;
         public static readonly char[] LegitOneCharacterCommands = new[]
         { '[', ']', '{', '}', '<', '>', ',', '.', '?' };
+
+        public static readonly string[] InvalidChannelNames = new[]
+        { "del", "ren" };
 
         public static string UploadDirectory
         {
@@ -33,9 +36,14 @@ namespace miniBBS.Core
             }
         }
 
+        public const CrossChannelNotificationMode DefaultCrossChannelNotificationMode = CrossChannelNotificationMode.Any | CrossChannelNotificationMode.OncePerChannel;
+
         public const string DefaultChatHeaderFormat = "[%mn%:%y%-%mm%-%dd% %hh%:%min%] <%un%> (re:%re%)";
 
-        public const int MaxEmoteLength = 44; // 4 for "/me ", 40 for the emote itself
+        /// <summary>
+        /// used for emotes or any other input wtih handling flag MaxLength
+        /// </summary>
+        public const int MaxInputLength = 64;
 
         public const int TutorLogins = 10;
 
@@ -93,7 +101,13 @@ namespace miniBBS.Core
         /// the inline colorizer doesn't change what the Io *thinks* is the foreground color.  Because of this you should always 
         /// return to the current foreground.
         /// </summary>
-        public const char InlineColorizer = '½';
+        public const char InlineColorizer = (char)130;
+
+        /// <summary>
+        /// A character which indicated that inverse atascii should be toggled on/off.
+        /// For all other emulation times this is filtered out.
+        /// </summary>
+        public const char Inverser = '¡';
 
         /// <summary>
         /// How long to wait, in millisecond, before hanging up.  This delay allows any remaining data in the stream to be 
@@ -135,6 +149,9 @@ namespace miniBBS.Core
         public const int MaxUserFilenameLength = 50;
 
         public const int MaxLinesToInsertInLineEditor = 50;
+
+        public const string MaintTime = "0200"; // 2 AM local time
+        public const int MaintDurationMin = 60; // 1 hour
 
         public static class Files
         {

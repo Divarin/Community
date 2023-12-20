@@ -13,6 +13,8 @@ namespace miniBBS.Services.GlobalCommands
 {
     public static class ListChannels
     {
+        private const int _totalUnreadToNotifiyAboutIndexes = 100;
+
         public static void Execute(BbsSession session, IRepository<Channel> channelRepo = null)
         {
             var originalColor = session.Io.GetForeground();
@@ -53,7 +55,7 @@ namespace miniBBS.Services.GlobalCommands
                         else
                             lastRead = -1;
                         //var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
-                        var unread = GetUnreadCount(session, readIds, chatRepo, chan.Id);
+                        var unread = GetUnreadCount(readIds, chatRepo, chan.Id);
 
                         builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
                         builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
@@ -91,7 +93,7 @@ namespace miniBBS.Services.GlobalCommands
 
             foreach (var chan in chans)
             {
-                var unread = GetUnreadCount(session, readIds, chatRepo, chan.Id);
+                var unread = GetUnreadCount(readIds, chatRepo, chan.Id);
                 if (unread > 0)
                 {
                     totalUnread += unread;
@@ -105,6 +107,11 @@ namespace miniBBS.Services.GlobalCommands
                 {
                     var s = totalUnreadChans == 1 ? "" : "s";
                     session.Io.OutputLine($"You have a total of {totalUnread} unread messages in {totalUnreadChans} channel{s}.");
+                    if (totalUnread > _totalUnreadToNotifiyAboutIndexes)
+                    {
+                        session.Io.SetForeground(ConsoleColor.Red);
+                        session.Io.OutputLine("What, that many messages?  I don't want to read all that to get caught up!  No problem, use '/? msgs' to learn how to jump around and just read the more recent stuff!  Don't worry I'll keep track of which messages you have and haven't read so feel free to jump.");
+                    }
                     Thread.Sleep(500);
                 }
             }
@@ -119,7 +126,7 @@ namespace miniBBS.Services.GlobalCommands
                 .ToArray();
         }
 
-        private static int GetUnreadCount(BbsSession session, List<int> readIds, IRepository<Chat> chatRepo, int channelId)
+        private static int GetUnreadCount(List<int> readIds, IRepository<Chat> chatRepo, int channelId)
         {
             var di = GlobalDependencyResolver.Default;            
             var count = chatRepo

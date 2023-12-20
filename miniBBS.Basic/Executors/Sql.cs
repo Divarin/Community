@@ -69,7 +69,7 @@ namespace miniBBS.Basic.Executors
             }
         }
 
-        public void ExecuteStateCommand(BbsSession session, string command, string stateKey, Variables variables)
+        public void ExecuteStateCommand(BbsSession session, string command, string args, Variables variables)
         {
             _variables = variables;
             _dbFilename = GetDatabaseFilename(variables);
@@ -80,6 +80,8 @@ namespace miniBBS.Basic.Executors
                 return;
             }
 
+            var arguments = args?.Split(' ');
+            var stateKey = arguments?.First();
             stateKey = Evaluate.Execute(stateKey, variables);
 
             stateKey = stateKey
@@ -105,12 +107,13 @@ namespace miniBBS.Basic.Executors
                     if (string.IsNullOrWhiteSpace(stateKey))
                         throw new RuntimeException("Missing state key parameter.");
                     {
+                        var varsToLoad = arguments.Length > 1 ? arguments.Skip(1).ToArray() : null;
                         var table = Query($"select StateData from {_stateTable} where StateKey = '{stateKey}' limit 1");
                         if (table != null && table.Rows?.Count >= 1)
                         {
                             var stateData = table.Rows[0][0] as string;
                             if (!string.IsNullOrWhiteSpace(stateData))
-                                variables.SetState(stateData);
+                                variables.SetState(stateData, varsToLoad);
                         }
                     }
                     break;

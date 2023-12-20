@@ -22,6 +22,8 @@ namespace miniBBS.UserIo
         protected Queue<Action> _delayedNotifications = new Queue<Action>();
         protected Thread _delayedNotificationThread = null;
 
+        public virtual string NewLine => Environment.NewLine;
+
         public UserIoBase(BbsSession session)
         {
             _session = session;
@@ -182,22 +184,21 @@ namespace miniBBS.UserIo
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkRed))
             {
                 //                                   1234567890123456789012345678901234567890
-                string more = Environment.NewLine + "[more? (y,n,c) or page (u)p]";
+                string more = NewLine + "[more? (y,n,c) or page (u)p]";
                 if (percentage.HasValue)
                     more += $" {Math.Round(100 * percentage.Value, 0)}% ";
 
                 if (session.Io.EmulationType == TerminalEmulation.Cbm)
                     more = more.ToUpper();
 
-                var r = Encoding.ASCII.GetBytes(more);
+                var r = GetBytes(more);
                 
                 session.Stream.Write(r, 0, r.Length);
                 var k = StreamInput(session);
                 if (k != '/')
                 {
-                    r[0] = 13;
-                    r[1] = 10;
-                    session.Stream.Write(r, 0, 2);
+                    var nl = GetBytes(NewLine);
+                    session.Stream.Write(nl, 0, nl.Length);
                 }
 
                 if (k == 'c' || k == 'C')
@@ -224,7 +225,7 @@ namespace miniBBS.UserIo
             return arr;
         }
 
-        protected virtual string TransformText(string text)
+        public virtual string TransformText(string text)
         {
             return text;
         }
@@ -265,7 +266,7 @@ namespace miniBBS.UserIo
 
                     // if the last line is just a newline and the line before that also ends with a newline then omit the last line
                     // this is because splitAndWrap added an extra newline as a side-effect
-                    if (lines.Count >= 2 && lines.Last().Equals(Environment.NewLine) && lines[lines.Count - 2].EndsWith(Environment.NewLine))
+                    if (lines.Count >= 2 && lines.Last().Equals(NewLine) && lines[lines.Count - 2].EndsWith(NewLine))
                         lines = lines.Take(lines.Count - 1).ToList();
                     if (flags.HasFlag(OutputHandlingFlag.PauseAtEnd))
                         lines.Add(TransformText(" --- End of Document ---"));
@@ -358,10 +359,15 @@ namespace miniBBS.UserIo
 
         protected abstract string ReplaceInlineColors(string line, out int actualTextLength);
 
-        protected virtual byte[] GetBytes(string text)
+        public virtual byte[] GetBytes(string text)
         {
-            return Encoding.ASCII.GetBytes(text);
+            return text.Select(c => (byte)c).ToArray();
+            //return Encoding.ASCII.GetBytes(text);
         }
+
+        protected virtual string GetString(byte[] bytes) => Encoding.ASCII.GetString(bytes);
+
+        protected virtual string GetString(byte[] bytes, int index, int count) => Encoding.ASCII.GetString(bytes, index, count);
 
         protected virtual void StreamOutput(BbsSession session, params char[] characters)
         {
@@ -376,12 +382,12 @@ namespace miniBBS.UserIo
 
         protected virtual void StreamOutputLine(BbsSession session, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
-            StreamOutput(session, Environment.NewLine, flags);
+            StreamOutput(session, NewLine, flags);
         }
 
         protected virtual void StreamOutputLine(BbsSession session, string text, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
-            StreamOutput(session, text:$"{text}{Environment.NewLine}", flags);
+            StreamOutput(session, text:$"{text}{NewLine}", flags);
         }
 
         public virtual byte[] InputRaw()
@@ -415,7 +421,7 @@ namespace miniBBS.UserIo
             if (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
             {
                 session.ResetIdleTimer();
-                var data = Encoding.ASCII.GetString(bytes, 0, i);
+                var data = GetString(bytes, 0, i);
                 if (data?.Length >= 1)
                     result = data[0];
             }
@@ -475,7 +481,7 @@ namespace miniBBS.UserIo
                         acText = TransformText(acText);
                         if (!string.IsNullOrWhiteSpace(acText))
                         {
-                            bytes = Encoding.ASCII.GetBytes(acText);
+                            bytes = GetBytes(acText);
                             i = acText.Length;
                         }
                     }
@@ -494,29 +500,35 @@ namespace miniBBS.UserIo
                         lineBuilder.Clear();
                         using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                         {
-                            session.Io.OutputLine($"{Environment.NewLine} *** ABORTED ***");
+                            session.Io.OutputLine($"{NewLine} *** ABORTED ***");
                             return null;
                         }
                     }
 
                     bytes = InterpretInput(bytes);
-                    
+
+                    var isUpArrow =
+                        (bytes.Length >= 3 && bytes[0] == 27 && bytes[1] == 91 && bytes[2] == 65) ||
+                        (bytes.Length >= 1 && bytes[0] == 11);
+
+                    isUpArrow |= 
+                        !string.IsNullOrWhiteSpace(session.Io.Up) &&
+                        bytes.SequenceEqual(session.Io.Up.Select(b => (byte)b));
+
                     if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine) && 
-                        bytes.Length >= 3 &&
-                        bytes[0] == 27 && bytes[1] == 91 && bytes[2] == 65 && 
-                        !string.IsNullOrWhiteSpace(session.LastLine))
+                        isUpArrow && !string.IsNullOrWhiteSpace(session.LastLine))
                     {
-                        bytes = Encoding.ASCII.GetBytes(session.LastLine);
+                        bytes = GetBytes(session.LastLine);
                         i = session.LastLine.Length;
                     }
 
                     RemoveInvalidInputCharacters(ref bytes);
                     if (bytes.Length < 1)
                         continue;
-                    var data = Encoding.ASCII.GetString(bytes, 0, i);
+                    var data = GetString(bytes, 0, i);
                     
                     // fix for SyncTERM version 1.2b
-                    if (data == "\r\0") data = Environment.NewLine; 
+                    if (data == "\r\0") data = NewLine; 
 
                     bool includedNewLine = false;
 
@@ -524,7 +536,7 @@ namespace miniBBS.UserIo
                     {
                         if (handlingFlag.HasFlag(InputHandlingFlag.AllowCtrlEnterToAddNewLine))
                         {
-                            data = Environment.NewLine;
+                            data = NewLine;
                             includedNewLine = true;
                         }
                         else
@@ -557,7 +569,7 @@ namespace miniBBS.UserIo
                         continue; // only contained backspace(s)
 
                     if (handlingFlag.HasFlag(InputHandlingFlag.MaxLengthIfEmote) &&
-                        lineBuilder.Length > Constants.MaxEmoteLength &&
+                        lineBuilder.Length > Constants.MaxInputLength &&
                         lineBuilder.Length >= 3 &&
                         lineBuilder[0] == '/' &&
                         char.ToUpper(lineBuilder[1]) == 'M' &&
@@ -565,11 +577,16 @@ namespace miniBBS.UserIo
                     {
                         // don't append because we're limiting input length
                     }
+                    else if (handlingFlag.HasFlag(InputHandlingFlag.MaxLength) &&
+                        lineBuilder.Length > Constants.MaxInputLength)
+                    {
+                        // don't append because we're limiting input length
+                    }
                     else
                     {
                         string echo = handlingFlag.HasFlag(InputHandlingFlag.PasswordInput) ? "*".Repeat(data.Length) : data;
 
-                        if (includedNewLine || !handlingFlag.HasFlag(InputHandlingFlag.DoNotEchoNewlines) || echo != Environment.NewLine)
+                        if (includedNewLine || !handlingFlag.HasFlag(InputHandlingFlag.DoNotEchoNewlines) || echo != NewLine)
                             StreamOutput(session, echo, OutputHandlingFlag.NoWordWrap);
 
                         if (echo == "\r")
@@ -581,10 +598,14 @@ namespace miniBBS.UserIo
                     if (lineBuilder.Length > 2 && lineBuilder.ToString().EndsWith("+++"))
                         return "/o"; // force logout
 
-                    if (!includedNewLine && data.Contains("\r"))
+                    var returnNow =
+                        (handlingFlag.HasFlag(InputHandlingFlag.ReturnFirstCharacterOnly) && lineBuilder.Length >= 1)
+                        || (!includedNewLine && data.Contains("\r"));
+
+                    if (returnNow)
                     {
                         if (handlingFlag.HasFlag(InputHandlingFlag.PasswordInput))
-                            StreamOutput(session, Environment.NewLine);
+                            StreamOutput(session, NewLine);
                         var result = lineBuilder.ToString()?.Replace("\0", "");
                         
                         // strip newlines from only the end of the result, leaving any that are in the middle or beginning.
@@ -619,10 +640,18 @@ namespace miniBBS.UserIo
         private long? _ticksWhenPolledKeyAppendedToGetLine;
         private Thread _pollKeyThread = null;
 
-        public char? GetPolledKey()
+        public virtual char? GetPolledKey()
         {
+            var c = _polledKey;
+            if (c.HasValue)
+            {
+                var txt = TransformText($"{c.Value}");
+                return txt[0];
+            }
             return _polledKey;
         }
+
+        public bool IsPollingKeys => _pollKeyThread?.IsAlive == true;
 
         public void PollKey()
         {
@@ -666,7 +695,8 @@ namespace miniBBS.UserIo
                 if ((i = _session.Stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     _session.ResetIdleTimer();
-                    var data = Encoding.ASCII.GetString(bytes, 0, i);
+                    bytes = InterpretInput(bytes);
+                    var data = GetString(bytes, 0, i);
                     if (data?.Length >= 1)
                     {
                         _polledKey = data[0];
@@ -721,11 +751,14 @@ namespace miniBBS.UserIo
 
         #endregion
 
-        //private class StreamOutputControlFlag
-        //{
-        //    public bool UserAborted { get; set; } = false;
-        //    public double ReadBytes { get; set; }
-        //    public double TotalBytes { get; set; }
-        //}
+        public virtual void SetUpper()
+        {
+
+        }
+
+        public virtual void SetLower()
+        {
+
+        }
     }
 }

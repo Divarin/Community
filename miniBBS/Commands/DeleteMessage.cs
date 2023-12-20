@@ -50,10 +50,8 @@ namespace miniBBS.Commands
                     session.Io.SetForeground(ConsoleColor.White);
                     session.Io.OutputLine(toBeDeleted.Message);
                     session.Io.SetForeground(ConsoleColor.Red);
-                    session.Io.Output("Delete this? ");
-                    var k = session.Io.InputKey();
-                    session.Io.OutputLine();
-                    if (k == 'y' || k == 'Y')
+                    var k = session.Io.Ask("Delete this? ");
+                    if (k == 'Y')
                     {
                         string message = $"{session.User.Name} deleted message # {session.Chats.ItemNumber(toBeDeleted.Id)} from channel {session.Channel.Name}";
                         session.Chats.Remove(toBeDeleted.Id);
