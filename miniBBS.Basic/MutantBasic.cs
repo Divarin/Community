@@ -684,6 +684,9 @@ namespace miniBBS.Basic
                     case "let":
                         Let.Execute(_session, args, variables, _rootDirectory);
                         break;
+                    case "dim":
+                        Dim.Execute(_session, args, variables);
+                        break;
                     case "goto":
                         {
                             int ln = Goto.Execute(args, variables);

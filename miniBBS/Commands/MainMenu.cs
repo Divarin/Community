@@ -20,6 +20,8 @@ namespace miniBBS.Commands
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
             $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
             $"{_clr("G", ConsoleColor.Green)}) Games",
+            $"{_clr("W", ConsoleColor.Green)}) Who is on",
+            $"{_clr("U", ConsoleColor.Green)}) User List",
             $"{_clr("O", ConsoleColor.Green)}) Logoff",
             $"{_clr("L", ConsoleColor.Green)}) Learn how to do more with Community!"
         };
@@ -109,6 +111,14 @@ namespace miniBBS.Commands
                                 break;
                             case 'L':
                                 session.Io.OutputLine(_learn);
+                                Pause();
+                                break;
+                            case 'W':
+                                WhoIsOn.Execute(session);
+                                Pause();
+                                break;
+                            case 'U':
+                                WhoIsAll.Execute(session);
                                 Pause();
                                 break;
                         }

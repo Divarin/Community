@@ -91,7 +91,7 @@ namespace miniBBS.Core
         /// but sometimes we explicitly want to add a space there (such as for returning a blank line) so this placeholder can sit there 
         /// and will be replaced with an actual space at the last second.
         /// </summary>
-        public const char Spaceholder = '¿';
+        public const char Spaceholder = (char)168;
 
         /// <summary>
         /// A character which indicates the beginning of, or ending of, a color code that's embedded within text.  This is used 
