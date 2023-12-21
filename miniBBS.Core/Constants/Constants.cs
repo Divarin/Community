@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "5.2b - 2023.12.20";
+        public const string Version = "5.2c - 2023.12.21";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;

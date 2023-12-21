@@ -287,7 +287,7 @@ namespace miniBBS.Basic.Executors
 
         private static ulong GetStringValue(string strValue)
         {
-            if (string.IsNullOrWhiteSpace(strValue))
+            if (strValue == null)
                 return 0;
 
             ulong v = 0;
