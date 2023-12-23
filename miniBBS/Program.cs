@@ -394,7 +394,7 @@ namespace miniBBS
             int unreadMail = Commands.Mail.CountUnread(session);
             if (unreadMail > 0)
             {
-                session.Io.Error($"You have {unreadMail} unread mails." +
+                session.Io.Error($"You have {unreadMail} unread mails.  " +
                     (startupMode == LoginStartupMode.ChatRooms ?
                     "Use '/mail' to read your mail." :
                     "Use E to read your mail."));

@@ -466,8 +466,11 @@ namespace miniBBS.Basic
 
             if (!_isScript)
             {
+                var wasPolling = _session.Io.IsPollingKeys;
                 _session.Io.AbortPollKey();
-                _session.Io.OutputLine($"Program run complete{(_session.Io.IsPollingKeys ? ", press any key" : "")}.");
+                _session.Io.OutputLine($"Program run complete{(wasPolling ? ", press any key..." : "")}.");
+                if (wasPolling)
+                    Thread.Sleep(2000);
             }
         }
 
