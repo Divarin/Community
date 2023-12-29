@@ -143,7 +143,7 @@ namespace miniBBS.Commands
             }
             else
             {
-                session.Io.Error(string.Join(Environment.NewLine, new[]
+                session.Io.Error(string.Join(session.Io.NewLine, new[]
                 {
                     "Usages:",
                     "/rere (msg #) (new re: number) - '/rere 123 120' sets 123's re: number to 120",

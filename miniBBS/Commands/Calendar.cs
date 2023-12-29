@@ -155,9 +155,9 @@ namespace miniBBS.Commands
                     UserId = session.User.Id
                 };
 
-                session.Io.OutputLine($"Describe when you'll be online to chat.  Examples:{Environment.NewLine}" +
-                    $"Every day at 4:30 pm pacific time{Environment.NewLine}" +
-                    $"Tuesdays at 7:00 am eastern{Environment.NewLine}" +
+                session.Io.OutputLine($"Describe when you'll be online to chat.  Examples:{session.Io.NewLine}" +
+                    $"Every day at 4:30 pm pacific time{session.Io.NewLine}" +
+                    $"Tuesdays at 7:00 am eastern{session.Io.NewLine}" +
                     $"June 15th at 19:00 UTC");
                 session.Io.Output("When?: ");
                 var when = session.Io.InputLine();

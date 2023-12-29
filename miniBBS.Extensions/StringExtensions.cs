@@ -265,6 +265,8 @@ namespace miniBBS.Extensions
         //    return Color(str, color);
         //}
 
+        public static string Inverse(this string str) => $"{Constants.Inverser}{str}{Constants.Inverser}";
+
         public static string Color(this string str, ConsoleColor color)
         {
             if (string.IsNullOrWhiteSpace(str))

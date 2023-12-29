@@ -82,7 +82,7 @@ namespace miniBBS.Commands
         private static void ListAllBlurbs(BbsSession session)
         {
             var blurbs = _blurbs.OrderByDescending(x => x.DateAddedUtc);
-            string list = string.Join(Environment.NewLine, blurbs.Select(b =>
+            string list = string.Join(session.Io.NewLine, blurbs.Select(b =>
             {
                 var username = session.Usernames.ContainsKey(b.UserId) ? session.Usernames[b.UserId] : "Unknown";
                 return $"{b.Id} : {username} : {b.BlurbText}";

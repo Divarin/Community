@@ -752,7 +752,7 @@ namespace miniBBS
             {
                 session.Io = new Atascii(session);
                 session.Cols = 40;
-                session.Io.OutputLine("Atascii Mode Activated.");
+                session.Io.OutputLine($"{session.Io.NewLine.Repeat(2)}Atascii Mode Activated.");
             }
 
             int retries = 4;
