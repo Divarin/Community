@@ -2,7 +2,6 @@
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -10,6 +9,12 @@ namespace miniBBS.Commands
 {
     public static class UserInfo
     {
+        private static readonly MetadataType[] _filteredMetadataTypes = new[]
+        {
+            MetadataType.ReadBulletins,
+            MetadataType.ReadMessages,
+        };
+
         public static void Execute(BbsSession session, string username)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
@@ -51,7 +56,7 @@ namespace miniBBS.Commands
                 {
                     var metas = DI.GetRepository<Metadata>()
                         .Get(m => m.UserId, user.Id)
-                        .Where(m => m.Type != MetadataType.ReadMessages);
+                        .Where(m => !_filteredMetadataTypes.Contains(m.Type));
 
                     foreach (var meta in metas)
                         builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");

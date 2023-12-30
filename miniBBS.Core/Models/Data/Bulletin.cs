@@ -15,5 +15,6 @@ namespace miniBBS.Core.Models.Data
         public DateTime DateUtc { get; set; }
         public string Subject { get; set; }
         public string Message { get; set; }
+        public int BoardId { get; set; }
     }
 }

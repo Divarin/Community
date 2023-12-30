@@ -112,6 +112,7 @@
     <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Data\Blurb.cs" />
     <Compile Include="Models\Data\Bulletin.cs" />
+    <Compile Include="Models\Data\BulletinBoard.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
     <Compile Include="Models\Data\LogEntry.cs" />

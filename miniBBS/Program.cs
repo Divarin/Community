@@ -404,7 +404,7 @@ namespace miniBBS
             int unreadBulletins = Bulletins.CountUnread(session);
             if (unreadBulletins > 0)
             {
-                session.Io.Error($"There are {unreadBulletins} unread messages on the Bulletin Board.  " +
+                session.Io.Error($"There are {unreadBulletins} unread messages on the Bulletin Boards.  " +
                     (startupMode == LoginStartupMode.ChatRooms ? 
                     "Use '/b' to read the boards." :
                     "Use M to read the boards."));

@@ -16,8 +16,13 @@ namespace miniBBS.Commands
     public static class Bulletins
     {
         private const string END_QUOTE = " --- End Quote ---";
-        private const string NO_MORE_UNREAD = "No more unread messages  Try going to the chat rooms and reading the backlog there!";
-
+        
+        private const string NO_MORE_UNREAD = 
+            "No more unread messages in the current  " + 
+            "board use ']' to advance to the next.   " + 
+            "Also try going to the chat rooms and    " + 
+            "reading the backlog there!";
+        //   1234567890123456789012345678901234567890
         public static void Execute(BbsSession session)
         {
             var previousLocation = session.CurrentLocation;
@@ -27,7 +32,8 @@ namespace miniBBS.Commands
 
             var exitMenu = false;
 
-            var repo = DI.GetRepository<Bulletin>();
+            var boardRepo = DI.GetRepository<BulletinBoard>();
+            var bulletinRepo = DI.GetRepository<Bulletin>();
             var metaRepo = DI.GetRepository<Metadata>();
             var meta = metaRepo.Get(new Dictionary<string, object>
             {
@@ -39,9 +45,23 @@ namespace miniBBS.Commands
                 JsonConvert.DeserializeObject<List<int>>(meta.Data) :
                 new List<int>();
 
-            var bulletins = repo.Get()
+            var boards = boardRepo.Get()
                 .OrderBy(b => b.Id)
-                .ToDictionary(k => k.Id);
+                .ToList();
+
+            var currentBoard = boards.First();
+
+            Dictionary<int, Bulletin> bulletins = null;
+
+            void ReloadBulletins()
+            {
+                bulletins = bulletinRepo
+                    .Get(x => x.BoardId, currentBoard.Id)
+                    .OrderBy(b => b.Id)
+                    .ToDictionary(k => k.Id);
+            }
+
+            ReloadBulletins();
 
             ShowMenu(session);
             try
@@ -49,10 +69,10 @@ namespace miniBBS.Commands
                 int? lastRead = null;
                 do
                 {
-                    session.Io.Output($"{Constants.Inverser}[Bulletins] (?=Help) >{Constants.Inverser} ".Color(ConsoleColor.White));
+                    session.Io.Output($"{Constants.Inverser}[Bulletins:{currentBoard.Name.Color(ConsoleColor.Yellow)}] {"(?=Help)".Color(ConsoleColor.DarkGray)} >{Constants.Inverser} ".Color(ConsoleColor.White));
                     var key = session.Io.InputKey();
 
-                    if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
+                    if (!key.HasValue || key == '\r' || key == '\n')
                         key = '>';
                     
                     session.Io.Output(key.Value);
@@ -75,6 +95,22 @@ namespace miniBBS.Commands
                     session.Io.OutputLine();
                     switch (key)
                     {
+                        case '[':
+                        case '{':
+                            currentBoard = boards.LastOrDefault(x => x.Id < currentBoard.Id);
+                            if (currentBoard == null)
+                                currentBoard = boards.Last();
+                            ReloadBulletins();
+                            // previous board
+                            break;
+                        case ']':
+                        case '}':
+                            currentBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
+                            if (currentBoard == null)
+                                currentBoard = boards.First();
+                            ReloadBulletins();
+                            // next board
+                            break;
                         case '_':
                         case '-':
                             // previous message (don't follow thread)
@@ -216,16 +252,16 @@ namespace miniBBS.Commands
                                 session.Io.Error("Reply to what?  You haven't read a message yet!");
                             else if (bulletins.TryGetValue(lastRead.Value, out var original))
                             {
-                                if (Reply(session, repo, original, readBulletins))
-                                    bulletins = repo.Get().OrderBy(b => b.Id).ToDictionary(k => k.Id);
+                                if (Reply(session, currentBoard, bulletinRepo, original, readBulletins))
+                                    ReloadBulletins();
                             }
                             else
                                 session.Io.Error("I can't find the message you're replying to!");
                             break;
                         case 'P':
                             // post
-                            if (PostMessage(session, repo, readBulletins))
-                                bulletins = repo.Get().OrderBy(b => b.Id).ToDictionary(k => k.Id);
+                            if (PostMessage(session, currentBoard, bulletinRepo, readBulletins))
+                                ReloadBulletins();
                             break;
                         case 'L':
                             // list
@@ -234,8 +270,8 @@ namespace miniBBS.Commands
                         case 'E':
                         case 'D':
                             // edit / delete
-                            if (EditBulletin(session, repo, bulletins, delete: key == 'D'))
-                                bulletins = repo.Get().OrderBy(b => b.Id).ToDictionary(k => k.Id);
+                            if (EditBulletin(session, currentBoard, bulletinRepo, bulletins, delete: key == 'D'))
+                                ReloadBulletins();
                             break;
                         case 'Q':
                             // quit
@@ -275,11 +311,11 @@ namespace miniBBS.Commands
             }
         }
 
-        private static bool EditBulletin(BbsSession session, IRepository<Bulletin> repo, Dictionary<int, Bulletin> bulletins, bool delete)
+        private static bool EditBulletin(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, Dictionary<int, Bulletin> bulletins, bool delete)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
-                session.Io.Output($"{(delete ? "delete" : "Edit")} bulletin #: ");
+                session.Io.Output($"{(delete ? "Delete" : "Edit")} bulletin #: ");
                 var line = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!int.TryParse(line, out var num) || !bulletins.ContainsKey(num))
@@ -291,14 +327,18 @@ namespace miniBBS.Commands
                     return false;
                 }
 
-                var isModerator = session.User.Access.HasFlag(AccessFlag.Administrator) || session.User.Access.HasFlag(AccessFlag.GlobalModerator);
-                var hasResponses = bulletins.Values.Any(b => b.OriginalId == bulletin.Id);
-                var tooOld = (DateTime.UtcNow - bulletin.DateUtc).TotalMinutes > Constants.MinutesUntilMessageIsUndeletable;
-
-                if (!isModerator && (tooOld || hasResponses))
+                // in market can edit post no matter how old as long as it's yours
+                if (delete || !"market".Equals(board.Name, StringComparison.CurrentCultureIgnoreCase))
                 {
-                    session.Io.Error($"Bulletin too old to be {(delete ? "deleted" : "edited")}.");
-                    return false;
+                    var isModerator = session.User.Access.HasFlag(AccessFlag.Administrator) || session.User.Access.HasFlag(AccessFlag.GlobalModerator);
+                    var hasResponses = bulletins.Values.Any(b => b.OriginalId == bulletin.Id);
+                    var tooOld = (DateTime.UtcNow - bulletin.DateUtc).TotalMinutes > Constants.MinutesUntilMessageIsUndeletable;
+
+                    if (!isModerator && (tooOld || hasResponses))
+                    {
+                        session.Io.Error($"Bulletin too old to be {(delete ? "deleted" : "edited")}.");
+                        return false;
+                    }
                 }
 
                 if (delete)
@@ -309,6 +349,14 @@ namespace miniBBS.Commands
                 }
                 else
                 {
+                    session.Io.OutputLine($"Current subject: {bulletin.Subject}");
+                    if ('Y' == session.Io.Ask("Change subject"))
+                    {
+                        session.Io.Output("New Subject: ");
+                        var newSubject = session.Io.InputLine();
+                        if (!string.IsNullOrWhiteSpace(newSubject))
+                            bulletin.Subject = newSubject;
+                    }
                     var editor = DI.Get<ITextEditor>();
                     editor.OnSave = body =>
                     {
@@ -377,7 +425,7 @@ namespace miniBBS.Commands
             return null;
         }
 
-        private static bool Reply(BbsSession session, IRepository<Bulletin> repo, Bulletin originalMessage, List<int> readBulletins)
+        private static bool Reply(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, Bulletin originalMessage, List<int> readBulletins)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
@@ -429,6 +477,7 @@ namespace miniBBS.Commands
                         body = $"{quote}{Environment.NewLine}{body}";
                     var posted = repo.Insert(new Bulletin
                     {
+                        BoardId = board.Id,
                         FromUserId = session.User.Id,
                         ToUserId = originalMessage.FromUserId,
                         DateUtc = DateTime.UtcNow,
@@ -441,7 +490,7 @@ namespace miniBBS.Commands
                     didPost = true;
                     DI.Get<IMessager>().Publish(session, new GlobalMessage(
                         session.Id,
-                        $"{session.User.Name} has posted a new Bulletin, #{posted.Id}, Subject: {subject.Color(ConsoleColor.Green)}.  Use '/b' to go to the Bulletin Boards."));
+                        $"{session.User.Name} has replied to a Bulletin in {board.Name}, #{posted.Id}, Subject: {subject.Color(ConsoleColor.Green)}.  Use '/b' to go to the Bulletin Boards."));
                     return string.Empty;
                 };
 
@@ -490,7 +539,7 @@ namespace miniBBS.Commands
                 if ("L".Equals(inp, StringComparison.CurrentCultureIgnoreCase))
                 {
                     int l = 1;
-                    session.Io.OutputLine(string.Join(session.Io.NewLine, split
+                    session.Io.OutputLine(string.Join(Environment.NewLine, split
                         .Select(x => $"{l++}: {x}")));
                 }
                 else if (int.TryParse(inp, out var n))
@@ -556,23 +605,23 @@ namespace miniBBS.Commands
             }
             builder.AppendLine(string.Join("", new[]
                 {
-                    $"{Constants.Inverser}Msg #:{Constants.Inverser} ".Color(ConsoleColor.Cyan),
+                    "Msg #: ".Color(ConsoleColor.Cyan),
                     bulletinId.ToString().PadRight(12).Color(ConsoleColor.White),
-                    $"{Constants.Inverser}Re   :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
+                    "Re   : ".Color(ConsoleColor.Cyan),
                     reNum.Color(ConsoleColor.DarkGray),
-                    session.Io.NewLine,
-                    $"{Constants.Inverser}From :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
+                    Environment.NewLine,
+                    "From : ".Color(ConsoleColor.Cyan),
                     fromUsername.PadRight(12).Color(ConsoleColor.Yellow),
-                    $"{Constants.Inverser}To   :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
+                    "To   : ".Color(ConsoleColor.Cyan),
                     toUsername.PadRight(12).Color(ConsoleColor.Yellow),
-                    session.Io.NewLine,
-                    $"{Constants.Inverser}Date :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
+                    Environment.NewLine,
+                    "Date : ".Color(ConsoleColor.Cyan),
                     $"{bulletin.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".Color(ConsoleColor.Blue),
-                    session.Io.NewLine,
-                    $"{Constants.Inverser}Subj :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
+                    Environment.NewLine,
+                    "Subj : ".Color(ConsoleColor.Cyan),
                     bulletin.Subject.Color(ConsoleColor.Yellow),
-                    session.Io.NewLine,
-                    $"{Constants.Spaceholder}" + "-".Repeat(session.Cols-4).Inverse().Color(ConsoleColor.White)
+                    Environment.NewLine,
+                    $"{Constants.Spaceholder}---------- ".Color(ConsoleColor.Green)
                 }));
 
             // add body
@@ -604,7 +653,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine($"{Constants.Inverser}*#### Date. From.... To...... Subject{Constants.Inverser}".Replace('.', Constants.Spaceholder));
                 //                         1 10/26 Divarin  All      Test message
                 //                          110/26DivarinAll    Test message   
-                session.Io.OutputLine($"{Constants.Spaceholder}" + "-".Repeat(session.Cols-4).Inverse().Color(ConsoleColor.White));
+                session.Io.OutputLine("--------------------------------------");
                 foreach (var bull in bulletins.Values)
                 {
                     var isRead = true == readBulletins?.Contains(bull.Id) ? $"{Constants.Spaceholder}" : "*".Color(ConsoleColor.Red);
@@ -649,29 +698,32 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine($"{Constants.Inverser} *** Community Bulletins Menu ***{Constants.Inverser}\r\n".Color(ConsoleColor.DarkMagenta));
                 session.Io.OutputLine(
-                    "N".Inverse().Color(ConsoleColor.Green) + eq + "Next Unread        " +
-                    "#".Inverse().Color(ConsoleColor.Green) + eq + "Jump to #");
+                    "[".Color(ConsoleColor.Green) + eq + "Prev Board         " +
+                    "]".Color(ConsoleColor.Green) + eq + "Next Board");
+                session.Io.OutputLine(
+                    "N".Color(ConsoleColor.Green) + eq + "Next Unread        " +
+                    "#".Color(ConsoleColor.Green) + eq + "Jump to #");
                 session.Io.OutputLine("Follow thread with < and >:".Color(ConsoleColor.DarkCyan));
                 session.Io.OutputLine(
-                    "<".Inverse().Color(ConsoleColor.Green) + eq + "Prev. in Thread    " +
-                    ">".Inverse().Color(ConsoleColor.Green) + eq + "Next in Thread");
+                    "<".Color(ConsoleColor.Green) + eq + "Prev. in Thread    " +
+                    ">".Color(ConsoleColor.Green) + eq + "Next in Thread");
                 session.Io.OutputLine("Don't follow thread with - and +:".Color(ConsoleColor.DarkCyan));
                 session.Io.OutputLine(
-                    "-".Inverse().Color(ConsoleColor.Green) + eq + "Prev. Bulletin     " +
-                    "+".Inverse().Color(ConsoleColor.Green) + eq + "Next Bulletin");
+                    "-".Color(ConsoleColor.Green) + eq + "Prev. Bulletin     " +
+                    "+".Color(ConsoleColor.Green) + eq + "Next Bulletin");
                 session.Io.OutputLine(
-                    "B".Inverse().Color(ConsoleColor.Green) + eq + "Back One Subject   " +
-                    "F".Inverse().Color(ConsoleColor.Green) + eq + "Fwd. One Subject");
+                    "B".Color(ConsoleColor.Green) + eq + "Back One Subject   " +
+                    "F".Color(ConsoleColor.Green) + eq + "Fwd. One Subject");
                 session.Io.OutputLine(
-                    "R".Inverse().Color(ConsoleColor.Green) + eq + "Reply to Bulletin  " +
-                    "P".Inverse().Color(ConsoleColor.Green) + eq + "Post New");
+                    "R".Color(ConsoleColor.Green) + eq + "Reply to Bulletin  " +
+                    "P".Color(ConsoleColor.Green) + eq + "Post New");
                 session.Io.OutputLine(
-                    "L".Inverse().Color(ConsoleColor.Green) + eq + "List Bulletins     " +
-                    "Q".Inverse().Color(ConsoleColor.Green) + eq + "Quit Bulletins");
+                    "L".Color(ConsoleColor.Green) + eq + "List Bulletins     " +
+                    "Q".Color(ConsoleColor.Green) + eq + "Quit Bulletins");
                 session.Io.OutputLine("-------------------------------------".Color(ConsoleColor.DarkGray));
                 session.Io.OutputLine(
-                    "E".Inverse().Color(ConsoleColor.Green) + eq + "Edit a Bulletin    " +
-                    "D".Inverse().Color(ConsoleColor.Green) + eq + "Del. a Bulletin");
+                    "E".Color(ConsoleColor.Green) + eq + "Edit a Bulletin    " +
+                    "D".Color(ConsoleColor.Green) + eq + "Del. a Bulletin");
             }
         }
 
@@ -697,7 +749,7 @@ namespace miniBBS.Commands
             return unread;
         }
 
-        private static bool PostMessage(BbsSession session, IRepository<Bulletin> repo, List<int> readBulletins)
+        private static bool PostMessage(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, List<int> readBulletins)
         {
             var didPost = false;
 
@@ -723,6 +775,7 @@ namespace miniBBS.Commands
             {
                 var posted = repo.Insert(new Bulletin
                 {
+                    BoardId = board.Id,
                     FromUserId = session.User.Id,
                     ToUserId = toUserId,
                     DateUtc = DateTime.UtcNow,
@@ -732,7 +785,7 @@ namespace miniBBS.Commands
                 didPost = true;
                 DI.Get<IMessager>().Publish(session, new GlobalMessage(
                     session.Id,
-                    $"{session.User.Name} has posted a new Bulletin, #{posted.Id}, Subject: {subject.Color(ConsoleColor.Green)}."));
+                    $"{session.User.Name} has posted a new Bulletin in {board.Name}, #{posted.Id}, Subject: {subject.Color(ConsoleColor.Green)}."));
                 return string.Empty;
             };
 
