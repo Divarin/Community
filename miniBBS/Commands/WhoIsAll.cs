@@ -44,11 +44,9 @@ namespace miniBBS.Commands
                 .GroupBy(s => s.Username)
                 .ToDictionary(k => k.Key, v => v.ToList());
 
-            session.Io.OutputLine("Slack-er (/ˈslakər/) : One who has failed to call in the past 30 days.");
-            session.Io.Output("Filter out slackers?: ");
-            var key = session.Io.InputKey();
-            session.Io.OutputLine();
-            if (key == 'Y' || key == 'y')
+            session.Io.OutputLine($"There are {users.Count()} total users, {online.Count} {(online.Count == 1 ? "is" : "are")} online.");
+            session.Io.OutputLine("Slacker : One who has failed to call in the past 30 days.");
+            if ('Y' == session.Io.Ask("Filter out slackers"))
                 users = users.Where(u => u.LastLogonUtc >= DateTime.UtcNow.AddMonths(-1));
 
             if (true == args?.Any() && int.TryParse(args[0], out int n))

@@ -298,13 +298,13 @@ namespace miniBBS
                 if (session.User.Timezone == 0)
                     session.Io.OutputLine("All times are in Universal Coordinated Time (UTC), AKA Greenwich mean time (GMT), AKA Zulu time.  Use command /tz to change this.");
                 else
-                    session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz to change this.");
+                    session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz (from chat) to change this.");
 
                 var calCount = Calendar.GetCount();
                 if (calCount > 0)
                 {
                     session.Io.SetForeground(ConsoleColor.Red);
-                    session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.  Use '/cal' to view them.");
+                    session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.{(startupMode == LoginStartupMode.ChatRooms ? "Use '/cal' to view them." : "")}");
                 }
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
@@ -953,7 +953,7 @@ namespace miniBBS
                     }
                     return;
                 case "/msg":
-                    if (session.User.Access.HasFlag(AccessFlag.Administrator))
+                    if (session.User.Access.HasFlag(AccessFlag.Administrator) && 'M' == session.Io.Ask("M)essage base view for chats or B)ulletin boards?"))
                         Msg.Execute(session);
                     else
                         Bulletins.Execute(session);
