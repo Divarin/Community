@@ -45,7 +45,13 @@ namespace miniBBS.Commands
                     lastKeyPoll = session.Io.GetPolledTicks();
                     if (!key.HasValue)
                         continue;
-                    if (key == 3 || key == 27) // CTRL+C or ESC
+
+                    var isEscOrCtrlC =
+                        key == 3 ||
+                        key == 27 ||
+                        (session.Io is Atascii && (key == 30 || key == 0));
+
+                    if (isEscOrCtrlC)
                         exit = true;
 
                     var msg = $"{key}";
@@ -77,6 +83,7 @@ namespace miniBBS.Commands
                 session.ShowPrompt = originalPrompt;                
                 messenger.Unsubscribe(subscriber);
                 session.Io.OutputLine($"{session.Io.NewLine}Press any key to return to the normal world.");
+                Thread.Sleep(2000);
             }
         }
     }

@@ -15,7 +15,7 @@ namespace miniBBS.Commands
                 .OrderBy(c => c.Id);
 
             var lines = chats.Select(c => c.GetWriteString(session));
-            string all = string.Join(Environment.NewLine, lines);
+            string all = string.Join(session.Io.NewLine, lines);
 
             session.Io.OutputLine(all);
         }

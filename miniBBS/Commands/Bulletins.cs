@@ -52,7 +52,7 @@ namespace miniBBS.Commands
                     session.Io.Output($"{Constants.Inverser}[Bulletins] (?=Help) >{Constants.Inverser} ".Color(ConsoleColor.White));
                     var key = session.Io.InputKey();
 
-                    if (!key.HasValue || key == '\r' || key == '\n')
+                    if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
                         key = '>';
                     
                     session.Io.Output(key.Value);
@@ -490,7 +490,7 @@ namespace miniBBS.Commands
                 if ("L".Equals(inp, StringComparison.CurrentCultureIgnoreCase))
                 {
                     int l = 1;
-                    session.Io.OutputLine(string.Join(Environment.NewLine, split
+                    session.Io.OutputLine(string.Join(session.Io.NewLine, split
                         .Select(x => $"{l++}: {x}")));
                 }
                 else if (int.TryParse(inp, out var n))
@@ -556,23 +556,23 @@ namespace miniBBS.Commands
             }
             builder.AppendLine(string.Join("", new[]
                 {
-                    "Msg #: ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}Msg #:{Constants.Inverser} ".Color(ConsoleColor.Cyan),
                     bulletinId.ToString().PadRight(12).Color(ConsoleColor.White),
-                    "Re   : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}Re   :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
                     reNum.Color(ConsoleColor.DarkGray),
-                    Environment.NewLine,
-                    "From : ".Color(ConsoleColor.Cyan),
+                    session.Io.NewLine,
+                    $"{Constants.Inverser}From :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
                     fromUsername.PadRight(12).Color(ConsoleColor.Yellow),
-                    "To   : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}To   :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
                     toUsername.PadRight(12).Color(ConsoleColor.Yellow),
-                    Environment.NewLine,
-                    "Date : ".Color(ConsoleColor.Cyan),
+                    session.Io.NewLine,
+                    $"{Constants.Inverser}Date :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
                     $"{bulletin.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".Color(ConsoleColor.Blue),
-                    Environment.NewLine,
-                    "Subj : ".Color(ConsoleColor.Cyan),
+                    session.Io.NewLine,
+                    $"{Constants.Inverser}Subj :{Constants.Inverser} ".Color(ConsoleColor.Cyan),
                     bulletin.Subject.Color(ConsoleColor.Yellow),
-                    Environment.NewLine,
-                    $"{Constants.Spaceholder}---------- ".Color(ConsoleColor.Green)
+                    session.Io.NewLine,
+                    $"{Constants.Spaceholder}" + "-".Repeat(session.Cols-4).Inverse().Color(ConsoleColor.White)
                 }));
 
             // add body
@@ -604,7 +604,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine($"{Constants.Inverser}*#### Date. From.... To...... Subject{Constants.Inverser}".Replace('.', Constants.Spaceholder));
                 //                         1 10/26 Divarin  All      Test message
                 //                          110/26DivarinAll    Test message   
-                session.Io.OutputLine("--------------------------------------");
+                session.Io.OutputLine($"{Constants.Spaceholder}" + "-".Repeat(session.Cols-4).Inverse().Color(ConsoleColor.White));
                 foreach (var bull in bulletins.Values)
                 {
                     var isRead = true == readBulletins?.Contains(bull.Id) ? $"{Constants.Spaceholder}" : "*".Color(ConsoleColor.Red);
@@ -649,29 +649,29 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine($"{Constants.Inverser} *** Community Bulletins Menu ***{Constants.Inverser}\r\n".Color(ConsoleColor.DarkMagenta));
                 session.Io.OutputLine(
-                    "N".Color(ConsoleColor.Green) + eq + "Next Unread        " +
-                    "#".Color(ConsoleColor.Green) + eq + "Jump to #");
+                    "N".Inverse().Color(ConsoleColor.Green) + eq + "Next Unread        " +
+                    "#".Inverse().Color(ConsoleColor.Green) + eq + "Jump to #");
                 session.Io.OutputLine("Follow thread with < and >:".Color(ConsoleColor.DarkCyan));
                 session.Io.OutputLine(
-                    "<".Color(ConsoleColor.Green) + eq + "Prev. in Thread    " +
-                    ">".Color(ConsoleColor.Green) + eq + "Next in Thread");
+                    "<".Inverse().Color(ConsoleColor.Green) + eq + "Prev. in Thread    " +
+                    ">".Inverse().Color(ConsoleColor.Green) + eq + "Next in Thread");
                 session.Io.OutputLine("Don't follow thread with - and +:".Color(ConsoleColor.DarkCyan));
                 session.Io.OutputLine(
-                    "-".Color(ConsoleColor.Green) + eq + "Prev. Bulletin     " +
-                    "+".Color(ConsoleColor.Green) + eq + "Next Bulletin");
+                    "-".Inverse().Color(ConsoleColor.Green) + eq + "Prev. Bulletin     " +
+                    "+".Inverse().Color(ConsoleColor.Green) + eq + "Next Bulletin");
                 session.Io.OutputLine(
-                    "B".Color(ConsoleColor.Green) + eq + "Back One Subject   " +
-                    "F".Color(ConsoleColor.Green) + eq + "Fwd. One Subject");
+                    "B".Inverse().Color(ConsoleColor.Green) + eq + "Back One Subject   " +
+                    "F".Inverse().Color(ConsoleColor.Green) + eq + "Fwd. One Subject");
                 session.Io.OutputLine(
-                    "R".Color(ConsoleColor.Green) + eq + "Reply to Bulletin  " +
-                    "P".Color(ConsoleColor.Green) + eq + "Post New");
+                    "R".Inverse().Color(ConsoleColor.Green) + eq + "Reply to Bulletin  " +
+                    "P".Inverse().Color(ConsoleColor.Green) + eq + "Post New");
                 session.Io.OutputLine(
-                    "L".Color(ConsoleColor.Green) + eq + "List Bulletins     " +
-                    "Q".Color(ConsoleColor.Green) + eq + "Quit Bulletins");
+                    "L".Inverse().Color(ConsoleColor.Green) + eq + "List Bulletins     " +
+                    "Q".Inverse().Color(ConsoleColor.Green) + eq + "Quit Bulletins");
                 session.Io.OutputLine("-------------------------------------".Color(ConsoleColor.DarkGray));
                 session.Io.OutputLine(
-                    "E".Color(ConsoleColor.Green) + eq + "Edit a Bulletin    " +
-                    "D".Color(ConsoleColor.Green) + eq + "Del. a Bulletin");
+                    "E".Inverse().Color(ConsoleColor.Green) + eq + "Edit a Bulletin    " +
+                    "D".Inverse().Color(ConsoleColor.Green) + eq + "Del. a Bulletin");
             }
         }
 

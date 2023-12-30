@@ -54,6 +54,7 @@
     <Compile Include="Exceptions\RuntimeException.cs" />
     <Compile Include="Executors\Color.cs" />
     <Compile Include="Executors\Data.cs" />
+    <Compile Include="Executors\Dim.cs" />
     <Compile Include="Executors\Edit.cs" />
     <Compile Include="Executors\Evaluate.cs" />
     <Compile Include="Executors\Find.cs" />

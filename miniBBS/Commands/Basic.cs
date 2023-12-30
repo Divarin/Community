@@ -77,7 +77,7 @@ namespace miniBBS.Commands
             }
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
-                var msg = $"{session.User.Name} prints the Basic expression:{Environment.NewLine}{expr}{Environment.NewLine}{result.Color(ConsoleColor.Green)}";
+                var msg = $"{session.User.Name} prints the Basic expression:{session.Io.NewLine}{expr}{session.Io.NewLine}{result.Color(ConsoleColor.Green)}";
                 session.Io.OutputLine(msg);
                 session.Messager.Publish(session, new GlobalMessage(session.Id, msg));
             }

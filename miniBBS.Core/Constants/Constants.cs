@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "5.2b - 2023.12.20";
+        public const string Version = "5.3 - 2023.12.30";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -91,7 +91,7 @@ namespace miniBBS.Core
         /// but sometimes we explicitly want to add a space there (such as for returning a blank line) so this placeholder can sit there 
         /// and will be replaced with an actual space at the last second.
         /// </summary>
-        public const char Spaceholder = '¿';
+        public const char Spaceholder = (char)168;
 
         /// <summary>
         /// A character which indicates the beginning of, or ending of, a color code that's embedded within text.  This is used 
