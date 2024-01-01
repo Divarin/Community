@@ -130,6 +130,7 @@
     <Compile Include="Commands\WhoIsAll.cs" />
     <Compile Include="Commands\WhoIsOn.cs" />
     <Compile Include="DI.cs" />
+    <Compile Include="Exceptions\ForceLogoutException.cs" />
     <Compile Include="Exceptions\IdleTimeoutException.cs" />
     <Compile Include="Helpers\NotificationHandler.cs" />
     <Compile Include="Helpers\TcpClientFactory.cs" />

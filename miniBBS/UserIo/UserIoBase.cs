@@ -2,6 +2,7 @@
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
+using miniBBS.Exceptions;
 using miniBBS.Extensions;
 using miniBBS.Interfaces;
 using System;
@@ -418,6 +419,8 @@ namespace miniBBS.UserIo
             int i;
             char? result = null;
             session.Stream.Flush();
+            if (session.ForceLogout)
+                throw new ForceLogoutException();
             if (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
             {
                 session.ResetIdleTimer();
@@ -689,7 +692,7 @@ namespace miniBBS.UserIo
             {
                 var bytes = new byte[256];
                 int i;
-                if (_session.ForceLogout || !_session.Stream.CanRead || !_session.Stream.CanWrite)
+                if (_session.ForceLogout || !_session.Stream.CanRead || !_session.Stream.CanWrite || !_session.IsConnected)
                     break;
 
                 if ((i = _session.Stream.Read(bytes, 0, bytes.Length)) != 0)
