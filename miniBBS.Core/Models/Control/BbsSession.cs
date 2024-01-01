@@ -6,6 +6,7 @@ using miniBBS.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Sockets;
 using System.Threading;
 
 namespace miniBBS.Core.Models.Control
@@ -179,6 +180,17 @@ namespace miniBBS.Core.Models.Control
         /// When in replay screensaver mode, this is the next message number to replay
         /// </summary>
         public int ReplayNum { get; set; }
+        public bool IsConnected
+        {
+            get
+            {
+                var networkSteram = Stream as NetworkStream;
+                var socketProperty = typeof(NetworkStream)
+                    .GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var socket = (Socket)socketProperty.GetValue(networkSteram, null);
+                return socket.Connected;
+            }
+        }
 
         private static void PingPong(object o)
         {

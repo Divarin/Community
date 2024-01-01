@@ -1,6 +1,8 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Extensions;
 using System;
 
 namespace miniBBS.Subscribers
@@ -21,10 +23,17 @@ namespace miniBBS.Subscribers
                 return;
             
             var session = _sessionRef.Target as BbsSession;
+            var monochrome =
+                session.Io.EmulationType == TerminalEmulation.Ascii ||
+                session.Io.EmulationType == TerminalEmulation.Atascii;
+
             if (message.SessionId != session.Id)
             {
                 var msg = message.Message;
-                session.Io.Output(msg);
+                if (monochrome)
+                    session.Io.Output(msg);
+                else
+                    session.Io.Output(msg.Color(message.KeyColor));
             }
         }
     }
