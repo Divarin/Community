@@ -69,7 +69,7 @@ namespace miniBBS.Commands
             {
                 messenger.Subscribe(subscriber);
 
-                var enteredMessage = "\r\nYou feel a new presence\r\n";
+                var enteredMessage = $"\r\n{session.User.Name} has entered holding a {keyColor} key.\r\n";
                 messenger.Publish(session, new NullSpaceMessage(session, keyColor, enteredMessage));
 
                 session.Io.PollKey();
@@ -144,7 +144,7 @@ namespace miniBBS.Commands
                     _keys[keyColor] = true;
                 }
 
-                var departedMessage = "\r\nYou feel a presence has departed\r\n";
+                var departedMessage = $"\r\n{session.User.Name} has left.\r\n";
                 messenger.Publish(session, new NullSpaceMessage(session, keyColor, departedMessage));
                 session.DoNotDisturb = originalDnd;
                 session.CurrentLocation = originalArea;

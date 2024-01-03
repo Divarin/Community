@@ -17,11 +17,10 @@ namespace miniBBS.Commands
     {
         private const string END_QUOTE = " --- End Quote ---";
         
-        private const string NO_MORE_UNREAD = 
-            "No more unread messages in the current  " + 
-            "board use ']' to advance to the next.   " + 
-            "Also try going to the chat rooms and    " + 
-            "reading the backlog there!";
+        //private const string NO_MORE_UNREAD = 
+        //    "No more unread messages in the current board use ']' to advance to the next.   " + 
+        //    "Also try going to the chat rooms and    " + 
+        //    "reading the backlog there!";
         //   1234567890123456789012345678901234567890
         public static void Execute(BbsSession session)
         {
@@ -145,7 +144,27 @@ namespace miniBBS.Commands
                                     lastRead = n;
                                 }
                                 else
-                                    session.Io.Error(NO_MORE_UNREAD);
+                                {
+                                    // no new unread in current board
+                                    // try advance to next board
+                                    var nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
+                                    if (nextBoard != null)
+                                    {
+                                        session.Io.OutputLine($"Going to '{nextBoard.Name}' board.".Color(ConsoleColor.Magenta));
+                                        currentBoard = nextBoard;
+                                        ReloadBulletins();
+                                        n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                                    }
+                                    if (n > 0)
+                                    {
+                                        ReadBulletin(session, bulletins, n, readBulletins);
+                                        lastRead = n;
+                                    }
+                                    else
+                                    {
+                                        session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
+                                    }
+                                }
                             }
                             break;
                         case '#':
@@ -197,7 +216,7 @@ namespace miniBBS.Commands
                                     lastRead = n;
                                 }
                                 else
-                                    session.Io.Error(NO_MORE_UNREAD);
+                                    session.Io.Error("No more messages in this board, use ']' to advance to the next board.");
                             }
                             else
                             {
