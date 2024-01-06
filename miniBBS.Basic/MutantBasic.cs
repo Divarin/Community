@@ -29,6 +29,7 @@ namespace miniBBS.Basic
         private readonly string _scriptName;
         private readonly string _scriptInput;
         private readonly bool _isDebugging;
+
         private const string _version = "2.6";
         private static bool _debug = false;
         private bool _prompt = false;
@@ -44,6 +45,33 @@ namespace miniBBS.Basic
             _scriptInput = scriptInput;
             _isDebugging = isDebugging;
         }
+
+        //public static bool TryAutoLaunch(string[] args)
+        //{
+        //    const string drop = "drop=";
+        //    const string prog = "prog=";
+
+        //    if (true != args?.Any(a => "basic".Equals(a, StringComparison.CurrentCultureIgnoreCase)))
+        //        return false;
+        //    var dropfile = args.FirstOrDefault(a => a.StartsWith(drop)).Substring(drop.Length);
+        //    if (string.IsNullOrWhiteSpace(dropfile))
+        //        return false;
+        //    var programName = args.FirstOrDefault(a => a.StartsWith(prog)).Substring(prog.Length);
+        //    if (string.IsNullOrWhiteSpace(programName))
+        //        return false;
+        //    BbsSession pseudoSession = SetupPseudoSession(dropfile);
+        //    if (pseudoSession == null)
+        //        return false;
+
+        //    var basic = new MutantBasic(Constants.TextFileRootDirectory + $"(path here)", true, programName);
+
+        //    var parameters = new LineEditorParameters
+        //    {
+        //        Filename = programName,
+        //        PreloadedBody = // put basic code here
+        //    };
+        //    basic.EditText(pseudoSession, parameters);
+        //}
 
         public void EditText(BbsSession session, LineEditorParameters parameters = null)
         {

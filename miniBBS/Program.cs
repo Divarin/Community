@@ -31,6 +31,9 @@ namespace miniBBS
 
         static void Main(string[] args)
         {
+            //if (Basic.MutantBasic.TryAutoLaunch(args))
+            //    return;
+
             TcpListener listener = null;
 
             try
@@ -825,7 +828,8 @@ namespace miniBBS
             }
             else
             {
-                session.Io.Output("oh yeah?  prove it! (password): ");
+                session.Io.OutputLine("oh yeah?  prove it!");
+                session.Io.Output("password: ");
                 string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
                 if (!DI.Get<IHasher>().VerifyHash(pw, user.PasswordHash))
                 {

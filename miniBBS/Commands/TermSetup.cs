@@ -139,7 +139,7 @@ namespace miniBBS.Commands
                         case 'e':
                         case 'E':
                             {
-                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (CBM){0}4 = ATASCII (CBM){0}Emulation [{1}] : ", 
+                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (Commodore){0}4 = ATASCII (Atari){0}Emulation [{1}] : ", 
                                     Environment.NewLine, 
                                     emulation.ToString()));
                                 char? s = session.Io.InputKey();

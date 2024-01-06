@@ -60,18 +60,52 @@ namespace miniBBS.Commands
                     .ToDictionary(k => k.Id);
             }
 
+            int? lastRead = null;
+            void NextUnread()
+            {
+                Notice(session, "Finding next unread message");
+                var n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                if (n > 0)
+                {
+                    ReadBulletin(session, bulletins, n, readBulletins);
+                    lastRead = n;
+                }
+                else
+                {
+                    // no new unread in current board
+                    // try advance to next board
+                    session.Io.OutputLine($"No more unread messages in '{currentBoard.Name}'.".Color(ConsoleColor.Magenta));
+                    var nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
+                    if (nextBoard != null)
+                    {
+                        session.Io.OutputLine($"Going to '{nextBoard.Name}' board.".Color(ConsoleColor.Magenta));
+                        currentBoard = nextBoard;
+                        ReloadBulletins();
+                        n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                    }
+                    if (n > 0)
+                    {
+                        ReadBulletin(session, bulletins, n, readBulletins);
+                        lastRead = n;
+                    }
+                    else
+                    {
+                        session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
+                    }
+                }
+            }
+
             ReloadBulletins();
 
             ShowMenu(session);
             try
             {
-                int? lastRead = null;
                 do
                 {
                     session.Io.Output($"{Constants.Inverser}[Bulletins:{currentBoard.Name.Color(ConsoleColor.Yellow)}] {"(?=Help)".Color(ConsoleColor.DarkGray)} >{Constants.Inverser} ".Color(ConsoleColor.White));
                     var key = session.Io.InputKey();
 
-                    if (!key.HasValue || key == '\r' || key == '\n')
+                    if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
                         key = '>';
                     
                     session.Io.Output(key.Value);
@@ -135,37 +169,7 @@ namespace miniBBS.Commands
                             break;
                         case 'N':
                             // next unread
-                            {
-                                Notice(session, "Finding next unread message");
-                                var n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
-                                if (n > 0)
-                                {
-                                    ReadBulletin(session, bulletins, n, readBulletins);
-                                    lastRead = n;
-                                }
-                                else
-                                {
-                                    // no new unread in current board
-                                    // try advance to next board
-                                    var nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
-                                    if (nextBoard != null)
-                                    {
-                                        session.Io.OutputLine($"Going to '{nextBoard.Name}' board.".Color(ConsoleColor.Magenta));
-                                        currentBoard = nextBoard;
-                                        ReloadBulletins();
-                                        n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
-                                    }
-                                    if (n > 0)
-                                    {
-                                        ReadBulletin(session, bulletins, n, readBulletins);
-                                        lastRead = n;
-                                    }
-                                    else
-                                    {
-                                        session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
-                                    }
-                                }
-                            }
+                            NextUnread();
                             break;
                         case '#':
                             session.Io.Error("'#' means:  Enter the bulletin number to read it.");
@@ -225,20 +229,8 @@ namespace miniBBS.Commands
                                 if (!n.HasValue)
                                 {
                                     Notice(session, "None found, finding next unread");
-                                    n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
-                                    if (!n.HasValue)
-                                    {
-                                        Notice(session, "None found, finding next message");
-                                        n = bulletins.Keys.FirstOrDefault(x => x > lastRead.Value);
-                                    }
+                                    NextUnread();
                                 }
-                                if (n.HasValue && bulletins.ContainsKey(n.Value))
-                                {
-                                    ReadBulletin(session, bulletins, n.Value, readBulletins);
-                                    lastRead = n;
-                                }
-                                else
-                                    Notice(session, "No more messages found.");
                             }
                             break;
                         case 'B':
@@ -466,7 +458,7 @@ namespace miniBBS.Commands
                 {
                     quote = string.Join(Environment.NewLine, new[]
                     {
-                        $" --- Begin Quote from {originalUsername}, msg #{originalMessage.Id} ---".Color(ConsoleColor.DarkGray),
+                        $" --- Quote Msg#{originalMessage.Id} from {originalUsername} ---".Color(ConsoleColor.DarkGray),
                         quote.Color(ConsoleColor.Blue),
                         END_QUOTE.Color(ConsoleColor.DarkGray),
                     });
@@ -632,7 +624,7 @@ namespace miniBBS.Commands
                     "From : ".Color(ConsoleColor.Cyan),
                     fromUsername.PadRight(12).Color(ConsoleColor.Yellow),
                     "To   : ".Color(ConsoleColor.Cyan),
-                    toUsername.PadRight(12).Color(ConsoleColor.Yellow),
+                    toUsername.Color(ConsoleColor.Yellow),
                     Environment.NewLine,
                     "Date : ".Color(ConsoleColor.Cyan),
                     $"{bulletin.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".Color(ConsoleColor.Blue),
@@ -643,8 +635,13 @@ namespace miniBBS.Commands
                     $"{Constants.Spaceholder}---------- ".Color(ConsoleColor.Green)
                 }));
 
+            // account for messages that contain the old colorizer character
+            // this char was changed due to conflicts with an atascii character.
+            var body = bulletin.Message
+                .Replace('½', Constants.InlineColorizer);
+
             // add body
-            builder.Append(bulletin.Message);
+            builder.Append(body);
 
             // show message
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
@@ -666,42 +663,52 @@ namespace miniBBS.Commands
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 var builder = new StringBuilder();
-                //                              1         2         3
-                //                     1234567890123456789012345678901234567890
-                //                                 12345678 12345678 12345678901
-                session.Io.OutputLine($"{Constants.Inverser}*#### Date. From.... To...... Subject{Constants.Inverser}".Replace('.', Constants.Spaceholder));
-                //                         1 10/26 Divarin  All      Test message
-                //                          110/26DivarinAll    Test message   
+
+                //                                          12345678901234567890 
+                session.Io.OutputLine($"{Constants.Inverser}*# Date. From.... Subject{Constants.Inverser}".Replace('.', Constants.Spaceholder));
+
                 session.Io.OutputLine("--------------------------------------");
                 foreach (var bull in bulletins.Values)
                 {
                     var isRead = true == readBulletins?.Contains(bull.Id) ? $"{Constants.Spaceholder}" : "*".Color(ConsoleColor.Red);
-                    var msgNum = bull.Id.ToString().PadLeft(4, Constants.Spaceholder).Color(ConsoleColor.White);
-                    var postedDate = bull.DateUtc.AddHours(session.TimeZone).ToString("MM/dd").Color(ConsoleColor.DarkGray);
+                    var printableMsgNum = bull.Id.ToString();
+                    var msgNum = printableMsgNum
+                        //.PadLeft(4, Constants.Spaceholder)
+                        .Color(ConsoleColor.White);
+                    var printablePostedDate = bull.DateUtc.AddHours(session.TimeZone).ToString("MM/dd");
+                    var postedDate = printablePostedDate.Color(ConsoleColor.DarkGray);
 
-                    var fromUserName = session.Usernames.ContainsKey(bull.FromUserId) ? session.Usernames[bull.FromUserId] : "Unknown";
-                    if (fromUserName.Length > usernameLength)
-                        fromUserName = fromUserName.Substring(0, usernameLength);
-                    else if (fromUserName.Length < usernameLength)
-                        fromUserName = fromUserName.PadRight(usernameLength, Constants.Spaceholder);
-                    fromUserName = fromUserName.Color(ConsoleColor.Yellow);
+                    var printableFromUserName = session.Usernames.ContainsKey(bull.FromUserId) ? session.Usernames[bull.FromUserId] : "Unknown";
+                    if (printableFromUserName.Length > usernameLength)
+                        printableFromUserName = printableFromUserName.Substring(0, usernameLength);
+                    else if (printableFromUserName.Length < usernameLength)
+                        printableFromUserName = printableFromUserName.PadRight(usernameLength, Constants.Spaceholder);
+                    var fromUserName = printableFromUserName.Color(ConsoleColor.Yellow);
 
-                    var toUserName = bull.ToUserId.HasValue ?
-                        (session.Usernames.ContainsKey(bull.ToUserId.Value) ? session.Usernames[bull.ToUserId.Value] : "Unknown") :
-                        "All";
-                    if (toUserName.Length > usernameLength)
-                        toUserName = toUserName.Substring(0, usernameLength);
-                    else if (toUserName.Length < 8)
-                        toUserName = toUserName.PadRight(usernameLength, Constants.Spaceholder);
-                    toUserName = toUserName.Color(ConsoleColor.Yellow);
+                    //var toUserName = bull.ToUserId.HasValue ?
+                    //    (session.Usernames.ContainsKey(bull.ToUserId.Value) ? session.Usernames[bull.ToUserId.Value] : "Unknown") :
+                    //    "All";
+                    //if (toUserName.Length > usernameLength)
+                    //    toUserName = toUserName.Substring(0, usernameLength);
+                    //else if (toUserName.Length < 8)
+                    //    toUserName = toUserName.PadRight(usernameLength, Constants.Spaceholder);
+                    //toUserName = toUserName.Color(ConsoleColor.Yellow);
 
-                    var subject = bull.Subject;
-                    var subLen = session.Cols - 32;
-                    if (subject.Length > subLen)
-                        subject = subject.Substring(0, subLen);
-                    subject = subject.Color(ConsoleColor.DarkGreen);
+                    var printableSubject = bull.Subject;
+                    
+                    var printable = $"*{printableMsgNum} {printablePostedDate} {printableFromUserName} {printableSubject}";
+                    var printableLength = printable.Length;
+                    var maxLength = session.Cols - 3;
+                    if (printableLength >= maxLength)
+                    {
+                        var change = printableLength - maxLength;
+                        var subjectLength = printableSubject.Length - change;
+                        if (subjectLength > 0)
+                            printableSubject = printableSubject.Substring(0, subjectLength);
+                    }
 
-                    builder.AppendLine($"{isRead}{msgNum} {postedDate} {fromUserName} {toUserName} {subject}");
+                    var subject = printableSubject.Color(ConsoleColor.DarkGreen);
+                    builder.AppendLine($"{isRead}{msgNum} {postedDate} {fromUserName} {subject}");
                     //builder.AppendLine($"{isRead}{bull.Id.ToString().Color(ConsoleColor.White)} {postedDate}  {fromUserName.UniqueColor()}  {toUserName.UniqueColor()}  {bull.Subject.Color(ConsoleColor.DarkGreen)}");
                 }
                 session.Io.OutputLine(builder.ToString());
