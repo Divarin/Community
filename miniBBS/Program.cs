@@ -1327,6 +1327,9 @@ namespace miniBBS
                 case "/blurbadmin":
                     Blurbs.BlurbAdmin(session, parts.Skip(1).ToArray());
                     return;
+                case "/blurbs":
+                    Blurbs.BlurbAdmin(session, "list");
+                    return;
                 case "/hand":
                 case "/raise":
                 case "/raisehand":
@@ -1528,6 +1531,9 @@ namespace miniBBS
                     break;
                 case "voice":
                     Menus.Voice.Show(session);
+                    break;
+                case "misc":
+                    Menus.MiscMenu.Show(session);
                     break;
                 default:
                     Menus.MainMenu.Show(session);

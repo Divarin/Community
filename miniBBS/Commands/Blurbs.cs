@@ -39,13 +39,6 @@ namespace miniBBS.Commands
         {
             const string usage = "Usage: /blurbadmin list, /blurbadmin del #";
 
-            if (!session.User.Access.HasFlag(AccessFlag.Administrator) &&
-                !session.User.Access.HasFlag(AccessFlag.GlobalModerator))
-            {
-                session.Io.Error("Access denied");
-                return;
-            }
-
             if (args == null || args.Length < 1)
             {
                 session.Io.Error(usage);
@@ -100,6 +93,18 @@ namespace miniBBS.Commands
                 return;
             }
             ShowBlurb(session, blurbToDelete);
+
+            var canDelete = 
+                blurbToDelete.UserId == session.User.Id ||
+                session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                session.User.Access.HasFlag(AccessFlag.GlobalModerator);
+
+            if (!canDelete)
+            {
+                session.Io.Error("Access denied");
+                return;
+            }
+
             if ('Y' == session.Io.Ask("Delete this blurb?"))
             {
                 _blurbs.Remove(blurbToDelete);

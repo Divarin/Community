@@ -34,7 +34,10 @@ namespace miniBBS.Commands
                     {
                         case "list":
                             if ("sent".Equals(arg, StringComparison.CurrentCultureIgnoreCase))
+                            {
                                 ListSentMails(session);
+                                mails = GetMails(session);
+                            }
                             else
                             {
                                 ListMails(session, mails);
@@ -255,7 +258,7 @@ namespace miniBBS.Commands
                 }
 
                 session.Io.SetForeground(ConsoleColor.Yellow);
-                session.Io.Output($"{Constants.Inverser}{(mail.ToUserId == session.User.Id ? "(R)eply, " : "")}(D)elete, (ENTER)=Continue{Constants.Inverser}: ");
+                session.Io.Output($"{Constants.Inverser}{(mail.ToUserId == session.User.Id ? "(R)eply, " : "")}{(!mail.Read && mail.FromUserId == session.User.Id ? "(E)dit, ": "")}(D)elete, (ENTER)=Continue{Constants.Inverser}: ");
                 var k = session.Io.InputKey();
                 session.Io.OutputLine();
                 if (k.HasValue)
@@ -266,8 +269,13 @@ namespace miniBBS.Commands
                             if (mail.ToUserId == session.User.Id)
                                 SendMail(session, mail.FromUserId, $"re: {mail.Subject.Replace("re: ", "")}");
                             break;
+                        case 'E':
+                            if (mail.FromUserId == session.User.Id && !mail.Read)
+                                EditMail(session, mail);
+                            break;
                         case 'D':
-                            DeleteMail(session, mail);
+                            if (mail.ToUserId == session.User.Id || (!mail.Read && mail.FromUserId == session.User.Id))
+                                DeleteMail(session, mail);
                             break;
                     }
                 }
@@ -324,13 +332,78 @@ namespace miniBBS.Commands
 
                 session.Io.OutputLine(builder.ToString());
                 session.Io.SetForeground(ConsoleColor.Yellow);
+                session.Io.OutputLine("D# : Delete message # (if not yet read)");
+                session.Io.OutputLine("E# : Edit message # (if not yet read)");
+                session.Io.OutputLine("#  : Read message #");
                 session.Io.Output($"{Constants.Inverser}# to read or ENTER=quit:{Constants.Inverser} ");
                 var inp = session.Io.InputLine();
                 session.Io.OutputLine();
-                if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= sentMails.Count)
-                    ReadMail(session, sentMails[n - 1]);
+                if (!string.IsNullOrWhiteSpace(inp))
+                {
+                    if (int.TryParse(inp, out int n) && n >= 1 && n <= sentMails.Count)
+                        ReadMail(session, sentMails[n - 1]);
+                    else if (inp.Length >= 2 && int.TryParse(inp.Substring(1), out n) && n >= 1 && n <= sentMails.Count)
+                    {
+                        var mailMessage = sentMails[n - 1];
+                        if (mailMessage.Read)
+                        {
+                            session.Io.Error("Message has already been read.");
+                        }
+                        else
+                        {
+                            switch (inp[0])
+                            {
+                                case 'd':
+                                case 'D':
+                                    DeleteMail(session, mailMessage);
+                                    break;
+                                case 'e':
+                                case 'E':
+                                    EditMail(session, mailMessage);
+                                    break;
+                                default:
+                                    session.Io.Error("Unrecognized command");
+                                    break;
+                            }
+                        }
+                    }
+                }
+                
             }
         }
+
+        private static void EditMail(BbsSession session, Core.Models.Data.Mail mail)
+        {
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                if (session.Usernames.ContainsKey(mail.ToUserId))
+                {
+                    session.Io.SetForeground(ConsoleColor.White);
+                    session.Io.OutputLine($"Editing mail to {UserIoExtensions.WrapInColor(session.Usernames[mail.ToUserId], ConsoleColor.Yellow)}");
+                    session.Io.SetForeground(ConsoleColor.Magenta);
+                }
+
+                session.Io.Output($"{Constants.Inverser}Subject (ENTER='{mail.Subject}'):{Constants.Inverser} ");
+                var newSubject = session.Io.InputLine();
+                if (!string.IsNullOrWhiteSpace(newSubject))
+                    mail.Subject = newSubject;
+                session.Io.OutputLine();
+
+                var lineEditor = DI.Get<ITextEditor>();
+                lineEditor.OnSave = _body =>
+                {
+                    mail.Message = _body;
+                    DI.GetRepository<Core.Models.Data.Mail>().Update(mail);
+                    return "Mail edited";
+                };
+                lineEditor.EditText(session, new LineEditorParameters
+                {
+                    QuitOnSave = true,
+                    PreloadedBody = mail.Message,
+                });
+            }
+        }
+
         private static void DeleteMail(BbsSession session, Core.Models.Data.Mail mail)
         {
             session.Io.OutputLine($"Are you sure you want to delete this mail:{Environment.NewLine}From: {session.Username(mail.FromUserId)}, To: {session.Username(mail.ToUserId)}{Environment.NewLine}Subject: {mail.Subject}");
@@ -343,10 +416,20 @@ namespace miniBBS.Commands
 
         private static void DeleteAllMail(BbsSession session, IEnumerable<Core.Models.Data.Mail> mails)
         {
-            if (true == mails?.Any() && 'Y' == session.Io.Ask($"Are you sure you want to delete all {mails.Count()} of your mails?"))
+            if (true != mails?.Any())
             {
-                var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
-                mailRepo.DeleteRange(mails);
+                session.Io.Error("You don't have any mail.");
+                return;
+            }
+            var key = session.Io.Ask("Delete: (A)ll Mail or only (R)ead mail, (Q)uit");
+            switch (key)
+            {
+                case 'A':
+                    DI.GetRepository<Core.Models.Data.Mail>().DeleteRange(mails);
+                    break;
+                case 'R':
+                    DI.GetRepository<Core.Models.Data.Mail>().DeleteRange(mails.Where(x => x.Read).ToList());
+                    break;
             }
         }
 

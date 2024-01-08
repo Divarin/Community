@@ -263,7 +263,7 @@ namespace miniBBS.Commands
                                 session.Io.Error("Reply to what?  You haven't read a message yet!");
                             else if (bulletins.TryGetValue(lastRead.Value, out var original))
                             {
-                                if (Reply(session, currentBoard, bulletinRepo, original, readBulletins))
+                                if (Reply(session, currentBoard, bulletinRepo, original))
                                     ReloadBulletins();
                             }
                             else
@@ -436,7 +436,7 @@ namespace miniBBS.Commands
             return null;
         }
 
-        private static bool Reply(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, Bulletin originalMessage, List<int> readBulletins)
+        private static bool Reply(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, Bulletin originalMessage)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {

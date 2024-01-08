@@ -7,7 +7,7 @@ namespace miniBBS.Menus
 {
     public static class MainMenu
     {
-        private static Func<string, ConsoleColor, string> _clr = (str, clr) => UserIoExtensions.WrapInColor(str, clr);
+        private static readonly Func<string, ConsoleColor, string> _clr = (str, clr) => UserIoExtensions.WrapInColor(str, clr);
 
         //    12345678901234567890123456789012345678901234567890123456789012345678901234567890
         //    1234567890123456789012345678901234567890
@@ -29,7 +29,8 @@ namespace miniBBS.Menus
                 $"{_clr("/? emotes", ConsoleColor.Green)}, " + 
                 $"{_clr("/? context", ConsoleColor.Green)}, " + 
                 $"{_clr("/? mod", ConsoleColor.Green)}, " + 
-                $"{_clr("/? voice", ConsoleColor.Green)} ",
+                $"{_clr("/? voice", ConsoleColor.Green)}, " +
+                $"{_clr("/? misc", ConsoleColor.Green)} ",
             $"--- {_clr("Subsystems", ConsoleColor.Yellow)} ---",
             //$"{_clr("/msg", ConsoleColor.Green)} : Message Base view",
             $"{_clr("/b", ConsoleColor.Green)} : Bulletin Boards",
@@ -37,14 +38,6 @@ namespace miniBBS.Menus
             $"{_clr("/mail", ConsoleColor.Green)} : E-Mail",
             $"{_clr("/polls", ConsoleColor.Green)} : Vote on stuff",
             $"{_clr("/files", ConsoleColor.Green)} : Files, Games, BASIC & more",
-            $"--- {_clr("Misc", ConsoleColor.Yellow)} ---",
-            $"{_clr("/main", ConsoleColor.Green)} : Shows the BBS's Main Menu",
-            $"{_clr("/newuser", ConsoleColor.Green)} : Read new user docs",
-            $"{_clr("/doors", ConsoleColor.Green)} : Finds all user-made BASIC programs and quick-launch them.",
-            $"{_clr("/term", ConsoleColor.Green)} : Config Terminal",
-            $"{_clr("/dnd", ConsoleColor.Green)} : Toggle Do Not Disturb",
-            $"{_clr("/afk", ConsoleColor.Green)} : Toggle Away from Keyboard",
-            $"{_clr("/password", ConsoleColor.Green)} : Change your password",
         };
 
         public static void Show(BbsSession session)
