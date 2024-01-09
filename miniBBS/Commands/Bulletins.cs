@@ -89,9 +89,7 @@ namespace miniBBS.Commands
                         lastRead = n;
                     }
                     else
-                    {
                         session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
-                    }
                 }
             }
 
@@ -204,33 +202,30 @@ namespace miniBBS.Commands
                         case '>':
                         case '.':
                             // next bulletin
-                            if (!bulletins.Any())
+                            if (lastRead.HasValue)
                             {
-                                session.Io.Error("No messages, try (P)osting one!");
-                                break;
-                            }
-                            if (!lastRead.HasValue)
-                            {
-                                Notice(session, "Finding first unread message");
-                                // haven't read anything yet, start with first unread
-                                var n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
-                                if (bulletins.ContainsKey(n)) // might not if it was default
+                                Notice(session, "Finding next in thread");
+                                var n = TryFindNextInThread(lastRead, bulletins);
+                                if (n.HasValue)
                                 {
-                                    ReadBulletin(session, bulletins, n, readBulletins);
-                                    lastRead = n;
+                                    ReadBulletin(session, bulletins, n.Value, readBulletins);
+                                    break;
                                 }
+                                Notice(session, "No more in thread");
+                            }
+                            if (lastRead.HasValue)
+                            {
+                                var n = bulletins.Keys.FirstOrDefault();
+                                if (n > 0)
+                                    ReadBulletin(session, bulletins, n, readBulletins);
                                 else
-                                    session.Io.Error("No more messages in this board, use ']' to advance to the next board.");
+                                    Notice(session, "No bulletins on this board, use ']' to advance to next.");
                             }
                             else
                             {
-                                Notice(session, "Finding next in thread");
-                                int? n = TryFindNextInThread(lastRead, bulletins);
-                                if (!n.HasValue)
-                                {
-                                    Notice(session, "None found, finding next unread");
-                                    NextUnread();
-                                }
+                                var n = bulletins.Keys.FirstOrDefault(x => x > lastRead.Value);
+                                if (n > 0)
+                                    ReadBulletin(session, bulletins, n, readBulletins);
                             }
                             break;
                         case 'B':
