@@ -213,7 +213,7 @@ namespace miniBBS.Commands
                                 }
                                 Notice(session, "No more in thread");
                             }
-                            if (lastRead.HasValue)
+                            if (!lastRead.HasValue)
                             {
                                 var n = bulletins.Keys.FirstOrDefault();
                                 if (n > 0)
