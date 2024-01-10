@@ -16,6 +16,7 @@ namespace miniBBS.Commands
             $"{_clr("***", ConsoleColor.Yellow)} {_clr($"{Constants.Inverser}Mutiny Community Main Menu{Constants.Inverser}", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
             $"{_clr("M", ConsoleColor.Green)}) Message Bases / Bulletin Boards",
             $"{_clr("C", ConsoleColor.Green)}) Chat Rooms (with history)",
+            $"{_clr("N", ConsoleColor.Green)}) NullSpace Chat",
             $"{_clr("L", ConsoleColor.Green)}) Live Chat Calendar",
             $"{_clr("E", ConsoleColor.Green)}) E-Mail",
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
@@ -88,6 +89,9 @@ namespace miniBBS.Commands
                                 //Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
                                 session.Io.Error("Use '/main' to return to main menu.");
                                 return true;
+                            case 'N':
+                                NullSpace.Enter(session);
+                                break;
                             case 'E':
                                 Mail.Execute(session);
                                 break;

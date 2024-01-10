@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 
 namespace miniBBS
@@ -218,24 +219,16 @@ namespace miniBBS
             }
         }
 
-        private static bool ShowNotifications(BbsSession session)
+        private static IEnumerable<string> GetOtherNotifications(BbsSession session)
         {
             var notifications = DI.Get<INotificationHandler>().GetNotifications(session.User.Id);
             if (true == notifications?.Any())
             {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                {
-                    session.Io.OutputLine($"{Environment.NewLine} ** Listen very carefully, I shall say this only once! ** ");
-                }
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
-                {
-                    string text = string.Join(Environment.NewLine, notifications.Select(n => $"{n.DateSentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm} {n.Message}"));
-                    session.Io.OutputLine(text);
-                }
-                return true;
+                yield return $"{Environment.NewLine} ** Listen very carefully, I shall say this only once! ** ".Color(ConsoleColor.Red);
+                foreach (var notification in notifications)
+                    $"{notification.DateSentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm} {notification.Message}"
+                        .Color(ConsoleColor.Green);
             }
-
-            return false;
         }
 
         private static void RunSession(BbsSession session)
@@ -303,13 +296,6 @@ namespace miniBBS
                 else
                     session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz (from chat) to change this.");
 
-                var calCount = Calendar.GetCount();
-                if (calCount > 0)
-                {
-                    session.Io.SetForeground(ConsoleColor.Red);
-                    session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.{(startupMode == LoginStartupMode.ChatRooms ? "Use '/cal' to view them." : "")}");
-                }
-
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
                 if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
@@ -333,8 +319,6 @@ namespace miniBBS
 
             session.CurrentLocation = Module.Chat;
 
-            Polls.ShowCountOfNewSinceLastCall(session);            
-            ListChannels.ShowTotalUnread(session);
             session.Io.OutputLine("Press Enter/Return to read next message.");
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
@@ -392,30 +376,81 @@ namespace miniBBS
 
         private static void ShowLoginNotifications(BbsSession session, LoginStartupMode startupMode)
         {
-            var anyNotifications = ShowNotifications(session);
-
-            int unreadMail = Commands.Mail.CountUnread(session);
-            if (unreadMail > 0)
+            using (session.Io.WithColorspace(ConsoleColor.Red, ConsoleColor.Yellow))
             {
-                session.Io.Error($"You have {unreadMail} unread mails.  " +
-                    (startupMode == LoginStartupMode.ChatRooms ?
-                    "Use '/mail' to read your mail." :
-                    "Use E to read your mail."));
-                anyNotifications = true;
+                session.Io.Output($"{Constants.Inverser}{Constants.Spaceholder}*** Community Login Notifications *** {Constants.Inverser}");
+                session.Io.SetColors(ConsoleColor.Black, ConsoleColor.White);
+                session.Io.OutputLine();
+
+                int iBulletins, iChats, iEmails, iPolls, iCals;
+                iBulletins = Bulletins.CountUnread(session);
+                iChats = ListChannels.GetTotalUnread(session);
+                iEmails = Commands.Mail.CountUnread(session);
+                iPolls = Polls.GetCountOfNewSinceLastCall(session);
+                iCals = Calendar.GetCount();
+
+                var numBulletins = iBulletins.ToString().Color(iBulletins > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
+                var numChats = iChats.ToString().Color(iChats > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
+                var numEmails = iEmails.ToString().Color(iEmails > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
+                var numPolls = iPolls.ToString().Color(iPolls > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
+                var numCals = iCals.ToString().Color(iCals > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
+
+                var builder = new StringBuilder();
+                if (startupMode == LoginStartupMode.ChatRooms)
+                {
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(6) + $"Unread Bulletins (/b):{Constants.Inverser} {numBulletins}");
+                    builder.AppendLine($"{Constants.Inverser}Unread Chats (all channels):{Constants.Inverser} {numChats}");
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(6) + $"Unread Emails (/mail):{Constants.Inverser} {numEmails}");
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(9) + $"New Polls (/polls):{Constants.Inverser} {numPolls}");
+                    builder.AppendLine($"{Constants.Inverser}{Constants.Spaceholder}New Calendar Events (/cal):{Constants.Inverser} {numCals}");
+                }
+                else
+                {
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(4) + $"Unread Bulletins (B):{Constants.Inverser} {numBulletins}");
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(8) + $"Unread Chats (C):{Constants.Inverser} {numChats}");
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(7) + $"Unread Emails (E):{Constants.Inverser} {numEmails}");
+                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(11) + $"New Polls (V):{Constants.Inverser} {numPolls}");
+                    builder.AppendLine($"{Constants.Inverser}{Constants.Spaceholder}New Calendar Events (L):{Constants.Inverser} {numCals}");
+                }
+                foreach (var other in GetOtherNotifications(session))
+                    builder.AppendLine(other);
+                session.Io.Output(builder.ToString());
+                Thread.Sleep(1234);
             }
 
-            int unreadBulletins = Bulletins.CountUnread(session);
-            if (unreadBulletins > 0)
-            {
-                session.Io.Error($"There are {unreadBulletins} unread messages on the Bulletin Boards.  " +
-                    (startupMode == LoginStartupMode.ChatRooms ? 
-                    "Use '/b' to read the boards." :
-                    "Use M to read the boards."));
-                anyNotifications = true;
-            }
+            //var anyNotifications = GetOtherNotifications(session);
 
-            if (anyNotifications)
-                Thread.Sleep(3000);
+            //var calCount = Calendar.GetCount();
+            //if (calCount > 0)
+            //{
+            //    session.Io.SetForeground(ConsoleColor.Red);
+            //    session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.{(startupMode == LoginStartupMode.ChatRooms ? "Use '/cal' to view them." : "")}");
+            //}
+
+            //int unreadMail = Commands.Mail.CountUnread(session);
+            //if (unreadMail > 0)
+            //{
+            //    session.Io.Error($"You have {unreadMail} unread mails.  " +
+            //        (startupMode == LoginStartupMode.ChatRooms ?
+            //        "Use '/mail' to read your mail." :
+            //        "Use E to read your mail."));
+            //    anyNotifications = true;
+            //}
+
+            //int unreadBulletins = Bulletins.CountUnread(session);
+            //if (unreadBulletins > 0)
+            //{
+            //    session.Io.Error($"There are {unreadBulletins} unread messages on the Bulletin Boards.  " +
+            //        (startupMode == LoginStartupMode.ChatRooms ? 
+            //        "Use '/b' to read the boards." :
+            //        "Use M to read the boards."));
+            //    anyNotifications = true;
+            //}
+
+            //Polls.GetCountOfNewSinceLastCall(session);
+            
+            //if (anyNotifications)
+            //    Thread.Sleep(3000);
         }
 
         private static void Prompt(BbsSession session)
@@ -1109,6 +1144,10 @@ namespace miniBBS
                 case "/channel":
                     ExecuteChannelCommand(session, parts.Skip(1).ToArray());
                     return;
+                case "/null":
+                case "/nullspace":
+                    NullSpace.Enter(session);
+                    return;
                 case "/who":
                     WhoIsOn.Execute(session, DI.Get<ISessionsList>());
                     return;
@@ -1289,6 +1328,12 @@ namespace miniBBS
                 case "/email":
                 case "/e-mail":
                     Commands.Mail.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/rm":
+                case "/mr":
+                case "/mailread":
+                case "/readmail":
+                    Commands.Mail.ReadLatest(session);
                     return;
                 case "/feedback":
                     Commands.Mail.Execute(session, "send", Constants.SysopName);

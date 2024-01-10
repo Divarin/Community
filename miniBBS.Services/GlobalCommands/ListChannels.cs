@@ -83,13 +83,13 @@ namespace miniBBS.Services.GlobalCommands
             return GetChannelList(session, repo);
         }
 
-        public static void ShowTotalUnread(BbsSession session)
+        public static int GetTotalUnread(BbsSession session)
         {
             var di = GlobalDependencyResolver.Default;
             var readIds = session.ReadChatIds(di);
             var chatRepo = di.GetRepository<Chat>();
             var chans = GetChannelList(session);
-            int totalUnread = 0, totalUnreadChans = 0;
+            int totalUnread = 0;//, totalUnreadChans = 0;
 
             foreach (var chan in chans)
             {
@@ -97,24 +97,25 @@ namespace miniBBS.Services.GlobalCommands
                 if (unread > 0)
                 {
                     totalUnread += unread;
-                    totalUnreadChans++;
+                    //totalUnreadChans++;
                 }
             }
 
-            if (totalUnread > 0)
-            {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                {
-                    var s = totalUnreadChans == 1 ? "" : "s";
-                    session.Io.OutputLine($"You have a total of {totalUnread} unread messages in {totalUnreadChans} channel{s}.");
-                    if (totalUnread > _totalUnreadToNotifiyAboutIndexes)
-                    {
-                        session.Io.SetForeground(ConsoleColor.Red);
-                        session.Io.OutputLine("What, that many messages?  I don't want to read all that to get caught up!  No problem, use '/? msgs' to learn how to jump around and just read the more recent stuff!  Don't worry I'll keep track of which messages you have and haven't read so feel free to jump.");
-                    }
-                    Thread.Sleep(500);
-                }
-            }
+            return totalUnread;
+            //if (totalUnread > 0)
+            //{
+            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            //    {
+            //        var s = totalUnreadChans == 1 ? "" : "s";
+            //        session.Io.OutputLine($"You have a total of {totalUnread} unread messages in {totalUnreadChans} channel{s}.");
+            //        if (totalUnread > _totalUnreadToNotifiyAboutIndexes)
+            //        {
+            //            session.Io.SetForeground(ConsoleColor.Red);
+            //            session.Io.OutputLine("What, that many messages?  I don't want to read all that to get caught up!  No problem, use '/? msgs' to learn how to jump around and just read the more recent stuff!  Don't worry I'll keep track of which messages you have and haven't read so feel free to jump.");
+            //        }
+            //        Thread.Sleep(500);
+            //    }
+            //}
         }
 
         private static Channel[] GetChannelList(BbsSession session, IRepository<Channel> channelRepo)

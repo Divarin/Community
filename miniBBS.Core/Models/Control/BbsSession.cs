@@ -82,7 +82,13 @@ namespace miniBBS.Core.Models.Control
                         _doNotDisturb ? "now" : "no longer",
                         $"{Constants.InlineColorizer}-1{Constants.InlineColorizer}"));
 
-                    Messager.Publish(this, new ChannelMessage(Id, Channel.Id, $"{User.Name} is {(_doNotDisturb ? "now" : "no longer")} in Do Not Disturb (DND) mode."));
+                    var channelMessage = new ChannelMessage(
+                        Id,
+                        Channel.Id,
+                        $"{User.Name} is {(_doNotDisturb ? "now" : "no longer")} in Do Not Disturb (DND) mode.",
+                        predicate: x => !x.DoNotDisturb);
+
+                    Messager.Publish(this, channelMessage);
                 }
             }
         }

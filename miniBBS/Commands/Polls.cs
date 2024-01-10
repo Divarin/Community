@@ -38,21 +38,22 @@ namespace miniBBS.Commands
             }
         }
 
-        public static void ShowCountOfNewSinceLastCall(BbsSession session)
+        public static int GetCountOfNewSinceLastCall(BbsSession session)
         {
             if (session?.User == null)
-                return;
+                return 0;
 
             var questionRepo = DI.GetRepository<PollQuestion>();
             var count = questionRepo.Get().Count(p => p.DateAddedUtc >= session.User.LastLogonUtc);
-            if (count > 0)
-            {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                {
-                    var s = count == 1 ? "" : "s";
-                    session.Io.OutputLine($"There are {count} new poll question{s} since your last call, use /polls to view.");
-                }
-            }
+            return count;
+            //if (count > 0)
+            //{
+            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            //    {
+            //        var s = count == 1 ? "" : "s";
+            //        session.Io.OutputLine($"There are {count} new poll question{s} since your last call, use /polls to view.");
+            //    }
+            //}
         }
 
         private static bool Menu(BbsSession session, IRepository<PollQuestion> questionRepo, IRepository<PollVote> voteRepo)

@@ -61,7 +61,9 @@ namespace miniBBS.Services.Services
                         lines.Add(string.Empty);
                     else if (line.StartsWith("/"))
                     {
-                        cmdResult = ProcessCommand(lines, line.Substring(1).Split(' ').ToArray());
+                        cmdResult = ProcessCommand(session, lines, line.Substring(1)
+                            .Split(' ')
+                            .ToArray());
                         if (cmdResult.HasFlag(CommandResult.Saved))
                             _savedText = String.Join(Environment.NewLine, lines);
                         if (cmdResult.HasFlag(CommandResult.RevertToOriginal))
@@ -114,7 +116,7 @@ namespace miniBBS.Services.Services
         /// </summary>
         public Func<string, string> OnSave { get; set; }
 
-        private CommandResult ProcessCommand(List<string> lines, string[] args)
+        private CommandResult ProcessCommand(BbsSession session, List<string> lines, string[] args)
         {
             if (args?.Length < 1)
                 return CommandResult.None;
@@ -187,7 +189,7 @@ namespace miniBBS.Services.Services
                         if (args.Length < 2)
                             Notify("Insert after what line? (try '/i 5' to insert after line 5)");
                         else
-                            InsertLines(lines, args.Skip(1)?.ToArray());
+                            InsertLines(session, lines, args.Skip(1)?.ToArray());
                     }
                     break;
                 case "delete":
@@ -293,7 +295,7 @@ namespace miniBBS.Services.Services
                     "/abort, /abt, /a : Abort (undoes all changes since your last save)",
                     "/quit, /exit, /q, /x : Exit the editor, if you have unsaved changes you're asked if you also want to save",
                     "/list, /l [range] : Lists the file's contents.  You will be asked if you want to show line numbers.  Optional range can be a line number or a range of lines (such as '/list 5' or '/list 5-10' or '/list 5-' or '/list -5'",
-                    "/insert, /ins, /i (after) [count] : Inserts one or more blank lines after the specified line number.  Can use '/insert 0' to insert at the beginning",
+                    "/insert, /ins, /i (after) [count] : Inserts one or more lines after the specified line number.  Can use '/insert 0' to insert at the beginning",
                     "/delete, /del, /d [range] : Deletes one or more lines, if the optional [range] is not given then the last line is deleted.  You will be asked to confirm the delete",
                     "/edit, /ed, /e [line num] [search & replace]: Edits a line.  If a line number is given then edits that line otherwise edits the last line.",
                     "/move, /mv, /m [range] [line num] : Moves one or more lines (defined by the [range]) to a line immediately after [line num].",
@@ -513,7 +515,7 @@ namespace miniBBS.Services.Services
             }
         }
 
-        private void InsertLines(List<string> lines, string[] args)
+        private void InsertLines(BbsSession session, List<string> lines, string[] args)
         {
             if (!int.TryParse(args[0], out int insertPoint) || insertPoint < 0 || insertPoint >= lines.Count)
             {
@@ -523,11 +525,26 @@ namespace miniBBS.Services.Services
             int numLines = 1;
             if (args.Length >= 2 && int.TryParse(args[1], out int nl) && nl > 0 && nl <= Constants.MaxLinesToInsertInLineEditor)
                 numLines = nl;
+            if (numLines < 1)
+                return;
+
+            var text = string.Empty;
+            if (numLines == 1)
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                {
+                    session.Io.OutputLine($"{Constants.Inverser}Enter text for inserted line below:{Constants.Inverser}");
+                    text = session.Io.InputLine();
+                }
+            }
 
             for (int i = 0; i < numLines; i++)
-                lines.Insert(insertPoint, string.Empty);
+                lines.Insert(insertPoint, text);
 
-            Notify($"{numLines} blank lines inserted after line # {insertPoint}.");
+            if (string.IsNullOrWhiteSpace(text))
+                Notify($"{numLines} blank line{(numLines == 1 ? "" : "s")} inserted after line # {insertPoint}.");
+            else
+                Notify($"Inserted typed line after line # {insertPoint}.");
         }
 
         private void MoveLines(ref List<string> lines, string[] args)

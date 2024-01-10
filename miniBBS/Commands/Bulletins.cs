@@ -209,6 +209,7 @@ namespace miniBBS.Commands
                                 if (n.HasValue)
                                 {
                                     ReadBulletin(session, bulletins, n.Value, readBulletins);
+                                    lastRead = n;
                                     break;
                                 }
                                 Notice(session, "No more in thread");
@@ -217,7 +218,10 @@ namespace miniBBS.Commands
                             {
                                 var n = bulletins.Keys.FirstOrDefault();
                                 if (n > 0)
+                                {
                                     ReadBulletin(session, bulletins, n, readBulletins);
+                                    lastRead = n;
+                                }
                                 else
                                     Notice(session, "No bulletins on this board, use ']' to advance to next.");
                             }
@@ -225,7 +229,10 @@ namespace miniBBS.Commands
                             {
                                 var n = bulletins.Keys.FirstOrDefault(x => x > lastRead.Value);
                                 if (n > 0)
+                                {
                                     ReadBulletin(session, bulletins, n, readBulletins);
+                                    lastRead = n;
+                                }
                             }
                             break;
                         case 'B':

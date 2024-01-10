@@ -16,6 +16,7 @@ namespace miniBBS.Core.Models.Messages
         /// <param name="channelId"></param>
         /// <param name="message"></param>
         /// <param name="disturb">If true then message will be shown even to users with DoNotDistrub turned on</param>
+        /// <param name="predicate">If <paramref name="predicate"/> is given then result must be true for notification to be shown</param>
         public ChannelMessage(Guid sessionId, int channelId, string message, bool disturb=false, Func<BbsSession, bool> predicate = null)
         {
             SessionId = sessionId;

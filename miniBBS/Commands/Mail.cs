@@ -192,7 +192,7 @@ namespace miniBBS.Commands
                 lineEditor.OnSave = _body =>
                 {
                     SendMail(session, toId, subject, _body);
-                    session.Messager.Publish(session, new UserMessage(session.Id, toId, $"New mail from {session.User.Name}"));
+                    session.Messager.Publish(session, new UserMessage(session.Id, toId, $"New mail from {session.User.Name}, use /mr to read."));
                     return "Mail sent!";
                 };
                 lineEditor.EditText(session, new LineEditorParameters
@@ -468,6 +468,31 @@ namespace miniBBS.Commands
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
             {
                 session.Io.OutputLine(err);
+            }
+        }
+
+        internal static void ReadLatest(BbsSession session)
+        {
+            var originalLocation = session.CurrentLocation;
+            var originalDnd = session.DoNotDisturb;
+
+            session.CurrentLocation = Module.Email;
+            session.DoNotDisturb = true;
+
+            try
+            {
+                var latest = GetMails(session).FirstOrDefault();
+                if (latest == null)
+                {
+                    session.Io.Error("No mail!");
+                    return;
+                }
+                ReadMail(session, latest);
+            }
+            finally
+            {
+                session.CurrentLocation = originalLocation;
+                session.DoNotDisturb = originalDnd;
             }
         }
     }
