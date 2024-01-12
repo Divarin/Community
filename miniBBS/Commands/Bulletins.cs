@@ -1,6 +1,7 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -755,7 +756,7 @@ namespace miniBBS.Commands
             }
         }
 
-        internal static int CountUnread(BbsSession session)
+        internal static Count Count(BbsSession session)
         {
             var metaRepo = DI.GetRepository<Metadata>();
 
@@ -772,9 +773,11 @@ namespace miniBBS.Commands
             var bulletinRepo = DI.GetRepository<Bulletin>();
             var bulletins = bulletinRepo.Get().ToList();
 
-            var unread = bulletins?.Count(b => !readBulletins.Contains(b.Id)) ?? 0;
-
-            return unread;
+            return new Count
+            {
+                TotalCount = bulletins?.Count() ?? 0,
+                SubsetCount = bulletins?.Count(b => !readBulletins.Contains(b.Id)) ?? 0
+            };
         }
 
         private static bool PostMessage(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, List<int> readBulletins)

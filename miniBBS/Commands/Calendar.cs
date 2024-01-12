@@ -1,6 +1,7 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using System;
@@ -12,11 +13,17 @@ namespace miniBBS.Commands
 {
     public static class Calendar
     {
-        public static int GetCount()
+        public static Count Count(BbsSession session)
         {
             var calRepo = DI.GetRepository<CalendarItem>();
             PruneOldEntries(calRepo);
-            return calRepo.Get().Count();
+            var cals = calRepo.Get();
+            
+            return new Count
+            {
+                TotalCount = cals.Count(),
+                SubsetCount = cals.Count(x => x.DateCreatedUtc > session.User.LastLogonUtc)
+            };
         }
 
         public static void Execute(BbsSession session)

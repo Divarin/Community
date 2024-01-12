@@ -1,6 +1,7 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -38,22 +39,16 @@ namespace miniBBS.Commands
             }
         }
 
-        public static int GetCountOfNewSinceLastCall(BbsSession session)
+        public static Count Count(BbsSession session)
         {
-            if (session?.User == null)
-                return 0;
-
             var questionRepo = DI.GetRepository<PollQuestion>();
-            var count = questionRepo.Get().Count(p => p.DateAddedUtc >= session.User.LastLogonUtc);
-            return count;
-            //if (count > 0)
-            //{
-            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-            //    {
-            //        var s = count == 1 ? "" : "s";
-            //        session.Io.OutputLine($"There are {count} new poll question{s} since your last call, use /polls to view.");
-            //    }
-            //}
+            var questions = questionRepo.Get();
+
+            return new Count
+            {
+                TotalCount = questions.Count(),
+                SubsetCount = questions.Count(p => p.DateAddedUtc >= session?.User?.LastLogonUtc)
+            };
         }
 
         private static bool Menu(BbsSession session, IRepository<PollQuestion> questionRepo, IRepository<PollVote> voteRepo)

@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
@@ -55,7 +56,7 @@ namespace miniBBS.Services.GlobalCommands
                         else
                             lastRead = -1;
                         //var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
-                        var unread = GetUnreadCount(readIds, chatRepo, chan.Id);
+                        var unread = GetChannelCount(readIds, chatRepo, chan.Id).SubsetCount;
 
                         builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
                         builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
@@ -83,39 +84,23 @@ namespace miniBBS.Services.GlobalCommands
             return GetChannelList(session, repo);
         }
 
-        public static int GetTotalUnread(BbsSession session)
+        public static Count Count(BbsSession session)
         {
             var di = GlobalDependencyResolver.Default;
             var readIds = session.ReadChatIds(di);
             var chatRepo = di.GetRepository<Chat>();
             var chans = GetChannelList(session);
-            int totalUnread = 0;//, totalUnreadChans = 0;
+
+            var total = new Count();
 
             foreach (var chan in chans)
             {
-                var unread = GetUnreadCount(readIds, chatRepo, chan.Id);
-                if (unread > 0)
-                {
-                    totalUnread += unread;
-                    //totalUnreadChans++;
-                }
+                var channelCount = GetChannelCount(readIds, chatRepo, chan.Id);
+                total.TotalCount += channelCount.TotalCount;
+                total.SubsetCount += channelCount.SubsetCount;
             }
 
-            return totalUnread;
-            //if (totalUnread > 0)
-            //{
-            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-            //    {
-            //        var s = totalUnreadChans == 1 ? "" : "s";
-            //        session.Io.OutputLine($"You have a total of {totalUnread} unread messages in {totalUnreadChans} channel{s}.");
-            //        if (totalUnread > _totalUnreadToNotifiyAboutIndexes)
-            //        {
-            //            session.Io.SetForeground(ConsoleColor.Red);
-            //            session.Io.OutputLine("What, that many messages?  I don't want to read all that to get caught up!  No problem, use '/? msgs' to learn how to jump around and just read the more recent stuff!  Don't worry I'll keep track of which messages you have and haven't read so feel free to jump.");
-            //        }
-            //        Thread.Sleep(500);
-            //    }
-            //}
+            return total;            
         }
 
         private static Channel[] GetChannelList(BbsSession session, IRepository<Channel> channelRepo)
@@ -127,13 +112,16 @@ namespace miniBBS.Services.GlobalCommands
                 .ToArray();
         }
 
-        private static int GetUnreadCount(List<int> readIds, IRepository<Chat> chatRepo, int channelId)
+        private static Count GetChannelCount(List<int> readIds, IRepository<Chat> chatRepo, int channelId)
         {
-            var di = GlobalDependencyResolver.Default;            
-            var count = chatRepo
-                .Get(c => c.ChannelId, channelId)
-                ?.Count(c => !readIds.Contains(c.Id)) ?? 0;
-            return count;
+            var di = GlobalDependencyResolver.Default;
+            var chats = chatRepo.Get(c => c.ChannelId, channelId);
+
+            return new Count
+            {
+                TotalCount = chats?.Count() ?? 0,
+                SubsetCount = chats?.Count(c => !readIds.Contains(c.Id)) ?? 0
+            };
         }
     }
 }

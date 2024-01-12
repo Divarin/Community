@@ -2,6 +2,7 @@
 using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -376,41 +377,43 @@ namespace miniBBS
 
         private static void ShowLoginNotifications(BbsSession session, LoginStartupMode startupMode)
         {
-            using (session.Io.WithColorspace(ConsoleColor.Red, ConsoleColor.Yellow))
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 session.Io.Output($"{Constants.Inverser}{Constants.Spaceholder}*** Community Login Notifications *** {Constants.Inverser}");
-                session.Io.SetColors(ConsoleColor.Black, ConsoleColor.White);
+                session.Io.SetForeground(ConsoleColor.White);
                 session.Io.OutputLine();
 
-                int iBulletins, iChats, iEmails, iPolls, iCals;
-                iBulletins = Bulletins.CountUnread(session);
-                iChats = ListChannels.GetTotalUnread(session);
-                iEmails = Commands.Mail.CountUnread(session);
-                iPolls = Polls.GetCountOfNewSinceLastCall(session);
-                iCals = Calendar.GetCount();
+                var counts = new Count[]
+                {
+                    Bulletins.Count(session),
+                    ListChannels.Count(session),
+                    Commands.Mail.Count(session),
+                    Polls.Count(session),
+                    Calendar.Count(session)
+                };
 
-                var numBulletins = iBulletins.ToString().Color(iBulletins > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
-                var numChats = iChats.ToString().Color(iChats > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
-                var numEmails = iEmails.ToString().Color(iEmails > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
-                var numPolls = iPolls.ToString().Color(iPolls > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
-                var numCals = iCals.ToString().Color(iCals > 0 ? ConsoleColor.Green : ConsoleColor.DarkGray);
+                var formattedCounts = counts.Select(c =>
+                {
+                    var color = c.SubsetCount > 0 ? ConsoleColor.Green : ConsoleColor.DarkCyan;
+                    return $"{c.SubsetCount.ToString().Color(color)} / {c.TotalCount}";
+                }).ToArray();
 
                 var builder = new StringBuilder();
                 if (startupMode == LoginStartupMode.ChatRooms)
                 {
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(6) + $"Unread Bulletins (/b):{Constants.Inverser} {numBulletins}");
-                    builder.AppendLine($"{Constants.Inverser}Unread Chats (all channels):{Constants.Inverser} {numChats}");
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(6) + $"Unread Emails (/mail):{Constants.Inverser} {numEmails}");
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(9) + $"New Polls (/polls):{Constants.Inverser} {numPolls}");
-                    builder.AppendLine($"{Constants.Inverser}{Constants.Spaceholder}New Calendar Events (/cal):{Constants.Inverser} {numCals}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(6) + $"Unread Bulletins (/b): {formattedCounts[0]}");
+                    builder.AppendLine($"Unread Chats (all channels): {formattedCounts[1]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(6) + $"Unread Emails (/mail): {formattedCounts[2]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(9) + $"New Polls (/polls): {formattedCounts[3]}");
+                    builder.AppendLine($"{Constants.Spaceholder}New Calendar Events (/cal): {formattedCounts[4]}");
                 }
                 else
                 {
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(4) + $"Unread Bulletins (B):{Constants.Inverser} {numBulletins}");
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(8) + $"Unread Chats (C):{Constants.Inverser} {numChats}");
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(7) + $"Unread Emails (E):{Constants.Inverser} {numEmails}");
-                    builder.AppendLine($"{Constants.Inverser}" + $"{Constants.Spaceholder}".Repeat(11) + $"New Polls (V):{Constants.Inverser} {numPolls}");
-                    builder.AppendLine($"{Constants.Inverser}{Constants.Spaceholder}New Calendar Events (L):{Constants.Inverser} {numCals}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(4) + $"Unread Bulletins (B): {formattedCounts[0]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(8) + $"Unread Chats (C): {formattedCounts[1]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(7) + $"Unread Emails (E): {formattedCounts[2]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(11) + $"New Polls (V): {formattedCounts[3]}");
+                    builder.AppendLine($"{Constants.Spaceholder}New Calendar Events (L): {formattedCounts[4]}");
                 }
                 foreach (var other in GetOtherNotifications(session))
                     builder.AppendLine(other);

@@ -592,6 +592,7 @@ namespace miniBBS.Basic
                 vars["SCRIPTNAME$"] = () => '"' + _scriptName + '"';
                 vars["CHAT$"] = () => '"' + _scriptInput + '"';
                 vars["DEBUGGING"] = () => _isDebugging ? "1" : "0";
+                vars["CHANNEL$"] = () => _session.Channel.Name;
             }
 
             return vars;

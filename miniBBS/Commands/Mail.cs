@@ -1,6 +1,7 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
@@ -142,11 +143,16 @@ namespace miniBBS.Commands
             return new Tuple<string, string>(null, null);
         }
 
-        public static int CountUnread(BbsSession session)
+        public static Count Count(BbsSession session)
         {
-            return DI.GetRepository<Core.Models.Data.Mail>()
-                .Get(m => m.ToUserId, session.User.Id)
-                .Count(c => !c.Read);
+            var mails = DI.GetRepository<Core.Models.Data.Mail>()
+                .Get(m => m.ToUserId, session.User.Id);
+
+            return new Count
+            {
+                TotalCount = mails.Count(),
+                SubsetCount = mails.Count(c => !c.Read)
+            };
         }
 
         private static void SendMail(BbsSession session, string to)
