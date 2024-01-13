@@ -477,7 +477,7 @@ namespace miniBBS.Commands
             }
         }
 
-        internal static void ReadLatest(BbsSession session)
+        public static void ReadLatest(BbsSession session)
         {
             var originalLocation = session.CurrentLocation;
             var originalDnd = session.DoNotDisturb;

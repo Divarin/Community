@@ -89,7 +89,7 @@ namespace miniBBS.Commands
                             exit = true;
                             break;
                         }
-                        if (!idleTimeoutWarned && idleTime.TotalMinutes == _warnIdleTime.TotalMinutes)
+                        if (!idleTimeoutWarned && idleTime.TotalMinutes >= _warnIdleTime.TotalMinutes)
                         {
                             session.Io.OutputLine("You feel yourself being pulled out of NullSpace (you're approach idle-timeout)");
                             idleTimeoutWarned = true;

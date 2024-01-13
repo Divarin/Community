@@ -377,20 +377,22 @@ namespace miniBBS
 
         private static void ShowLoginNotifications(BbsSession session, LoginStartupMode startupMode)
         {
+            const int BULLETINS = 0, CHATS = 1, MAILS = 2, POLLS = 3, CALS = 4;
+
+            var counts = new Count[]
+            {
+                Bulletins.Count(session),
+                ListChannels.Count(session),
+                Commands.Mail.Count(session),
+                Polls.Count(session),
+                Calendar.Count(session)
+            };
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 session.Io.Output($"{Constants.Inverser}{Constants.Spaceholder}*** Community Login Notifications *** {Constants.Inverser}");
                 session.Io.SetForeground(ConsoleColor.White);
                 session.Io.OutputLine();
-
-                var counts = new Count[]
-                {
-                    Bulletins.Count(session),
-                    ListChannels.Count(session),
-                    Commands.Mail.Count(session),
-                    Polls.Count(session),
-                    Calendar.Count(session)
-                };
 
                 var formattedCounts = counts.Select(c =>
                 {
@@ -401,19 +403,19 @@ namespace miniBBS
                 var builder = new StringBuilder();
                 if (startupMode == LoginStartupMode.ChatRooms)
                 {
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(6) + $"Unread Bulletins (/b): {formattedCounts[0]}");
-                    builder.AppendLine($"Unread Chats (all channels): {formattedCounts[1]}");
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(6) + $"Unread Emails (/mail): {formattedCounts[2]}");
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(9) + $"New Polls (/polls): {formattedCounts[3]}");
-                    builder.AppendLine($"{Constants.Spaceholder}New Calendar Events (/cal): {formattedCounts[4]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(6) + $"Unread Bulletins (/b): {formattedCounts[BULLETINS]}");
+                    builder.AppendLine($"Unread Chats (all channels): {formattedCounts[CHATS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(6) + $"Unread Emails (/mail): {formattedCounts[MAILS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(9) + $"New Polls (/polls): {formattedCounts[POLLS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}New Calendar Events (/cal): {formattedCounts[CALS]}");
                 }
                 else
                 {
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(4) + $"Unread Bulletins (B): {formattedCounts[0]}");
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(8) + $"Unread Chats (C): {formattedCounts[1]}");
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(7) + $"Unread Emails (E): {formattedCounts[2]}");
-                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(11) + $"New Polls (V): {formattedCounts[3]}");
-                    builder.AppendLine($"{Constants.Spaceholder}New Calendar Events (L): {formattedCounts[4]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(4) + $"Unread Bulletins (B): {formattedCounts[BULLETINS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(8) + $"Unread Chats (C): {formattedCounts[CHATS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(7) + $"Unread Emails (E): {formattedCounts[MAILS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}".Repeat(11) + $"New Polls (V): {formattedCounts[POLLS]}");
+                    builder.AppendLine($"{Constants.Spaceholder}New Calendar Events (L): {formattedCounts[CALS]}");
                 }
                 foreach (var other in GetOtherNotifications(session))
                     builder.AppendLine(other);
@@ -421,39 +423,10 @@ namespace miniBBS
                 Thread.Sleep(1234);
             }
 
-            //var anyNotifications = GetOtherNotifications(session);
-
-            //var calCount = Calendar.GetCount();
-            //if (calCount > 0)
-            //{
-            //    session.Io.SetForeground(ConsoleColor.Red);
-            //    session.Io.OutputLine($"There are {calCount} live chat sessions on the calendar.{(startupMode == LoginStartupMode.ChatRooms ? "Use '/cal' to view them." : "")}");
-            //}
-
-            //int unreadMail = Commands.Mail.CountUnread(session);
-            //if (unreadMail > 0)
-            //{
-            //    session.Io.Error($"You have {unreadMail} unread mails.  " +
-            //        (startupMode == LoginStartupMode.ChatRooms ?
-            //        "Use '/mail' to read your mail." :
-            //        "Use E to read your mail."));
-            //    anyNotifications = true;
-            //}
-
-            //int unreadBulletins = Bulletins.CountUnread(session);
-            //if (unreadBulletins > 0)
-            //{
-            //    session.Io.Error($"There are {unreadBulletins} unread messages on the Bulletin Boards.  " +
-            //        (startupMode == LoginStartupMode.ChatRooms ? 
-            //        "Use '/b' to read the boards." :
-            //        "Use M to read the boards."));
-            //    anyNotifications = true;
-            //}
-
-            //Polls.GetCountOfNewSinceLastCall(session);
-            
-            //if (anyNotifications)
-            //    Thread.Sleep(3000);
+            if (counts[MAILS].SubsetCount > 0 && 'Y' == session.Io.Ask("You have unread e-mail, read now?"))
+            {
+                Commands.Mail.Execute(session, "list");
+            }
         }
 
         private static void Prompt(BbsSession session)
