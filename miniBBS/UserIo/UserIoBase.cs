@@ -605,6 +605,11 @@ namespace miniBBS.UserIo
                         (handlingFlag.HasFlag(InputHandlingFlag.ReturnFirstCharacterOnly) && lineBuilder.Length >= 1)
                         || (!includedNewLine && data.Contains("\r"));
 
+                    returnNow |=
+                        handlingFlag.HasFlag(InputHandlingFlag.ReturnFirstCharacterOnlyUnlessNumeric) &&
+                        lineBuilder.Length >= 1 &&
+                        !decimal.TryParse(lineBuilder.ToString(), out var _);
+
                     if (returnNow)
                     {
                         if (handlingFlag.HasFlag(InputHandlingFlag.PasswordInput))

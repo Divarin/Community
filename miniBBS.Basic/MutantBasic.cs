@@ -924,6 +924,9 @@ namespace miniBBS.Basic
                     case "showfile":
                         ShowFile.Execute(_session, _rootDirectory, args, variables);
                         break;
+                    case "notify" when _session.User.Access.HasFlag(AccessFlag.Administrator):
+                        Notify.Execute(_session, args, variables);
+                        break;
                     default:
                         if (statement.Contains('=') && !statement.StartsWith("LET"))
                         {

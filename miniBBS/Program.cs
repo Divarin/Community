@@ -388,6 +388,9 @@ namespace miniBBS
                 Calendar.Count(session)
             };
 
+            session.Io.OutputLine("Last 5 users".Color(ConsoleColor.Magenta));
+            Seen.Execute(session, "5");
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 session.Io.Output($"{Constants.Inverser}{Constants.Spaceholder}*** Community Login Notifications *** {Constants.Inverser}");

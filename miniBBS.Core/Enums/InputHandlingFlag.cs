@@ -54,5 +54,10 @@ namespace miniBBS.Core.Enums
         /// Returns as soon as the user has typed one character
         /// </summary>
         ReturnFirstCharacterOnly = 256,
+
+        /// <summary>
+        /// Same as ReturnFirstCharacterOnly unless the input is purely numeric (including decimal point)
+        /// </summary>
+        ReturnFirstCharacterOnlyUnlessNumeric = 512,
     }
 }

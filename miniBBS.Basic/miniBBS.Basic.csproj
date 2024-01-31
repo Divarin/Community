@@ -70,6 +70,7 @@
     <Compile Include="Executors\Int.cs" />
     <Compile Include="Executors\Len.cs" />
     <Compile Include="Executors\Let.cs" />
+    <Compile Include="Executors\Notify.cs" />
     <Compile Include="Executors\On.cs" />
     <Compile Include="Executors\Position.cs" />
     <Compile Include="Executors\Print.cs" />
