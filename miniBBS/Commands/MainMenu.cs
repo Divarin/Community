@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
@@ -112,8 +113,19 @@ namespace miniBBS.Commands
                                 BrowseGames.Execute(session);
                                 break;
                             case 'O':
-                                if ('Y' == session.Io.Ask("Are you sure you want to log off?"))
-                                    return false;
+                                {
+                                    var k = session.Io.Ask("Logoff? (Y)es, (W)ith Message, (N)o");
+                                    if (k == 'W')
+                                    {
+                                        session.Io.Output("Enter goodbye message: ");
+                                        var quitMessage = session.Io.InputLine();
+                                        session.Io.OutputLine();
+                                        if (!string.IsNullOrWhiteSpace(quitMessage))
+                                            session.Items[SessionItem.LogoutMessage] = quitMessage;
+                                    }
+                                    if (k == 'W' || k == 'Y')
+                                        return false;
+                                }
                                 break;
                             case 'L':
                                 //session.Io.OutputLine(_learn);

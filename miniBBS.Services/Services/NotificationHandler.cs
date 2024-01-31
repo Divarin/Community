@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace miniBBS.Helpers
+namespace miniBBS.Services.Services
 {
     public class NotificationHandler : INotificationHandler
     {
@@ -12,7 +12,7 @@ namespace miniBBS.Helpers
 
         public NotificationHandler()
         {
-            _repo = DI.GetRepository<Notification>();
+            _repo = GlobalDependencyResolver.Default.GetRepository<Notification>();
         }
 
         public IEnumerable<Notification> GetNotifications(int userId)

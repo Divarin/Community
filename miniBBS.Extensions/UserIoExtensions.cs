@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Interfaces;
 using System;
 
@@ -17,6 +18,23 @@ namespace miniBBS.Extensions
                 var result = io.InputKey();
                 io.OutputLine();
                 return char.ToUpper(result ?? (char)0);
+            }
+        }
+
+        /// <summary>
+        /// Returns keypress or if a number then allows for multiple keypresses to accomodate multi-digit numbers.
+        /// </summary>
+        public static string AskWithNumber(this IUserIo io, string question)
+        {
+            if (io == null)
+                return string.Empty;
+
+            using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                io.Output($"{Constants.Inverser}{question}:{Constants.Inverser} ");
+                var result = io.InputLine(InputHandlingFlag.ReturnFirstCharacterOnlyUnlessNumeric);
+                io.OutputLine();
+                return result;
             }
         }
 

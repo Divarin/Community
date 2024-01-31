@@ -6,11 +6,14 @@ using miniBBS.Extensions;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace miniBBS.Commands
 {
     public static class Seen
     {
+        private const string _seenHeader = "Who       When               Bye";
+
         public static void Execute(BbsSession session, params string[] args)
         {
             var repo = DI.GetRepository<Metadata>();
@@ -36,8 +39,13 @@ namespace miniBBS.Commands
                     Data = JsonConvert.DeserializeObject<SeenData>(m.Data)
                 });
 
+            var builder = new StringBuilder();
+            builder.AppendLine(_seenHeader.Color(ConsoleColor.Magenta));
+
             foreach (var d in data)
-                d.Data.Show(session, d.UserId);
+                builder.AppendLine(GetLine(session, d.Data, d.UserId));
+
+            session.Io.Output(builder.ToString());
         }
 
         private static void ShowLastSeenUser(BbsSession session, IRepository<Metadata> repo)
@@ -50,7 +58,8 @@ namespace miniBBS.Commands
             if (last?.UserId != null)
             {
                 var data = JsonConvert.DeserializeObject<SeenData>(last.Data);
-                data.Show(session, last.UserId.Value);
+                session.Io.OutputLine(_seenHeader.Color(ConsoleColor.Magenta));
+                session.Io.OutputLine(GetLine(session, data, last.UserId.Value));
             }
             else
                 session.Io.Error("I don't remember the last time someone was on here.");
@@ -70,17 +79,37 @@ namespace miniBBS.Commands
                 ?.Where(x => x.UserId.HasValue && userIds.Contains(x.UserId.Value))
                 ?.ToDictionary(k => k.UserId);
 
+            var builder = new StringBuilder();
+            builder.AppendLine(_seenHeader.Color(ConsoleColor.Magenta));
+
             foreach (var un in usernames)
             {
                 if (reverseDict.TryGetValue(un, out int userId) && seens.ContainsKey(userId))
                 {
                     var seen = seens[userId];
                     var data = JsonConvert.DeserializeObject<SeenData>(seen.Data);
-                    data.Show(session, seen.UserId.Value);
+                    builder.AppendLine(GetLine(session, data, seen.UserId.Value));
                 }
                 else
                     session.Io.Error($"I don't remember the last time {un} was on here.");
             }
+
+            session.Io.Output(builder.ToString());
+        }
+
+        private static string GetLine(BbsSession session, SeenData seen, int userId)
+        {
+            var username = session.Usernames.ContainsKey(userId) ? session.Usernames[userId] : "Unknown";
+            var login = seen.SessionsStartUtc.Year == DateTime.Now.Year ?
+                $"{seen.SessionsStartUtc.AddHours(session.TimeZone):MMM dd HH:mm}" :
+                $"{seen.SessionsStartUtc.AddHours(session.TimeZone):yyMMdd HH:mm}";
+
+            return
+                username.MaxLength(10).PadRight(10).Color(ConsoleColor.Green) +
+                login.Color(ConsoleColor.Yellow) +
+                "-".Color(ConsoleColor.DarkGray) +
+                $"{seen.SessionEndUtc.AddHours(session.TimeZone):HH:mm} ".Color(ConsoleColor.White) +
+                seen.QuitMessage.Color(ConsoleColor.Blue);
         }
     }
 }

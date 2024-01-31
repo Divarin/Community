@@ -71,6 +71,7 @@
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Services\MaintDowntimeAnnouncer.cs" />
     <Compile Include="Services\Messager.cs" />
+    <Compile Include="Services\NotificationHandler.cs" />
     <Compile Include="Services\SessionsList.cs" />
     <Compile Include="Services\SqlUi.cs" />
     <Compile Include="Services\Xmodem.cs" />

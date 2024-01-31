@@ -234,6 +234,8 @@ namespace miniBBS.Commands
                                     ReadBulletin(session, bulletins, n, readBulletins);
                                     lastRead = n;
                                 }
+                                else
+                                    NextUnread();
                             }
                             break;
                         case 'B':
@@ -663,15 +665,44 @@ namespace miniBBS.Commands
                 return;
             }
 
+            List<Bulletin> toList = null;
+            while (toList == null)
+            {
+                var option = session.Io.AskWithNumber("U)nread, #) From #, ENTER=All");
+                if (option == "U")
+                {
+                    toList = bulletins.Values
+                        .Where(b => !readBulletins.Contains(b.Id))
+                        .OrderBy(b => b.DateUtc)
+                        .ToList();
+                }
+                else if (option == "#")
+                {
+                    session.Io.Error("By '#' I meant, type in a number.");
+                }
+                else if (!string.IsNullOrWhiteSpace(option) && int.TryParse(option, out var startAt))
+                {
+                    toList = bulletins.Values
+                        .Where(b => b.Id >= startAt)
+                        .OrderBy(b => b.DateUtc)
+                        .ToList();
+                }
+                else
+                {
+                    toList = bulletins.Values
+                        .OrderBy(b => b.DateUtc)
+                        .ToList();
+                }
+            };
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 var builder = new StringBuilder();
 
-                //                                          12345678901234567890 
                 session.Io.OutputLine($"{Constants.Inverser}*# Date. From.... Subject{Constants.Inverser}".Replace('.', Constants.Spaceholder));
 
                 session.Io.OutputLine("--------------------------------------");
-                foreach (var bull in bulletins.Values)
+                foreach (var bull in toList)
                 {
                     var isRead = true == readBulletins?.Contains(bull.Id) ? $"{Constants.Spaceholder}" : "*".Color(ConsoleColor.Red);
                     var printableMsgNum = bull.Id.ToString();

@@ -185,29 +185,6 @@ namespace miniBBS.Extensions
             return users;
         }
 
-        public static void Show(this SeenData seenData, BbsSession session, int userId)
-        {
-            if (seenData == null || session == null)
-                session?.Io?.OutputLine("I have no information about that user.");
-
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
-            {
-                var username = session.Usernames.ContainsKey(userId) ? session.Usernames[userId] : "Unknown";
-                var msg = 
-                    username.Color(ConsoleColor.Green) + 
-                    " last logged in " + 
-                    $"{seenData.SessionsStartUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".Color(ConsoleColor.Yellow) +
-                    ", then logged out " +
-                    $"{seenData.SessionEndUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".Color(ConsoleColor.Yellow) + 
-                    ", ";
-                if (!string.IsNullOrWhiteSpace(seenData.QuitMessage))
-                    msg += "and left saying '" + seenData.QuitMessage.Color(ConsoleColor.Magenta) + "'.";
-                else
-                    msg += "and left without saying a thing.";
-                session.Io.OutputLine(msg);
-            }
-        }
-
         public static LoginStartupMode GetStartupMode(this User user, IRepository<Metadata> metaRepo)
         {
             if (user == null || metaRepo == null)
