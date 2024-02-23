@@ -77,6 +77,7 @@
   <ItemGroup>
     <Compile Include="Commands\Afk.cs" />
     <Compile Include="Commands\Announce.cs" />
+    <Compile Include="Commands\B64.cs" />
     <Compile Include="Commands\Basic.cs" />
     <Compile Include="Commands\Bell.cs" />
     <Compile Include="Commands\Blurbs.cs" />

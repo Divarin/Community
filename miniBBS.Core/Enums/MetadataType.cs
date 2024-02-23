@@ -10,6 +10,7 @@
         ReadMessages,
         ChatHeaderFormat,
         CrossChannelNotifications,
-        ReadBulletins
+        ReadBulletins,
+        PasswordResetCode
     }
 }

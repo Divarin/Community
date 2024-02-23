@@ -19,5 +19,6 @@ namespace miniBBS.Core.Models.Data
         public int Rows { get; set; }
         public TerminalEmulation Emulation { get; set; }
         public int Timezone { get; set; }
+        public string InternetEmail { get; set; }
     }
 }

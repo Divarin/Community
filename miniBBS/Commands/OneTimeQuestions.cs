@@ -72,7 +72,7 @@ namespace miniBBS.Commands
                     "When you log in do you want to go to A) the Main Menu or B) the Chat Rooms.  " +
                     Environment.NewLine +
                     "What to do when you log in?".Color(ConsoleColor.Red),
-                Followup = "If you want to change this preference use the command (from chat rooms) '/pref'",
+                Followup = "If you want to change this preference use the command (P) from main menu or '/pref' from chat rooms.",
                 Action = (_s, _k) =>
                 {
                     var metaRepo = DI.GetRepository<Metadata>();

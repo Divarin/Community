@@ -6,6 +6,7 @@ using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
+using miniBBS.Exceptions;
 using miniBBS.Extensions;
 using miniBBS.Helpers;
 using miniBBS.Menus;
@@ -478,7 +479,7 @@ namespace miniBBS
                             username = "Unknown User";
                         var channelName = DI.GetRepository<Channel>().Get(chat.ChannelId).Name.Color(ConsoleColor.Green);
                         var chanNum = ListChannels.GetChannelList(session).IndexOf(x => x.Id == chat.ChannelId) + 1;
-                        session.Io.OutputLine($"{Environment.NewLine}NOW: {username.Color(ConsoleColor.White)} has posted in {channelName}, use '/ch {chanNum}' to change channels.");
+                        session.Io.OutputLine($"{Environment.NewLine}Now: {username.Color(ConsoleColor.White)} has posted in {channelName}, use '/ch {chanNum}' to change channels.");
                         Tutor.Execute(session, "Use '/pref' to change this notification and other preferences.");
                         session.ShowPrompt();
                     }
@@ -772,7 +773,7 @@ namespace miniBBS
                 session.Io.OutputLine($"{session.Io.NewLine.Repeat(2)}Atascii Mode Activated.");
             }
 
-            int retries = 4;
+            int retries = 6;
             retryLogin:
             retries--;
             if (retries <= 0)
@@ -844,11 +845,16 @@ namespace miniBBS
             {
                 session.Io.OutputLine("oh yeah?  prove it!");
                 session.Io.Output("password: ");
-                string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
-                if (!DI.Get<IHasher>().VerifyHash(pw, user.PasswordHash))
+                InputHandlingFlag inputHandlingFlag = retries > 2 ? InputHandlingFlag.PasswordInput : InputHandlingFlag.None;
+                string pw = session.Io.InputLine(inputHandlingFlag)?.ToLower();
+                if (!DI.Get<IHasher>().VerifyHash(pw, user.PasswordHash) && !TryUseResetCode(session, user, pw))
                 {
                     session.Io.OutputLine("I don't think so.");
-                    return;
+                    if (retries <= 1)
+                    {
+                        ForgotPassword(session, user);
+                    }
+                    goto retryLogin;
                 }
                 if (!user.Access.HasFlag(AccessFlag.MayLogon))
                 {
@@ -892,10 +898,146 @@ namespace miniBBS
             session.Messager.Publish(session, new UserLoginOrOutMessage(session, true));
         }
 
+        private static bool TryUseResetCode(BbsSession session, User user, string code)
+        {
+            var di = GlobalDependencyResolver.Default;
+            var metaRepo = di.GetRepository<Metadata>();
+            var resetCodeMeta = metaRepo.Get(new Dictionary<string, object>
+            {
+                {nameof(Metadata.UserId), user.Id},
+                {nameof(Metadata.Type), MetadataType.PasswordResetCode}
+            }).PruneAllButMostRecent(di);
+
+            var hasher = di.Get<IHasher>();
+
+            if (resetCodeMeta == null ||
+                string.IsNullOrWhiteSpace(resetCodeMeta.Data) ||
+                !hasher.VerifyHash(code.Trim().ToUpper(), resetCodeMeta.Data) ||
+                !resetCodeMeta.Data.Equals(code.Trim(), StringComparison.CurrentCultureIgnoreCase))
+            {
+                return false;
+            }
+
+            session.Io.OutputLine($"Welcome back, {user.Name}!");
+            try
+            {
+                session.User = user;
+                var attempts = 5;
+                while (attempts > 0 && !UpdatePassword.Execute(session, false))
+                {
+                    attempts--;
+                }
+                metaRepo.Delete(resetCodeMeta);
+            }
+            finally
+            {
+                session.User = null;
+            }
+            return true;
+        }
+
+        private static void ForgotPassword(BbsSession session, User user)
+        {
+            var answer = session.Io.Ask("Forgot your password eh?");
+            if (answer != 'Y')
+            {
+                session.Io.OutputLine("Okay, if you say so!");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(user.InternetEmail))
+            {
+                session.Io.OutputLine("Well, you didn't give me your internet e-mail address so ... too bad!");
+                return;
+            }
+
+            var di = GlobalDependencyResolver.Default;
+            var metaRepo = di.GetRepository<Metadata>();
+            var resetCodeMeta = metaRepo.Get(new Dictionary<string, object>
+            {
+                {nameof(Metadata.UserId), user.Id},
+                {nameof(Metadata.Type), MetadataType.PasswordResetCode}
+            }).PruneAllButMostRecent(di);
+
+            if (resetCodeMeta != null && !string.IsNullOrWhiteSpace(resetCodeMeta.Data))
+            {
+                session.Io.OutputLine("I've already told the sysop to email you, you'll just have to wait until he gets around to it.");
+            }
+            else
+            {
+                var code = Guid.NewGuid().ToString()
+                    .Replace("-", "")
+                    .Substring(0, 7)
+                    .ToUpper();
+
+                metaRepo.Insert(new Metadata
+                {
+                    UserId = user.Id,
+                    Type = MetadataType.PasswordResetCode,
+                    Data = code,
+                    DateAddedUtc = DateTime.Now,
+                });
+                
+                var msg = $"The user {user.Name} has forgotten their password.  Please e-mail them the reset code '{code}' at '{user.InternetEmail}'.";
+                try
+                {
+                    session.User = user;
+                    Commands.Mail.SysopFeedback(session, "PW Reset", msg);
+                    session.Io.OutputLine("Okay I'll have the sysop email you.  It might take up to a day and be sure to check your spam folder!");
+                }
+                finally
+                {
+                    session.User = null;
+                }
+            }
+        }
+
         private static User RegisterNewUser(BbsSession session, string username, IRepository<User> userRepo)
         {
             session.CurrentLocation = Module.NewUserRegistration;
 
+            var attempts = 5;
+            string newPasswordHash = null;
+            while (attempts > 0 && !UpdatePassword.GetNewPasswordHash(session, false, out newPasswordHash))
+            {
+                attempts--;
+            }
+            
+            if (string.IsNullOrWhiteSpace(newPasswordHash))
+            {
+                throw new ForceLogoutException("Forced logout due to new user not able to set their password.");
+            }
+
+            var now = DateTime.UtcNow;
+
+            User user = new User
+            {
+                Name = username,
+                PasswordHash = newPasswordHash,
+                DateAddedUtc = now,
+                LastLogonUtc = now,
+                TotalLogons = 1,
+                Access = AccessFlag.MayLogon
+            };
+
+            session.Io.OutputLine(
+                "For only the purposes of resetting your password, should you forget it, you *may* supply your Internet E-Mail address.  " +
+                "This is not required and you can always set/unset/change it once logged in.  ");
+
+            if ('Y' == session.Io.Ask("Do you want to give your Internet E-Mail address"))
+            {
+                session.Io.Output("Enter your E-Mail Address: ");
+                var email = session.Io.InputLine()?.Trim();
+                if (!string.IsNullOrWhiteSpace(email))
+                    user.InternetEmail = email;
+            }
+
+            user = userRepo.Insert(user);
+            return user;
+        }
+
+        private static string ChoosePassword(BbsSession session)
+        {
             session.Io.Output("Choose a password (and don't forget it): ");
             string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
 
@@ -905,22 +1047,7 @@ namespace miniBBS
                 return null;
             }
 
-            var now = DateTime.UtcNow;
-
-            User user = new User
-            {
-                Name = username,
-                PasswordHash = DI.Get<IHasher>().Hash(pw),
-                DateAddedUtc = now,
-                LastLogonUtc = now,
-                TotalLogons = 1,
-                Access = AccessFlag.MayLogon
-            };
-
-            //ReadFile.Execute(session, Constants.Files.NewUser);
-
-            user = userRepo.Insert(user);
-            return user;
+            return pw;
         }
 
         private static void ExecuteCommand(BbsSession session, string command)
@@ -1007,7 +1134,7 @@ namespace miniBBS
                 case "/pw":
                 case "/password":
                 case "/pwd":
-                    UpdatePassword.Execute(session);
+                    UpdatePassword.Execute(session, true);
                     return;
                 case "/main":
                 case "/menu":
@@ -1211,6 +1338,9 @@ namespace miniBBS
                 case "/calculate":
                 case "/calculator":
                     Calculate.Execute(session, parts.Skip(1).ToArray());
+                    return;
+                case "/b64":
+                    session.Io.OutputLine(B64.EncodeOrDecode(string.Join(" ", parts.Skip(1))).Color(ConsoleColor.Blue));
                     return;
                 case "/index":
                 case "/i":

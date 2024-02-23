@@ -668,6 +668,7 @@ namespace miniBBS.Commands
             List<Bulletin> toList = null;
             while (toList == null)
             {
+                session.Io.OutputLine($"Range: {bulletins.Keys.Min()}-{bulletins.Keys.Max()}");
                 var option = session.Io.AskWithNumber("U)nread, #) From #, ENTER=All");
                 if (option == "U")
                 {

@@ -34,7 +34,7 @@ namespace miniBBS.Extensions
                 io.Output($"{Constants.Inverser}{question}:{Constants.Inverser} ");
                 var result = io.InputLine(InputHandlingFlag.ReturnFirstCharacterOnlyUnlessNumeric);
                 io.OutputLine();
-                return result;
+                return result?.ToUpper() ?? string.Empty;
             }
         }
 

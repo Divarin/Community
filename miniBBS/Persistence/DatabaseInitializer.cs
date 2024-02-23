@@ -56,7 +56,7 @@ namespace miniBBS.Persistence
 
         private void CreateUsersTable(SQLiteConnection db)
         {
-            const string sql = "CREATE TABLE Users (Id integer primary key autoincrement, Name TEXT not null, PasswordHash TEXT not null, DateAddedUtc TEXT not null, LastLogonUtc TEXT not null, TotalLogons integer not null, Access TEXT not null, Cols integer not null default 40, Rows integer not null default 24, Emulation string not null default 'Ascii', Timezone integer not null default 0)";
+            const string sql = "CREATE TABLE Users (Id integer primary key autoincrement, Name TEXT not null, PasswordHash TEXT not null, DateAddedUtc TEXT not null, LastLogonUtc TEXT not null, TotalLogons integer not null, Access TEXT not null, Cols integer not null default 40, Rows integer not null default 24, Emulation string not null default 'Ascii', Timezone integer not null default 0, InternetEmail TEXT null)";
             Exec(db, sql);
         }
 

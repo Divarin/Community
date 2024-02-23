@@ -25,6 +25,7 @@ namespace miniBBS.Commands
             $"{_clr("G", ConsoleColor.Green)}) Games",
             $"{_clr("W", ConsoleColor.Green)}) Who is on",
             $"{_clr("U", ConsoleColor.Green)}) User List",
+            $"{_clr("P", ConsoleColor.Green)}) Preferences",
             $"{_clr("O", ConsoleColor.Green)}) Logoff",
             //$"{_clr("L", ConsoleColor.Green)}) Learn how to do more with Community!"
         };
@@ -139,6 +140,9 @@ namespace miniBBS.Commands
                             case 'U':
                                 WhoIsAll.Execute(session);
                                 Pause();
+                                break;
+                            case 'P':
+                                UserPreferences.Execute(session);
                                 break;
                         }
                     }

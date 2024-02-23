@@ -35,6 +35,8 @@ namespace miniBBS.Commands
                     session.Io.OutputLine($"2) Login Startup Mode: {mode.FriendlyName()}");
                     session.Io.OutputLine("3) Chat Header Format");
                     session.Io.OutputLine("4) Cross-Channel Notifications");
+                    session.Io.OutputLine("5) Set Internet E-Mail Address");
+                    session.Io.OutputLine("6) Change your password");
                     session.Io.OutputLine("Q) Quit");
                 }
 
@@ -67,11 +69,62 @@ namespace miniBBS.Commands
                     case '4':
                         SetCrossChannelNotifications(session, metaRepo);
                         break;
+                    case '5':
+                        SetInternetEmailAddress(session);
+                        break;
+                    case '6':
+                        UpdatePassword.Execute(session, true);
+                        break;
                     default:
                         exitLoop = true;
                         break;
                 }
             } while (!exitLoop);
+        }
+
+        private static void SetInternetEmailAddress(BbsSession session)
+        {
+            var exitMenu = false;
+            while (!exitMenu)
+            {
+                session.Io.OutputLine("The Internet E-Mail address is only used for password resets.");
+                if (string.IsNullOrWhiteSpace(session.User.InternetEmail))
+                    session.Io.OutputLine($"Currently not set, password reset not possible!".Color(ConsoleColor.Red));
+                else
+                    session.Io.OutputLine($"Currently set to: {session.User.InternetEmail.Color(ConsoleColor.Green)}");
+
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                {
+                    session.Io.OutputLine("1) Remove e-mail address (PW reset will not be possible)");
+                    session.Io.OutputLine("2) Update e-mail address");
+                    session.Io.OutputLine("Q) Quit");
+                    var option = session.Io.Ask("[1, 2, or Q]".Color(ConsoleColor.White));
+                    switch (option)
+                    {
+                        case '1':
+                            session.User.InternetEmail = null;
+                            session.UserRepo.Update(session.User);
+                            session.Io.Error("E-Mail address removed");
+                            break;
+                        case '2':
+                            {
+                                session.Io.Output("Enter new e-mail address: ");
+                                var newEmail = session.Io.InputLine();
+                                session.Io.OutputLine();
+                                if (!string.IsNullOrWhiteSpace(newEmail) && !newEmail.Equals(session.User.InternetEmail, StringComparison.CurrentCultureIgnoreCase))
+                                {
+                                    session.User.InternetEmail = newEmail;
+                                    session.UserRepo.Update(session.User);
+                                    session.Io.Error("E-Mail address updated");
+                                }
+                            }
+                            break;
+                        case 'Q':
+                            exitMenu = true;
+                            break;
+                    }
+                }
+            }
         }
 
         private static void SetCrossChannelNotifications(BbsSession session, IRepository<Metadata> metaRepo)
