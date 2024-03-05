@@ -702,7 +702,7 @@ namespace miniBBS.Basic
                             break;
                         if (_isScript)
                         {
-                            if ("uprint".Equals(command, StringComparison.CurrentCultureIgnoreCase))
+                            if (!_autoStart || "uprint".Equals(command, StringComparison.CurrentCultureIgnoreCase))
                                 Print.Execute(_session, args, variables);
                             else
                                 Print.BroadcastToChannel(_session, args, variables);

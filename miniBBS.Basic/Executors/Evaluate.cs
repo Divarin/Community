@@ -24,7 +24,7 @@ namespace miniBBS.Basic.Executors
             "COUNT", "NL$", "ISWORD", 
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
             "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
-            "GUID$", "SECONDS"
+            "GUID$", "SECONDS", "LTRIM$", "RTRIM$", "TRIM$", "ROUND",
         };
 
         private static readonly char[] _logicalOperators = new char[]
@@ -627,6 +627,35 @@ namespace miniBBS.Basic.Executors
                                 if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out double d))
                                     throw new RuntimeException("type mismatch");
                                 value = Math.Abs(d).ToString();
+                            }
+                            break;
+                        case "trim$":
+                            {
+                                value = value.Detokenize(pkg.StringValues);
+                                value = value.Trim();
+                                value = $"{Constants.Basic.Quote}{value}{Constants.Basic.Quote}";
+                            }
+                            break;
+                        case "ltrim$":
+                            {
+                                value = value.Detokenize(pkg.StringValues);
+                                value = value.TrimStart();
+                                value = $"{Constants.Basic.Quote}{value}{Constants.Basic.Quote}";
+                            }
+                            break;
+                        case "rtrim$":
+                            {
+                                value = value.Detokenize(pkg.StringValues);
+                                value = value.TrimEnd();
+                                value = $"{Constants.Basic.Quote}{value}{Constants.Basic.Quote}";
+                            }
+                            break;
+                        case "round":
+                            {
+                                string[] parts = value.Split(new char[] { ',', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                var a = Execute(parts[0], variables, pkg);
+                                var b = Execute(parts[1], variables, pkg);
+                                value = Math.Round(double.Parse(a), int.Parse(b)).ToString();
                             }
                             break;
                         case "isword":
