@@ -125,7 +125,10 @@ namespace miniBBS.Commands
                                             session.Items[SessionItem.LogoutMessage] = quitMessage;
                                     }
                                     if (k == 'W' || k == 'Y')
+                                    {
+                                        session.Items[SessionItem.DoNotShowDndSummary] = true;
                                         return false;
+                                    }
                                 }
                                 break;
                             case 'L':

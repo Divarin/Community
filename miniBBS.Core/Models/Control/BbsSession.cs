@@ -57,7 +57,9 @@ namespace miniBBS.Core.Models.Control
         public ISubscriber<GlobalMessage> GlobalMessageSubscriber { get; set; }
         public ISubscriber<UserMessage> UserMessageSubscriber { get; set; }
         public ISubscriber<EmoteMessage> EmoteSubscriber { get; set; }
+        
         public Module CurrentLocation { get; set; }
+        
         public Action OnDispose { get; set; }
 
         private bool _doNotDisturb = false;
@@ -72,8 +74,11 @@ namespace miniBBS.Core.Models.Control
                 var changed = _doNotDisturb != value;
                 _doNotDisturb = value;
 
-                if (!_doNotDisturb && DndMessages.Count > 0)
+                if (!_doNotDisturb && DndMessages.Count > 0 &&
+                    (!Items.ContainsKey(SessionItem.DoNotShowDndSummary) || (bool)Items[SessionItem.DoNotShowDndSummary] != true))
+                {
                     ShowDndMessages();
+                }
 
                 if (changed && User != null && Channel != null)
                 {
@@ -98,6 +103,10 @@ namespace miniBBS.Core.Models.Control
         private DateTime _lastActivityUtc = new DateTime();
         public TimeSpan IdleTime => DateTime.UtcNow - _lastActivityUtc;
         public IDictionary<int, string> Usernames { get; set; } 
+        
+        /// <summary>
+        /// [ID] = Chat
+        /// </summary>
         public SortedList<int, Chat> Chats { get; set; }
 
         #region message pointers

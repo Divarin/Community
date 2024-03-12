@@ -335,8 +335,11 @@ namespace miniBBS
                     // enter (advance to next n lines)
                     ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastReadMessage | ChatWriteFlags.UpdateLastMessagePointer);
                 }
-                else if (line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
+                else if ((line[0] == '/' || Constants.LegitOneCharacterCommands.Contains(line[0]))
+                    && !(line.Length > 1 && line[1] == '/'))
+                {
                     ExecuteCommand(session, line);
+                }
                 else if (line?.Length == 1)
                 {
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
@@ -351,13 +354,16 @@ namespace miniBBS
                     // in other words, filter out control characters only such as backspaces.  You would think 
                     // IsNullOrWhitespace would do this but it doesn't
 
+                    if (line.StartsWith("//"))
+                        line = line.Substring(1);
+
                     Chat chat = AddToChatLog.Execute(session, line);
                     if (chat != null)
                     {
                         if (!notifiedAboutNoOneInChannel && !DI.Get<ISessionsList>().Sessions.Any(s => s.Channel?.Id == session.Channel.Id && s.User?.Id != session.User.Id))
                         {
                             notifiedAboutNoOneInChannel = true;
-                            Tutor.Execute(session,                                
+                            Tutor.Execute(session,
                                 $"There's no one else on the channel right now but don't fret your message will be shown to users in the future when they log in.{Environment.NewLine}" +
                                 "Type /who to see who all is online and in what channels.");
                         }
@@ -1277,7 +1283,8 @@ namespace miniBBS
                     return;
                 case "/read":
                 case "/nonstop":
-                    ContinuousRead.Execute(session);
+                case "/last":
+                    ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)));
                     return;
                 case "/ctx":
                 case "/cx":

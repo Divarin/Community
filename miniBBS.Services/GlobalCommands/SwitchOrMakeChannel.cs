@@ -113,10 +113,9 @@ namespace miniBBS.Services.GlobalCommands
                 session.Io.OutputLine($"Users currently online in {channel.Name} : {string.Join(", ", channelUsers)}");
             }
 
-            messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
-
             if (!fromMessageBase)
             {
+                messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                 {
                     session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");

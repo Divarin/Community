@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
@@ -7,6 +8,7 @@ using miniBBS.UserIo;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace miniBBS.Commands
@@ -22,6 +24,8 @@ namespace miniBBS.Commands
         };
         private static readonly TimeSpan _maxIdleTime = TimeSpan.FromMinutes(20);
         private static readonly TimeSpan _warnIdleTime = _maxIdleTime.Subtract(TimeSpan.FromMinutes(2));
+
+        private const string SLASH_COMMANDS = "/? : This Menu\r\n/w : Who is here?\r\n/q : Quit Nullspace";
 
         static NullSpace()
         {
@@ -57,11 +61,11 @@ namespace miniBBS.Commands
             var originalArea = session.CurrentLocation;
             var originalPrompt = session.ShowPrompt;
 
-            session.CurrentLocation = Core.Enums.Module.NullSpace;
+            session.CurrentLocation = Module.NullSpace;
             session.DoNotDisturb = true;
             session.ShowPrompt = () => { };
 
-            session.Io.OutputLine($"{session.Io.NewLine}You have entered a strange and dark place.  Use ESC or CTRL+C to leave!");
+            session.Io.OutputLine($"{session.Io.NewLine}You have entered a strange and dark place.  Use ESC or CTRL+C to leave, or /? for help.");
 
             var subscriber = new NullSpaceSubscriber(session);
             
@@ -69,13 +73,16 @@ namespace miniBBS.Commands
             {
                 messenger.Subscribe(subscriber);
 
-                var enteredMessage = $"\r\n{session.User.Name} has entered holding a {keyColor} key.\r\n";
+                var enteredMessage = $"\r\n{session.User.Name} has entered holding the {keyColor} key.\r\n";
                 messenger.Publish(session, new NullSpaceMessage(session, keyColor, enteredMessage));
+
+                ShowUsers(session, includeSelf: false);
 
                 session.Io.PollKey();
                 var lastKeyPoll = session.Io.GetPolledTicks();
                 var exit = false;
                 session.Io.SetForeground(keyColor);
+                var lineBuilder = new StringBuilder();
 
                 while (!exit)
                 {
@@ -125,11 +132,22 @@ namespace miniBBS.Commands
                         msg == "\b" ||
                         key == 127 ||
                         (session.Io is Cbm && key == 20);
+                    
+                    lineBuilder.Append(key);
 
                     if (isNewline)
+                    {
                         msg = Environment.NewLine;
+                        if (lineBuilder.Length > 0 && lineBuilder[0] == '/')
+                            exit = ExecuteCommand(session, lineBuilder.ToString());
+                        lineBuilder.Clear();
+                    }
                     else if (isBackspace)
+                    {
                         msg = "\b \b";
+                        if (lineBuilder.Length > 0)
+                            lineBuilder.Remove(lineBuilder.Length - 1, 1);
+                    }
 
                     messenger.Publish(session, new NullSpaceMessage(session, keyColor, msg));
                     session.Io.Output(msg);
@@ -142,9 +160,10 @@ namespace miniBBS.Commands
                 lock (_lock)
                 {
                     _keys[keyColor] = true;
+                    session.Items.Remove(SessionItem.NullspaceKey);
                 }
 
-                var departedMessage = $"\r\n{session.User.Name} has left.\r\n";
+                var departedMessage = $"\r\n{session.User.Name} has left.\r\n".Color(keyColor);
                 messenger.Publish(session, new NullSpaceMessage(session, keyColor, departedMessage));
                 session.DoNotDisturb = originalDnd;
                 session.CurrentLocation = originalArea;
@@ -152,6 +171,50 @@ namespace miniBBS.Commands
                 messenger.Unsubscribe(subscriber);
                 session.Io.OutputLine($"{session.Io.NewLine}Press any key to return to the normal world.");
                 Thread.Sleep(2000);
+            }
+        }
+
+        // Returns true if the user wants to exit nullspace
+        private static bool ExecuteCommand(BbsSession session, string command)
+        {
+            command = command
+                .Replace(Environment.NewLine, "")
+                .Replace(session.Io.NewLine, "")
+                .Trim()
+                .ToLower();
+
+            session.Io.OutputLine();
+            session.Io.OutputLine();
+
+            switch (command)
+            {
+                case "/?":
+                    session.Io.OutputLine(SLASH_COMMANDS.Color(ConsoleColor.Gray));
+                    break;
+                case "/w":
+                    ShowUsers(session, includeSelf: true);
+                    break;
+                case "/q": return true;
+            }
+
+            return false;
+        }
+
+        private static void ShowUsers(BbsSession session, bool includeSelf)
+        {
+            var usersInNullspace = DI.Get<ISessionsList>()
+                .Sessions
+                .Where(x => x.CurrentLocation == Module.NullSpace)
+                .Where(x => x.Items.ContainsKey(SessionItem.NullspaceKey));
+
+            if (!includeSelf)
+                usersInNullspace = usersInNullspace
+                    .Where(x => x.User?.Id != session.User.Id);
+
+            foreach (var sess in usersInNullspace)
+            {
+                var clr = (ConsoleColor)sess.Items[SessionItem.NullspaceKey];
+                session.Io.OutputLine($"{sess.User?.Name} is here holding the {clr} key.".Color(clr));
             }
         }
 
@@ -177,7 +240,10 @@ namespace miniBBS.Commands
             session.Io.OutputLine("Q) Quit");
             var key = session.Io.Ask("Option");
             if (int.TryParse($"{key}", out int n) && n >= 1 && n <= availableKeys.Length)
+            {
+                session.Items[SessionItem.NullspaceKey] = availableKeys[n - 1];
                 return availableKeys[n - 1];
+            }
             return null;
         }
     }
