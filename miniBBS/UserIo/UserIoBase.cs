@@ -23,6 +23,9 @@ namespace miniBBS.UserIo
         protected Queue<Action> _delayedNotifications = new Queue<Action>();
         protected Thread _delayedNotificationThread = null;
 
+        private Stack<string> _lastLineStack = new Stack<string>();
+        private Stack<string> _nextLineStack = new Stack<string>();
+
         public virtual string NewLine => Environment.NewLine;
 
         public UserIoBase(BbsSession session)
@@ -458,14 +461,14 @@ namespace miniBBS.UserIo
                 StringBuilder lineBuilder = new StringBuilder();
 
                 while (
-                    !session.ForceLogout && 
-                    session.Stream.CanRead && 
+                    !session.ForceLogout &&
+                    session.Stream.CanRead &&
                     session.Stream.CanWrite &&
                     (_pollingOn && TryGetKeyFromPoll(out c)) || (!_pollingOn && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
                     )
                 {
                     session.ResetIdleTimer();
-                    
+
                     if (!session.LastReadMessageNumberWhenStartedTyping.HasValue)
                         session.LastReadMessageNumberWhenStartedTyping = session.LastReadMessageNumber;
 
@@ -488,7 +491,7 @@ namespace miniBBS.UserIo
                             i = acText.Length;
                         }
                     }
-                    
+
                     if (handlingFlag.HasFlag(InputHandlingFlag.InterceptSingleCharacterCommand) &&
                         lineBuilder.Length == 0 &&
                         Constants.LegitOneCharacterCommands.Contains((char)bytes[0]))
@@ -518,11 +521,53 @@ namespace miniBBS.UserIo
                         !string.IsNullOrWhiteSpace(session.Io.Up) &&
                         bytes.SequenceEqual(session.Io.Up.Select(b => (byte)b));
 
-                    if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine) && 
-                        isUpArrow && !string.IsNullOrWhiteSpace(session.LastLine))
+                    var isDownArrow =
+                        (bytes.Length >= 3 && bytes[0] == 27 && bytes[1] == 91 && bytes[2] == 66);
+
+                    isDownArrow |=
+                        !string.IsNullOrWhiteSpace(session.Io.Down) &&
+                        bytes.SequenceEqual(session.Io.Down.Select(b => (byte)b));
+
+                    if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine))
                     {
-                        bytes = GetBytes(session.LastLine);
-                        i = session.LastLine.Length;
+                        if (isUpArrow && _lastLineStack.Count > 0)
+                        {
+                            string lastLine;
+                            do
+                            {
+                                lastLine = _lastLineStack.Pop();
+                                _nextLineStack.Push(lastLine);
+                                if (lastLine != lineBuilder.ToString())
+                                    break;
+                            } while (_lastLineStack.Count > 0);
+                            if (lastLine != null)
+                            {
+                                bytes = GetBytes(lastLine);
+                                i = lastLine.Length;
+                                StreamOutput(session, new char[] { '\b', ' ', '\b' }.Repeat(lineBuilder.Length));
+                                lineBuilder.Clear();
+                            }
+                        }
+                        else if (isDownArrow && _nextLineStack.Count > 0)
+                        {
+                            string nextLine;
+                            do
+                            {
+                                nextLine = _nextLineStack.Pop();
+                                _lastLineStack.Push(nextLine);
+                                if (nextLine != lineBuilder.ToString())
+                                    break;
+                            } while (_nextLineStack.Count > 0);
+                            if (nextLine != null)
+                            {
+                                bytes = GetBytes(nextLine);
+                                i = nextLine.Length;
+                                StreamOutput(session, new char[] { '\b', ' ', '\b' }.Repeat(lineBuilder.Length));
+                                lineBuilder.Clear();
+                            }
+                        }
+                        else if (isUpArrow || isDownArrow)
+                            continue;
                     }
 
                     RemoveInvalidInputCharacters(ref bytes);
@@ -621,7 +666,11 @@ namespace miniBBS.UserIo
                             result = result.Substring(0, result.Length - 1);
 
                         if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine))
-                            session.LastLine = result;
+                        {
+                            _lastLineStack.Push(result);
+                            if (_nextLineStack.Count > 0 && _nextLineStack.Peek() == result)
+                                _nextLineStack.Pop();
+                        }
                         return result;
                     }
 

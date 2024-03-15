@@ -54,6 +54,19 @@ namespace miniBBS.Extensions
             return new string(arr, 0, arr.Length);
         }
 
+        public static char[] Repeat(this char[] chars, int numRepeats)
+        {
+            char[] arr = new char[chars.Length * numRepeats];
+            var o = 0;
+            for (int i=0; i < numRepeats; i++)
+            {
+                foreach (var c in chars)
+                    arr[o++] = c;
+            }
+
+            return arr;
+        }
+
         public static IEnumerable<string> SplitAndWrap(this string str, BbsSession session, OutputHandlingFlag flags)
         {
             if (string.IsNullOrWhiteSpace(str) || session == null)

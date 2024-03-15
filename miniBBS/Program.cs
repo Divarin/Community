@@ -1242,9 +1242,13 @@ namespace miniBBS
                     return;
                 case "/e":
                 case "/end":
+                case "/last":
                     SetMessagePointer.Execute(session, session.Chats.Keys.Max());
                     session.Chats[session.MsgPointer].Write(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage, GlobalDependencyResolver.Default);
-                    return;                
+                    return;
+                case "/first":
+                    command = "/0";
+                    break; // don't return here
                 case "/chl":
                 case "/chanlist":
                 case "/channellist":
@@ -1283,7 +1287,6 @@ namespace miniBBS
                     return;
                 case "/read":
                 case "/nonstop":
-                case "/last":
                     ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)));
                     return;
                 case "/ctx":

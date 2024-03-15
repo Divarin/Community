@@ -187,8 +187,6 @@ namespace miniBBS.Core.Models.Control
             _pingPongThread.Start(this);
         }
 
-        public string LastLine { get; set; }
-
         public IDictionary<SessionItem, object> Items { get; } = new Dictionary<SessionItem, object>();
         
         /// <summary>

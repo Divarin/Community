@@ -90,6 +90,7 @@ namespace miniBBS.Commands
                             case 'C':
                                 //Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
                                 session.Io.Error("Use '/main' to return to main menu.");
+                                originalLocation = Module.Chat;
                                 return true;
                             case 'N':
                                 NullSpace.Enter(session);
@@ -155,8 +156,8 @@ namespace miniBBS.Commands
             }
             finally
             {
-                session.DoNotDisturb = originalDnd;
                 session.CurrentLocation = originalLocation;
+                session.DoNotDisturb = originalDnd;
             }
         }
 

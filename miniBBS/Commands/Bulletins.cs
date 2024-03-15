@@ -105,7 +105,7 @@ namespace miniBBS.Commands
                     var key = session.Io.InputKey();
 
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
-                        key = '>';
+                        key = 'N';
                     
                     session.Io.Output(key.Value);
                     key = char.ToUpper(key.Value);

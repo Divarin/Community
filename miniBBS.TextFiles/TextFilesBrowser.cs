@@ -81,6 +81,8 @@ namespace miniBBS.TextFiles
                         flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
                         flags &= ~FilesLaunchFlags.ReturnToPreviousDirectory;
                         command = Prompt(links);
+                        if (command == $"{(char)4}")
+                            command = "QUIT";
                     }
 
                     cmd = ProcessCommand(command, links);
@@ -99,9 +101,9 @@ namespace miniBBS.TextFiles
             }
             finally
             {
+                _session.CurrentLocation = originalLocation;
                 _session.ShowPrompt = origionalShowPrompt;
                 _session.DoNotDisturb = originalDnd;
-                _session.CurrentLocation = originalLocation;
             }
         }
 
@@ -135,8 +137,8 @@ namespace miniBBS.TextFiles
             }
             finally
             {
-                session.DoNotDisturb = originalDnd;
                 session.CurrentLocation = originalLocation;
+                session.DoNotDisturb = originalDnd;
             }
         }
 
@@ -1102,7 +1104,12 @@ namespace miniBBS.TextFiles
                 return string.Empty;
             };
 
-            string line = _session.Io.InputLine(autoComplete, InputHandlingFlag.AutoCompleteOnTab | InputHandlingFlag.UseLastLine);
+            var inputFlags =
+                InputHandlingFlag.InterceptSingleCharacterCommand |
+                InputHandlingFlag.AutoCompleteOnTab |
+                InputHandlingFlag.UseLastLine;
+
+            string line = _session.Io.InputLine(autoComplete, inputFlags);
             _session.Io.OutputLine();
             return line;
         }
