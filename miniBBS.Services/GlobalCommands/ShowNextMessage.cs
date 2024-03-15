@@ -13,7 +13,7 @@ namespace miniBBS.Services.GlobalCommands
         {
             if (!session.Chats.ContainsKey(session.MsgPointer))
             {
-                if (!chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase))
+                if (!chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase) && !chatWriteFlags.HasFlag(ChatWriteFlags.DoNotShowMessage))
                 {
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
                     {
@@ -32,7 +32,9 @@ namespace miniBBS.Services.GlobalCommands
                 
                 nextMessage.Write(session, chatWriteFlags, GlobalDependencyResolver.Default);
 
-                if (!SetMessagePointer.Execute(session, session.MsgPointer + 1) && !chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase))
+                if (!SetMessagePointer.Execute(session, session.MsgPointer + 1) &&
+                    !chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase) &&
+                    !chatWriteFlags.HasFlag(ChatWriteFlags.DoNotShowMessage))
                 {
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                     {

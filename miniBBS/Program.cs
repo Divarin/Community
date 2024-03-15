@@ -33,10 +33,7 @@ namespace miniBBS
         public static SystemControlFlag SysControl = SystemControlFlag.Normal;
 
         static void Main(string[] args)
-        {
-            //if (Basic.MutantBasic.TryAutoLaunch(args))
-            //    return;
-
+        {            
             TcpListener listener = null;
 
             try

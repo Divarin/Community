@@ -114,32 +114,20 @@ namespace miniBBS.TextFiles
         {
             bool linkFound = false;
             _session = session;
-            var originalDnd = session.DoNotDisturb;
-            var originalLocation = _session.CurrentLocation;
-            _session.CurrentLocation = Module.TextFilesBrowser;
 
-            try
+            IList<Link> links = TopLevel.GetLinks().ToList();
+
+            Link link = FindLink(msg, links);
+            if (link != null && !link.IsDirectory)
             {
-                _currentLocation = _topLevel;
-                IList<Link> links = TopLevel.GetLinks().ToList();
-
-                Link link = FindLink(msg, links);
-                if (link != null && !link.IsDirectory)
-                {
-                    linkFound = true;
-                    DescribeFile(link);
-                    AskLaunchFile(link);
-                }
-                else
-                    session.Io.OutputLine("Sorry I was unable to find that file.");
-
-                return linkFound;
+                linkFound = true;
+                DescribeFile(link);
+                AskLaunchFile(link);
             }
-            finally
-            {
-                session.CurrentLocation = originalLocation;
-                session.DoNotDisturb = originalDnd;
-            }
+            else
+                session.Io.OutputLine("Sorry I was unable to find that file.");
+
+            return linkFound;
         }
 
         /// <summary>
@@ -552,33 +540,23 @@ namespace miniBBS.TextFiles
 
         private void AskLaunchFile(Link link)
         {
-            var originalDnd = _session.DoNotDisturb;
-            _session.DoNotDisturb = true;
-
-            try
+            if (link.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
             {
-                if (link.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    var inp = _session.Io.Ask("Run Basic Program?");
-                    if (inp == 'Y')
-                        RunBasicProgram(link);
-                }
-                else if (link.ActualFilename.EndsWith(".db", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    var inp = _session.Io.Ask("Run SQL engine on this database?");
-                    if (inp == 'Y')
-                        FileWriter.Edit(_session, _currentLocation, link);
-                }
-                else
-                {
-                    var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
-                    if (inp == 'Y' || inp == 'C')
-                        ReadFile(link, nonstop: inp == 'C');
-                }
+                var inp = _session.Io.Ask("Run Basic Program?");
+                if (inp == 'Y')
+                    RunBasicProgram(link);
             }
-            finally
+            else if (link.ActualFilename.EndsWith(".db", StringComparison.CurrentCultureIgnoreCase))
             {
-                _session.DoNotDisturb = originalDnd;
+                var inp = _session.Io.Ask("Run SQL engine on this database?");
+                if (inp == 'Y')
+                    FileWriter.Edit(_session, _currentLocation, link);
+            }
+            else
+            {
+                var inp = _session.Io.Ask("Read file? (Y)es, (N)o, (C)ontinuous");
+                if (inp == 'Y' || inp == 'C')
+                    ReadFile(link, nonstop: inp == 'C');
             }
         }
 
@@ -726,7 +704,9 @@ namespace miniBBS.TextFiles
             }
             body = ReplaceLinefeedsWithEnters(body);
             var previousLocation = _session.CurrentLocation;
+            var previousDnd = _session.DoNotDisturb;
             _session.CurrentLocation = Module.TextFileReader;
+            _session.DoNotDisturb = true;
 
             try
             {
@@ -746,6 +726,7 @@ namespace miniBBS.TextFiles
             finally
             {
                 _session.CurrentLocation = previousLocation;
+                _session.DoNotDisturb = previousDnd;
             }
         }
 
@@ -796,8 +777,9 @@ namespace miniBBS.TextFiles
         {
             string body = FileReader.LoadFileContents(_currentLocation, link);
             var previousLocation = _session.CurrentLocation;
+            var previousDnd = _session.DoNotDisturb;
             _session.CurrentLocation = Module.BasicInterpreter;
-
+            _session.DoNotDisturb = true;
             try
             {
                 bool isScript = 
@@ -835,6 +817,7 @@ namespace miniBBS.TextFiles
             finally
             {
                 _session.CurrentLocation = previousLocation;
+                _session.DoNotDisturb = previousDnd;
             }
         }
 

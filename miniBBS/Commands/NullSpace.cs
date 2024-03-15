@@ -165,8 +165,8 @@ namespace miniBBS.Commands
 
                 var departedMessage = $"\r\n{session.User.Name} has left.\r\n".Color(keyColor);
                 messenger.Publish(session, new NullSpaceMessage(session, keyColor, departedMessage));
-                session.DoNotDisturb = originalDnd;
                 session.CurrentLocation = originalArea;
+                session.DoNotDisturb = originalDnd;
                 session.ShowPrompt = originalPrompt;                
                 messenger.Unsubscribe(subscriber);
                 session.Io.OutputLine($"{session.Io.NewLine}Press any key to return to the normal world.");

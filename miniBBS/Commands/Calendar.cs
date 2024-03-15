@@ -34,8 +34,8 @@ namespace miniBBS.Commands
 
             try
             {
-                session.DoNotDisturb = true;
                 session.CurrentLocation = Module.Calendar;
+                session.DoNotDisturb = true;
                 MenuItem menuSelection = MenuItem.Quit;
                 var channelNames = DI.GetRepository<Channel>()
                     .Get()

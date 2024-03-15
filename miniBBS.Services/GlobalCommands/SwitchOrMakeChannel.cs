@@ -77,11 +77,10 @@ namespace miniBBS.Services.GlobalCommands
 
             var messager = GlobalDependencyResolver.Default.Get<IMessager>();
             if (session.Channel != null) // will be null during logon while here to join default channel
-                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name}"));
+                messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name} for {channel.Name}."));
 
             session.Channel = channel;
             session.Chats = GlobalDependencyResolver.Default.Get<IChatCache>().GetChannelChats(session.Channel.Id);
-            //new SortedList<int, Chat>(chatRepo.Get(c => c.ChannelId, session.Channel.Id).ToDictionary(k => k.Id));
             session.UcFlag = ucFlag;            
             SetMessagePointer.Execute(session, session.UcFlag.LastReadMessageNumber);
             
@@ -116,12 +115,17 @@ namespace miniBBS.Services.GlobalCommands
             if (!fromMessageBase)
             {
                 messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                {
-                    session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
-                }
+                //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                //{
+                //    session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
+                //}
 
-                ShowNextMessage.Execute(session, ChatWriteFlags.UpdateLastMessagePointer | ChatWriteFlags.UpdateLastReadMessage);
+                var flags = 
+                    ChatWriteFlags.UpdateLastMessagePointer |
+                    ChatWriteFlags.UpdateLastReadMessage |
+                    ChatWriteFlags.DoNotShowMessage;
+
+                ShowNextMessage.Execute(session, flags);
             }
 
             return true;

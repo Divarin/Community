@@ -67,8 +67,8 @@ namespace miniBBS.Commands
 
             var originalLocation = session.CurrentLocation;
             var originalDnd = session.DoNotDisturb;
-            session.DoNotDisturb = true;
             session.CurrentLocation = Core.Enums.Module.MainMenu;
+            session.DoNotDisturb = true;
 
             try
             {

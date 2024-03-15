@@ -64,8 +64,8 @@ namespace miniBBS.Commands
 
                 do
                 {
+                    session.CurrentLocation = Module.MessageBase;
                     session.DoNotDisturb = true;
-                    session.CurrentLocation = Module.MessageBase;                    
                     session.ShowPrompt();
                     var c = session.Io.InputKey();
 

@@ -16,6 +16,8 @@ namespace miniBBS.Core.Models.Control
         private bool _disposed = false;
         private readonly ISessionsList _sessionsList;
         private static readonly Random _random = new Random((int)DateTime.Now.Ticks % int.MaxValue);
+        private static readonly string _on = $"{Constants.InlineColorizer}{(int)ConsoleColor.Red}{Constants.InlineColorizer}On{Constants.InlineColorizer}-1{Constants.InlineColorizer}";        
+        private static readonly string _off = $"{Constants.InlineColorizer}{(int)ConsoleColor.Green}{Constants.InlineColorizer}Off{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
 
         public BbsSession(ISessionsList sessionsList)
         {
@@ -87,10 +89,12 @@ namespace miniBBS.Core.Models.Control
                         _doNotDisturb ? "now" : "no longer",
                         $"{Constants.InlineColorizer}-1{Constants.InlineColorizer}"));
 
+                    var location = CurrentLocation == Module.Chat ? $"Chat ({Channel.Name})" : CurrentLocation.ToString();
+
                     var channelMessage = new ChannelMessage(
                         Id,
                         Channel.Id,
-                        $"{User.Name} is {(_doNotDisturb ? "now" : "no longer")} in Do Not Disturb (DND) mode.",
+                        $"{User.Name}: DND {(_doNotDisturb ? _on : _off)} @ {location}.",
                         predicate: x => !x.DoNotDisturb);
 
                     Messager.Publish(this, channelMessage);

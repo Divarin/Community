@@ -84,7 +84,9 @@ namespace miniBBS.TextFiles
         public static void Edit(BbsSession session, Link currentLocation, Link link, bool isNewFile = false)
         {
             var originalLocation = session.CurrentLocation;
+            var originalDnd = session.DoNotDisturb;
             session.CurrentLocation = Module.TextFileEditor;
+            session.DoNotDisturb = true;
 
             try
             {
@@ -160,6 +162,7 @@ namespace miniBBS.TextFiles
             finally
             {
                 session.CurrentLocation = originalLocation;
+                session.DoNotDisturb = originalDnd;
             }
         }
 

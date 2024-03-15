@@ -17,17 +17,20 @@ namespace miniBBS.Extensions
             if (chat == null || session == null)
                 return;
 
-            if (!session.Usernames.ContainsKey(chat.FromUserId))
+            if (!flags.HasFlag(ChatWriteFlags.DoNotShowMessage))
             {
-                string un = session.UserRepo.Get(chat.FromUserId)?.Name;
-                if (!string.IsNullOrWhiteSpace(un))
-                    session.Usernames[chat.FromUserId] = un;
-            }
+                if (!session.Usernames.ContainsKey(chat.FromUserId))
+                {
+                    string un = session.UserRepo.Get(chat.FromUserId)?.Name;
+                    if (!string.IsNullOrWhiteSpace(un))
+                        session.Usernames[chat.FromUserId] = un;
+                }
 
-            var line = chat.GetWriteString(session, flags);
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
-            {
-                session.Io.OutputLine(line);
+                var line = chat.GetWriteString(session, flags);
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
+                {
+                    session.Io.OutputLine(line);
+                }
             }
 
             if (flags.HasFlag(ChatWriteFlags.UpdateLastReadMessage))
