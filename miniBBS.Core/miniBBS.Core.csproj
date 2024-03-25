@@ -86,6 +86,7 @@
     <Compile Include="Enums\TextFilesSessionFlags.cs" />
     <Compile Include="Enums\UCFlag.cs" />
     <Compile Include="Enums\FileTransferProtocolOptions.cs" />
+    <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Interfaces\IChatCache.cs" />
     <Compile Include="Interfaces\ICompressor.cs" />
     <Compile Include="Interfaces\IDataModel.cs" />

@@ -380,6 +380,8 @@ namespace miniBBS.Basic
 
         private void ListProgram(SortedList<int, string> progLines, int?[] range, bool continuous)
         {
+            const OutputHandlingFlag flag = OutputHandlingFlag.NoWordWrap;
+
             var builder = new StringBuilder();
             foreach (var l in progLines)
             {
@@ -389,12 +391,12 @@ namespace miniBBS.Basic
                     continue;
                 var line = $"{l.Key} {l.Value}";
                 if (continuous)
-                    _session.Io.OutputLine(line);
+                    _session.Io.OutputLine(line, flag);
                 else
                     builder.AppendLine(line);
             }
             if (!continuous)
-                _session.Io.Output(builder.ToString());
+                _session.Io.Output(builder.ToString(), flag);
         }
 
         private void Run(ref SortedList<int, string> progLines, ref Variables variables, string line)

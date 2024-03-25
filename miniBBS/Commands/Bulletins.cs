@@ -322,8 +322,8 @@ namespace miniBBS.Commands
                 }
                 meta.Data = JsonConvert.SerializeObject(readBulletins);
                 metaRepo.InsertOrUpdate(meta);
+                session.CurrentLocation = previousLocation; 
                 session.DoNotDisturb = wasDnd;
-                session.CurrentLocation = previousLocation;
             }
         }
 

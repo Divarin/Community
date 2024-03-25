@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
+using miniBBS.Core.Extensions;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;

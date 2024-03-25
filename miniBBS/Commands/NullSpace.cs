@@ -35,9 +35,12 @@ namespace miniBBS.Commands
 
         public static void Enter(BbsSession session)
         {
+            if (session.User == null)
+                return;
+
             var ghosts = DI.Get<ISessionsList>()
                 .Sessions
-                .Where(x => x.User.Id == session.User.Id && x.CurrentLocation == Core.Enums.Module.NullSpace)
+                .Where(x => x.User?.Id == session.User.Id && x.CurrentLocation == Module.NullSpace)
                 .ToList();
 
             foreach (var ghost in ghosts)

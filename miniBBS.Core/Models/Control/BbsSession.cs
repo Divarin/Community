@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Extensions;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
@@ -89,7 +90,7 @@ namespace miniBBS.Core.Models.Control
                         _doNotDisturb ? "now" : "no longer",
                         $"{Constants.InlineColorizer}-1{Constants.InlineColorizer}"));
 
-                    var location = CurrentLocation == Module.Chat ? $"Chat ({Channel.Name})" : CurrentLocation.ToString();
+                    var location = CurrentLocation == Module.Chat ? $"Chat ({Channel.Name})" : CurrentLocation.FriendlyName();
 
                     var channelMessage = new ChannelMessage(
                         Id,

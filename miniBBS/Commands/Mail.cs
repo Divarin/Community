@@ -167,7 +167,10 @@ namespace miniBBS.Commands
             SendMail(session, toId);
         }
 
-        private static void SendMail(BbsSession session, int toId, string subject="")
+        /// <summary>
+        /// Returns true if the mail was sent, false if aborted.
+        /// </summary>
+        private static bool SendMail(BbsSession session, int toId, string subject="")
         { 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
@@ -191,7 +194,7 @@ namespace miniBBS.Commands
                 if (string.IsNullOrWhiteSpace(subject))
                 {
                     Error(session, "Aborted!");
-                    return;
+                    return false;
                 }
 
                 var lineEditor = DI.Get<ITextEditor>();
@@ -206,6 +209,8 @@ namespace miniBBS.Commands
                     QuitOnSave = true
                 });
             }
+
+            return true;
         }
 
         public static void SendMail(BbsSession session, int toId, string subject, string message)
@@ -272,8 +277,8 @@ namespace miniBBS.Commands
                     switch (char.ToUpper(k.Value))
                     {
                         case 'R':
-                            if (mail.ToUserId == session.User.Id)
-                                SendMail(session, mail.FromUserId, $"re: {mail.Subject.Replace("re: ", "")}");
+                            if (mail.ToUserId == session.User.Id && SendMail(session, mail.FromUserId, $"re: {mail.Subject.Replace("re: ", "")}"))
+                                DeleteMail(session, mail);
                             break;
                         case 'E':
                             if (mail.FromUserId == session.User.Id && !mail.Read)
@@ -294,20 +299,28 @@ namespace miniBBS.Commands
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
                 {
-                    StringBuilder builder = new StringBuilder();
-                    for (int i = 0; i < mails.Count; i++)
+                    while (true)
                     {
-                        var mail = mails[i];
-                        var from = session.Usernames.ContainsKey(mail.FromUserId) ? session.Usernames[mail.FromUserId] : "Unknown";
-                        builder.AppendLine($"{i + 1} : {from} : {(mail.Read ? "" : "(UNREAD)")} {mail.Subject}   {mail.SentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}");
+                        StringBuilder builder = new StringBuilder();
+                        for (int i = 0; i < mails.Count; i++)
+                        {
+                            var mail = mails[i];
+                            var from = session.Usernames.ContainsKey(mail.FromUserId) ? session.Usernames[mail.FromUserId] : "Unknown";
+                            builder.AppendLine($"{i + 1} : {from} : {(mail.Read ? "" : "(UNREAD)")} {mail.Subject}   {mail.SentUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}");
+                        }
+                        session.Io.OutputLine(builder.ToString());
+                        session.Io.SetForeground(ConsoleColor.Yellow);
+                        session.Io.Output($"{Constants.Inverser}# to read or ENTER=quit:{Constants.Inverser} ");
+                        var inp = session.Io.InputLine();
+                        session.Io.OutputLine();
+                        if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= mails.Count)
+                        {
+                            ReadMail(session, mails[n - 1]);
+                            mails = GetMails(session);
+                            continue;
+                        }
+                        break;
                     }
-                    session.Io.OutputLine(builder.ToString());
-                    session.Io.SetForeground(ConsoleColor.Yellow);
-                    session.Io.Output($"{Constants.Inverser}# to read or ENTER=quit:{Constants.Inverser} ");
-                    var inp = session.Io.InputLine();
-                    session.Io.OutputLine();
-                    if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= mails.Count)
-                        ReadMail(session, mails[n - 1]);
                 }
             }
             else
@@ -412,7 +425,7 @@ namespace miniBBS.Commands
 
         private static void DeleteMail(BbsSession session, Core.Models.Data.Mail mail)
         {
-            session.Io.OutputLine($"Are you sure you want to delete this mail:{Environment.NewLine}From: {session.Username(mail.FromUserId)}, To: {session.Username(mail.ToUserId)}{Environment.NewLine}Subject: {mail.Subject}");
+            session.Io.OutputLine($"Delete this mail:{Environment.NewLine}From: {session.Username(mail.FromUserId)}, To: {session.Username(mail.ToUserId)}{Environment.NewLine}Subject: {mail.Subject}");
             if ('Y' == session.Io.Ask("Delete?"))
             {
                 var mailRepo = DI.GetRepository<Core.Models.Data.Mail>();
