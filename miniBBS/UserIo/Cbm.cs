@@ -54,6 +54,8 @@ namespace miniBBS.UserIo
             {221, new[] { (byte)'|'} },
         };
 
+        //public override string NewLine => $"{(char)13}";
+
         const byte _revOn = 18;
         const byte _revOff = 146;
         const byte _toUpper = 142;

@@ -78,7 +78,7 @@ namespace miniBBS.UserIo
                 case ConsoleColor.DarkMagenta: return "\u001b[35m";
                 case ConsoleColor.DarkCyan: return "\u001b[36m";
                 case ConsoleColor.Gray: return "\u001b[37m";
-                case ConsoleColor.DarkGray: return "\u001b[30;1m";
+                case ConsoleColor.DarkGray: return "\u001b[37m";
                 case ConsoleColor.Red: return "\u001b[31;1m";
                 case ConsoleColor.Green: return "\u001b[32;1m";
                 case ConsoleColor.Yellow: return "\u001b[33;1m";

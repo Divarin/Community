@@ -159,6 +159,7 @@ namespace miniBBS
                             }
 
                             TermSetup.Execute(session, detectedEmulation);
+                            Banners.Show(session);
 
                             session.Io.OutputLine("Mutiny".Color(ConsoleColor.Red) + " Community".Color(ConsoleColor.Cyan) + $" Version {Constants.Version}.".Color(ConsoleColor.Yellow));
                             
@@ -759,7 +760,7 @@ namespace miniBBS
                 _logger.Log(session, $"{session.IpAddress} tried to log on but there are too many people online right now.");
                 return;
             }
-
+            
             session.Io.Output($"{Environment.NewLine}press backspace/delete: ");
             var emuTest = session.Io.InputKey();
             session.Io.OutputLine();
@@ -1106,6 +1107,12 @@ namespace miniBBS
                     else
                         Bulletins.Execute(session);
                     return;
+                case "/movemsg":
+                    MoveMsg.Execute(session, false, parts.Skip(1).ToArray());
+                    return;
+                case "/movethread":
+                    MoveMsg.Execute(session, true, parts.Skip(1).FirstOrDefault());
+                    return;
                 case "/b":
                 case "/bull":
                 case "/bulletin":
@@ -1283,8 +1290,10 @@ namespace miniBBS
                     Afk.Execute(session, string.Join(" ", parts.Skip(1)));
                     return;
                 case "/read":
+                    ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)), false);
+                    return;
                 case "/nonstop":
-                    ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)));
+                    ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)), true);
                     return;
                 case "/ctx":
                 case "/cx":
@@ -1491,6 +1500,9 @@ namespace miniBBS
                 case "/blurbs":
                     Blurbs.BlurbAdmin(session, "list");
                     return;
+                case "/banner":
+                    Banners.Show(session, parts.Skip(1).FirstOrDefault());
+                    return;
                 case "/hand":
                 case "/raise":
                 case "/raisehand":
@@ -1650,13 +1662,6 @@ namespace miniBBS
                     case "kick":
                         KickUser.Execute(session, args[1]);
                         break;
-                }
-            }
-            else if (args.Length >= 3)
-            {
-                switch (args[0].ToLower().Trim())
-                {
-                    case "movemsg": MoveMsg.Execute(session, args.Skip(1).ToArray()); break;
                 }
             }
         }

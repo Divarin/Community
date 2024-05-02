@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "5.7c - 2024.03.25";
+        public const string Version = "5.7h - 2024.05.01";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -35,6 +35,8 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const string BannerFile = "banners.txt";
 
         public const CrossChannelNotificationMode DefaultCrossChannelNotificationMode = CrossChannelNotificationMode.Any | CrossChannelNotificationMode.OncePerChannel;
 

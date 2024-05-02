@@ -17,14 +17,30 @@ namespace miniBBS.Commands
         /// <summary>
         /// Moves one or more messages from the current channel to the specified channel
         /// </summary>
-        public static void Execute(BbsSession session, params string[] args)
+        public static void Execute(BbsSession session, bool moveThread, params string[] args)
         {
-            if (args == null || args.Length < 2)
+            var badUsage = args == null;
+            badUsage |= moveThread && args.Length < 1;
+            badUsage |= !moveThread && args.Length < 2;
+
+            if (badUsage)
             {
-                session.Io.Error("Usgae: /ch movemsg (target channel) (msg number(s))");
-                session.Io.Error("ex: /ch movemsg General 13");
-                session.Io.Error("ex: /ch movemsg 3 13-30");
-                session.Io.Error("ex: /ch movemsg DevNotes 13-30 32 33-45");
+                if (moveThread)
+                {
+                    session.Io.Error("Usage: /movethread (target channel)");
+                }
+                else
+                {
+                    session.Io.Error("Usgae: /movemsg (target channel) (msg number(s))");
+                    session.Io.Error("ex: /movemsg General 13");
+                    session.Io.Error("ex: /movemsg 3 13-30");
+                    session.Io.Error("ex: /movemsg DevNotes 13-30 32 33-45");
+                }
+                return;
+            }
+            else if (moveThread && session.LastReadMessageNumber == null)
+            {
+                session.Io.Error("You must first read the message that's the start of the thread to be moved.");
                 return;
             }
 
@@ -55,8 +71,16 @@ namespace miniBBS.Commands
                 return;
             }
 
-            var chatNums = ParseChatNumbers(args.Skip(1)).ToList();
-            var chatsToMove = GetChatsToMove(session.Chats, chatNums).ToList();
+            List<Chat> chatsToMove;
+            if (moveThread)
+            {
+                chatsToMove = GetThreadChats(session).ToList();
+            }
+            else
+            {
+                var chatNums = ParseChatNumbers(args.Skip(1)).ToList();
+                chatsToMove = GetChatsToMove(session.Chats, chatNums).ToList();
+            }
 
             if (Confirm(session, chatsToMove, targetChannel.Name))
             {
@@ -106,6 +130,42 @@ namespace miniBBS.Commands
             }
             session.Io.OutputLine(builder.ToString());
             return 'Y' == session.Io.Ask("Move these messages?");
+        }
+
+        private static IEnumerable<Chat> GetThreadChats(BbsSession session)
+        {
+            var msgNum = session.LastReadMessageNumber;
+            if (!msgNum.HasValue || !session.Chats.ContainsKey(msgNum.Value))
+                return new Chat[] { };
+
+            var chat = session.Chats[msgNum.Value];
+
+            var resultList = new List<Chat>();
+            
+            AddThreadChats(chat, session.Chats, ref resultList);
+            
+            resultList = resultList
+                .OrderBy(x => x.Id)
+                .ToList();
+
+            return resultList;
+        }
+
+        private static void AddThreadChats(Chat chat, SortedList<int, Chat> chats, ref List<Chat> resultList)
+        {
+            if (chat == null)
+                return;
+            
+            resultList.Add(chat);
+
+            var followups = chats
+                .Where(x => x.Key > chat.Id && x.Value.ResponseToId == chat.Id)
+                .Select(x => x.Value);
+
+            foreach (var followup in followups)
+            {
+                AddThreadChats(followup, chats, ref resultList);
+            }
         }
 
         private static IEnumerable<Chat> GetChatsToMove(SortedList<int, Chat> chats, List<int> chatNums)

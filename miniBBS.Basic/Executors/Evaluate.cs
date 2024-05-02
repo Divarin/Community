@@ -21,7 +21,7 @@ namespace miniBBS.Basic.Executors
         { 
             "RND", "SIN", "COS", "TAN", "ATAN", "ASIN", "ACOS", "SQR", "VAL", "STR$", "INT", "POW", "MOD",
             "CHR$", "ASC", "LEFT$", "RIGHT$", "MID$", "REPLACE$", "INSTR", "LEN", "TAB", "ABS", "UC$", "LC$",
-            "COUNT", "NL$", "ISWORD", 
+            "COUNT", "NL$", "REPEAT$", "ISWORD",
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
             "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
             "GUID$", "SECONDS", "LTRIM$", "RTRIM$", "TRIM$", "ROUND",
@@ -620,6 +620,19 @@ namespace miniBBS.Basic.Executors
                                 if (!string.IsNullOrWhiteSpace(value))
                                     int.TryParse(value, out count);
                                 value = '"' + " ".Repeat(count) + '"';
+                            }
+                            break;
+                        case "repeat$":
+                            {
+                                string[] parts = value.Split(new char[] { ',', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length != 2)
+                                {
+                                    throw new RuntimeException("Invalid number of parameters for repeat$(), must pass one string and one number.");
+                                }
+                                var str = Execute(parts[0], variables, pkg).Detokenize(pkg.StringValues);
+                                var strCount = Execute(parts[1], variables, pkg).Detokenize(pkg.StringValues);
+                                if (int.TryParse(strCount, out var count))
+                                    value = '"' + str.Repeat(count) + '"';
                             }
                             break;
                         case "abs":
