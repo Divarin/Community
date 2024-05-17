@@ -38,6 +38,7 @@ namespace miniBBS.Commands
                     session.Io.OutputLine("4) Cross-Channel Notifications");
                     session.Io.OutputLine("5) Set Internet E-Mail Address");
                     session.Io.OutputLine("6) Change your password");
+                    session.Io.OutputLine("7) Set your Time Zone");
                     session.Io.OutputLine("Q) Quit");
                 }
 
@@ -75,6 +76,9 @@ namespace miniBBS.Commands
                         break;
                     case '6':
                         UpdatePassword.Execute(session, true);
+                        break;
+                    case '7':
+                        TimeZone.Execute(session);
                         break;
                     default:
                         exitLoop = true;

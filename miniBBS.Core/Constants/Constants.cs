@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "5.7h - 2024.05.01";
+        public const string Version = "5.8a - 2024.05.17";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -35,6 +35,8 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const int NumberOfArchivedBulletins = 50;
 
         public const string BannerFile = "banners.txt";
 

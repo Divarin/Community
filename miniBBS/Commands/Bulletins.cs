@@ -31,6 +31,8 @@ namespace miniBBS.Commands
             session.DoNotDisturb = true;
 
             var exitMenu = false;
+            var includeArchived = false;
+            var numArchived = 0;
 
             var boardRepo = DI.GetRepository<BulletinBoard>();
             var bulletinRepo = DI.GetRepository<Bulletin>();
@@ -51,25 +53,40 @@ namespace miniBBS.Commands
 
             var currentBoard = boards.First();
 
-            Dictionary<int, Bulletin> bulletins = null;
+            SortedList<int, Bulletin> bulletins = null;
 
             void ReloadBulletins()
             {
-                bulletins = bulletinRepo
+                var list = bulletinRepo
                     .Get(x => x.BoardId, currentBoard.Id)
                     .OrderBy(b => b.Id)
-                    .ToDictionary(k => k.Id);
+                    .ToList();
+                
+                numArchived = list.Count - 50;
+
+                if (!includeArchived && list.Count > Constants.NumberOfArchivedBulletins)
+                    list = list.Skip(list.Count - Constants.NumberOfArchivedBulletins).ToList();
+
+                var dict = list.ToDictionary(k => k.Id);
+                bulletins = new SortedList<int, Bulletin>(dict);
             }
 
             int? lastRead = null;
+            int bulletinIndex;
+            int? n;
+
             void NextUnread()
             {
                 Notice(session, "Finding next unread message");
-                var n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
-                if (n > 0)
+                bulletinIndex = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                if (bulletinIndex > 0)
                 {
-                    ReadBulletin(session, bulletins, n, readBulletins);
-                    lastRead = n;
+                    n = bulletins.ItemNumber(bulletinIndex);
+                    if (n.HasValue)
+                    {
+                        ReadBulletin(session, n.Value, bulletins, readBulletins);
+                        lastRead = bulletinIndex;
+                    }
                 }
                 else
                 {
@@ -82,12 +99,13 @@ namespace miniBBS.Commands
                         session.Io.OutputLine($"Going to '{nextBoard.Name}' board.".Color(ConsoleColor.Magenta));
                         currentBoard = nextBoard;
                         ReloadBulletins();
-                        n = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                        bulletinIndex = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
                     }
-                    if (n > 0)
+                    if (bulletinIndex > 0)
                     {
-                        ReadBulletin(session, bulletins, n, readBulletins);
-                        lastRead = n;
+                        n = bulletins.ItemNumber(bulletinIndex);
+                        ReadBulletin(session, n.Value, bulletins, readBulletins);
+                        lastRead = bulletinIndex;
                     }
                     else
                         session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
@@ -96,7 +114,7 @@ namespace miniBBS.Commands
 
             ReloadBulletins();
 
-            ShowMenu(session);
+            ShowMenu(session, includeArchived, numArchived);
             try
             {
                 do
@@ -105,7 +123,7 @@ namespace miniBBS.Commands
                     var key = session.Io.InputKey();
 
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
-                        key = 'N';
+                        key = '+';
                     
                     session.Io.Output(key.Value);
                     key = char.ToUpper(key.Value);
@@ -120,13 +138,18 @@ namespace miniBBS.Commands
                         }
                         else if (int.TryParse(restOfTheNumber, out int n1))
                         {
-                            jumpToMessageNumber = int.Parse($"{key.Value}{n1}");
+                            jumpToMessageNumber = int.Parse($"{key.Value}{restOfTheNumber}");
                         }
                     }
 
                     session.Io.OutputLine();
                     switch (key)
                     {
+                        case 'I':
+                            includeArchived = !includeArchived;
+                            session.Io.OutputLine($"Archived posts are now {(includeArchived ? "Shown" : "Hidden")}.");
+                            ReloadBulletins();
+                            break;
                         case '[':
                         case '{':
                             currentBoard = boards.LastOrDefault(x => x.Id < currentBoard.Id);
@@ -147,23 +170,31 @@ namespace miniBBS.Commands
                         case '-':
                             // previous message (don't follow thread)
                             {
-                                var n =
+                                bulletinIndex =
                                     lastRead.HasValue ?
                                     bulletins.Keys.LastOrDefault(x => x < lastRead.Value) :
                                     bulletins.Keys.FirstOrDefault();
-                                ReadBulletin(session, bulletins, n, readBulletins);
-                                lastRead = n;
+                                n = bulletins.ItemNumber(bulletinIndex);
+                                if (n.HasValue)
+                                {
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = bulletinIndex;
+                                }
                             }
                             break;
                         case '=':
                         case '+':
                             // next message (don't follow thread)
                             {
-                                var n = lastRead.HasValue ?
+                                bulletinIndex = lastRead.HasValue ?
                                     bulletins.Keys.FirstOrDefault(x => x > lastRead.Value) :
                                     bulletins.Keys.FirstOrDefault();
-                                ReadBulletin(session, bulletins, n, readBulletins);
-                                lastRead = n;
+                                n = bulletins.ItemNumber(bulletinIndex);
+                                if (n.HasValue)
+                                {
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = bulletinIndex;
+                                }
                             }
                             break;
                         case 'N':
@@ -188,16 +219,20 @@ namespace miniBBS.Commands
                             else
                             {
                                 Notice(session, "Finding previous in thread");
-                                int? n = TryFindPrevInThread(lastRead, bulletins);
-                                if (!n.HasValue)
+                                var idx = TryFindPrevInThread(lastRead, bulletins);
+                                if (!idx.HasValue)
                                 {
                                     Notice(session, "Not found, finding next older message");
-                                    n = lastRead.HasValue ?
+                                    idx = lastRead.HasValue ?
                                         bulletins.Keys.LastOrDefault(x => x < lastRead.Value) :
                                         bulletins.Keys.FirstOrDefault();
                                 }
-                                ReadBulletin(session, bulletins, n.Value, readBulletins);
-                                lastRead = n;
+                                n = bulletins.ItemNumber(idx);
+                                if (n.HasValue)
+                                {
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = idx;
+                                }
                             }
                             break;
                         case '>':
@@ -206,33 +241,42 @@ namespace miniBBS.Commands
                             if (lastRead.HasValue)
                             {
                                 Notice(session, "Finding next in thread");
-                                var n = TryFindNextInThread(lastRead, bulletins);
-                                if (n.HasValue)
+                                var idx = TryFindNextInThread(lastRead, bulletins);
+                                if (idx.HasValue)
                                 {
-                                    ReadBulletin(session, bulletins, n.Value, readBulletins);
-                                    lastRead = n;
+                                    n = bulletins.ItemNumber(idx);
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = idx;
                                     break;
                                 }
                                 Notice(session, "No more in thread");
+                                idx = TryFindStartOfNextThread(lastRead, bulletins);
+                                if (idx.HasValue)
+                                {
+                                    n = bulletins.ItemNumber(idx);
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = idx;
+                                    break;
+                                }
                             }
                             if (!lastRead.HasValue)
                             {
-                                var n = bulletins.Keys.FirstOrDefault();
-                                if (n > 0)
+                                if (bulletins?.Any() == true)
                                 {
-                                    ReadBulletin(session, bulletins, n, readBulletins);
-                                    lastRead = n;
+                                    ReadBulletin(session, 0, bulletins, readBulletins);
+                                    lastRead = bulletins.Keys.First();
                                 }
                                 else
                                     Notice(session, "No bulletins on this board, use ']' to advance to next.");
                             }
                             else
                             {
-                                var n = bulletins.Keys.FirstOrDefault(x => x > lastRead.Value);
-                                if (n > 0)
+                                var idx = bulletins.Keys.FirstOrDefault(x => x > lastRead.Value);
+                                if (idx > 0)
                                 {
-                                    ReadBulletin(session, bulletins, n, readBulletins);
-                                    lastRead = n;
+                                    n = bulletins.ItemNumber(idx);
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = idx;
                                 }
                                 else
                                     NextUnread();
@@ -242,24 +286,36 @@ namespace miniBBS.Commands
                             // back one subject
                             {
                                 Notice(session, "Finding start of previous thread");
-                                var n =
+                                var idx =
                                     lastRead.HasValue ?
                                     bulletins.LastOrDefault(x => x.Key < lastRead.Value && x.Value.ResponseToId == null).Key :
                                     bulletins.Keys.FirstOrDefault();
-                                ReadBulletin(session, bulletins, n, readBulletins);
-                                lastRead = n;
+                                n = bulletins.ItemNumber(idx);
+                                if (n.HasValue)
+                                {
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = idx;
+                                }
+                                else
+                                    NextUnread();
                             }
                             break;
                         case 'F':
                             // forward one subject
                             {
                                 Notice(session, "Finding start of next thread");
-                                var n =
+                                var idx =
                                     lastRead.HasValue ?
                                     bulletins.FirstOrDefault(x => x.Key > lastRead.Value && x.Value.ResponseToId == null).Key :
                                     bulletins.Keys.FirstOrDefault();
-                                ReadBulletin(session, bulletins, n, readBulletins);
-                                lastRead = n;
+                                n = bulletins.ItemNumber(idx);
+                                if (n.HasValue)
+                                {
+                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                    lastRead = idx;
+                                }
+                                else
+                                    NextUnread();
                             }
                             break;
                         case 'R':
@@ -281,7 +337,7 @@ namespace miniBBS.Commands
                             break;
                         case 'L':
                             // list
-                            ListBulletins(session, bulletins, readBulletins);
+                            ListBulletins(session, bulletins, readBulletins, includeArchived ? 0 : numArchived);
                             break;
                         case 'E':
                         case 'D':
@@ -294,15 +350,15 @@ namespace miniBBS.Commands
                             exitMenu = true;
                             break;
                         case '?':
-                            ShowMenu(session);
+                            ShowMenu(session, includeArchived, numArchived);
                             break;
                         default:
-                            if (jumpToMessageNumber > -1)
+                            if (jumpToMessageNumber >= 0)
                             {
                                 // jump to message by number
                                 Notice(session, $"Jumping to message # {jumpToMessageNumber}");
-                                ReadBulletin(session, bulletins, jumpToMessageNumber, readBulletins);
-                                lastRead = jumpToMessageNumber;
+                                ReadBulletin(session, jumpToMessageNumber, bulletins, readBulletins);
+                                lastRead = bulletins.ItemKey(jumpToMessageNumber);
                             }
                             else
                                 session.Io.Error("Unrecognized command, press question mark (?) for help.");
@@ -327,7 +383,25 @@ namespace miniBBS.Commands
             }
         }
 
-        private static bool EditBulletin(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, Dictionary<int, Bulletin> bulletins, bool delete)
+        /// <summary>
+        /// Given that we last read <paramref name="lastRead"/>, go back to the start of that thread, then forward to the first message that's 
+        /// in a different thread.
+        /// </summary>
+        private static int? TryFindStartOfNextThread(int? lastRead, SortedList<int, Bulletin> bulletins)
+        {
+            if (!lastRead.HasValue)
+                return bulletins?.Keys?.FirstOrDefault();
+
+            var lastReadMessage = bulletins[lastRead.Value];
+            if (!lastReadMessage.OriginalId.HasValue || !bulletins.ContainsKey(lastReadMessage.OriginalId.Value))
+                return bulletins?.Keys?.FirstOrDefault();
+            
+            var startOfThread = bulletins[lastReadMessage.OriginalId.Value];
+            var nextMessage = bulletins.FirstOrDefault(x => x.Key > startOfThread.Id && x.Value.OriginalId != lastReadMessage.OriginalId);
+            return nextMessage.Key;
+        }
+
+        private static bool EditBulletin(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, SortedList<int, Bulletin> bulletins, bool delete)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
@@ -399,7 +473,7 @@ namespace miniBBS.Commands
             }
         }
 
-        private static int? TryFindNextInThread(int? lastRead, Dictionary<int, Bulletin> bulletins)
+        private static int? TryFindNextInThread(int? lastRead, SortedList<int, Bulletin> bulletins)
         {
             if (!lastRead.HasValue)
                 return null;
@@ -420,7 +494,7 @@ namespace miniBBS.Commands
             return null;
         }
 
-        private static int? TryFindPrevInThread(int? lastRead, Dictionary<int, Bulletin> bulletins)
+        private static int? TryFindPrevInThread(int? lastRead, SortedList<int, Bulletin> bulletins)
         {
             if (!lastRead.HasValue)
                 return null;
@@ -592,23 +666,25 @@ namespace miniBBS.Commands
             }
         }
 
-        private static void ReadBulletin(BbsSession session, Dictionary<int, Bulletin> bulletins, int bulletinId, List<int> readBulletins)
+        private static void ReadBulletin(BbsSession session, int bulletinNumber, SortedList<int, Bulletin> bulletins, List<int> readBulletins)
         {
-            if (bulletinId < bulletins.Keys.Min())
-                bulletinId = bulletins.Keys.Min();
+            if (bulletinNumber < 0)
+                bulletinNumber = 0;
 
-            var found = bulletins.TryGetValue(bulletinId, out var bulletin);
-            if (!found)
+            var bulletinId = bulletins.ItemKey(bulletinNumber);
+
+            if (!bulletinId.HasValue)
             {
-                session.Io.Error($"Unable to find Bulletin #{bulletinId}!");
+                session.Io.Error($"Unable to find Bulletin #{bulletinNumber}!");
                 return;
             }
 
-            if (!readBulletins.Contains(bulletinId))
-                readBulletins.Add(bulletinId);
+            if (!readBulletins.Contains(bulletinId.Value))
+                readBulletins.Add(bulletinId.Value);
 
             var builder = new StringBuilder();
 
+            var bulletin = bulletins[bulletinId.Value];
             // format header
             var reNum = bulletin.ResponseToId?.ToString() ?? "None";
             if (!session.Usernames.TryGetValue(bulletin.FromUserId, out var fromUsername))
@@ -622,7 +698,7 @@ namespace miniBBS.Commands
             builder.AppendLine(string.Join("", new[]
                 {
                     "Msg #: ".Color(ConsoleColor.Cyan),
-                    bulletinId.ToString().PadRight(12).Color(ConsoleColor.White),
+                    bulletinNumber.ToString().PadRight(12).Color(ConsoleColor.White),
                     "Re   : ".Color(ConsoleColor.Cyan),
                     reNum.Color(ConsoleColor.DarkGray),
                     Environment.NewLine,
@@ -655,7 +731,7 @@ namespace miniBBS.Commands
             }
         }
 
-        private static void ListBulletins(BbsSession session, Dictionary<int, Bulletin> bulletins, List<int> readBulletins)
+        private static void ListBulletins(BbsSession session, SortedList<int, Bulletin> bulletins, List<int> readBulletins, int numHidden)
         {
             const int usernameLength = 8;
 
@@ -668,7 +744,7 @@ namespace miniBBS.Commands
             List<Bulletin> toList = null;
             while (toList == null)
             {
-                session.Io.OutputLine($"Range: {bulletins.Keys.Min()}-{bulletins.Keys.Max()}");
+                session.Io.OutputLine($"Range: 0-{bulletins.Count-1}");
                 var option = session.Io.AskWithNumber("U)nread, #) From #, ENTER=All");
                 if (option == "U")
                 {
@@ -684,7 +760,7 @@ namespace miniBBS.Commands
                 else if (!string.IsNullOrWhiteSpace(option) && int.TryParse(option, out var startAt))
                 {
                     toList = bulletins.Values
-                        .Where(b => b.Id >= startAt)
+                        .Skip(startAt)
                         .OrderBy(b => b.DateUtc)
                         .ToList();
                 }
@@ -703,10 +779,14 @@ namespace miniBBS.Commands
                 session.Io.OutputLine($"{Constants.Inverser}*# Date. From.... Subject{Constants.Inverser}".Replace('.', Constants.Spaceholder));
 
                 session.Io.OutputLine("--------------------------------------");
+                if (numHidden > 0)
+                {
+                    session.Io.Error($"Hiding {numHidden} archived, use 'I' to show.");
+                }
                 foreach (var bull in toList)
                 {
                     var isRead = true == readBulletins?.Contains(bull.Id) ? $"{Constants.Spaceholder}" : "*".Color(ConsoleColor.Red);
-                    var printableMsgNum = bull.Id.ToString();
+                    var printableMsgNum = bulletins.ItemNumber(bull.Id).ToString();
                     var msgNum = printableMsgNum
                         //.PadLeft(4, Constants.Spaceholder)
                         .Color(ConsoleColor.White);
@@ -750,7 +830,7 @@ namespace miniBBS.Commands
             }
         }
 
-        private static void ShowMenu(BbsSession session)
+        private static void ShowMenu(BbsSession session, bool includeArchived, int numArchived)
         {
             // 1234567890123456789012345678901234567890
             // <=Prev. in Thread    >/CR=Next in Thread
@@ -758,6 +838,8 @@ namespace miniBBS.Commands
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
             {
                 session.Io.OutputLine($"{Constants.Inverser} *** Community Bulletins Menu ***{Constants.Inverser}\r\n".Color(ConsoleColor.DarkMagenta));
+                session.Io.OutputLine(
+                    "I".Color(ConsoleColor.Green) + eq + $"{numArchived} Archived: {(includeArchived ? "Shown".Color(ConsoleColor.Red) : "Hidden".Color(ConsoleColor.Cyan))}");
                 session.Io.OutputLine(
                     "[".Color(ConsoleColor.Green) + eq + "Prev Board         " +
                     "]".Color(ConsoleColor.Green) + eq + "Next Board");

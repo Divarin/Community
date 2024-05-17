@@ -1,22 +1,20 @@
 ﻿using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System;
 
 namespace miniBBS.Commands
 {
     public static class TimeZone
     {
-        public static void Execute(BbsSession session, string adjust)
+        public static void Execute(BbsSession session, string adjust = null)
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                int tz;
+                if (string.IsNullOrWhiteSpace(adjust) || !int.TryParse(adjust, out var tz) || Math.Abs(tz) > 23)
+                    adjust = AskForAdjustment(session);
                 if (string.IsNullOrWhiteSpace(adjust) || !int.TryParse(adjust, out tz) || Math.Abs(tz) > 23)
                 {
-                    int et = (int) (DateTime.Now - DateTime.UtcNow).TotalHours;
-                    string msg = 
-                        $"Currently times are being adjusted from UTC by {session.TimeZone} hours.  Use /tz (hours) to change. " +
-                        $"For example to show times in UTC use '/tz 0'  To show times in Eastern Time Zone use '/tz {et}'.";
-                    session.Io.OutputLine(msg);
+                    session.Io.Error("Time Zone not changed.");
                     return;
                 }
                 session.TimeZone = tz;
@@ -27,6 +25,15 @@ namespace miniBBS.Commands
                     session.UserRepo.Update(session.User);
                 }
             }
+        }
+
+        private static string AskForAdjustment(BbsSession session)
+        {
+            int et = (int)(DateTime.Now - DateTime.UtcNow).TotalHours;
+            session.Io.OutputLine($"Currently times are being adjusted from UTC by {session.TimeZone} hours.");
+            session.Io.OutputLine($"For Time Zone offset (examples: 0 = UTC, {et} = US Eastern Time)");
+            session.Io.Output("Time Zone Offet (-23 to 23): ");
+            return session.Io.InputLine()?.Trim();
         }
     }
 }
