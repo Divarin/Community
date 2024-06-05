@@ -408,9 +408,14 @@ namespace miniBBS.Commands
                 session.Io.Output($"{(delete ? "Delete" : "Edit")} bulletin #: ");
                 var line = session.Io.InputLine();
                 session.Io.OutputLine();
-                if (!int.TryParse(line, out var num) || !bulletins.ContainsKey(num))
+
+                if (!int.TryParse(line, out var num))
                     return false;
-                var bulletin = bulletins[num];
+                var index = bulletins.ItemKey(num);
+                if (!index.HasValue || !bulletins.ContainsKey(index.Value))
+                    return false;
+
+                var bulletin = bulletins[index.Value];
                 if (bulletin.FromUserId != session.User.Id)
                 {
                     session.Io.Error("Not your bulletin!");
