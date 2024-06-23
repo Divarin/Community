@@ -123,8 +123,8 @@ namespace miniBBS.Commands
                     var key = session.Io.InputKey();
 
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
-                        key = '+';
-                    
+                        key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'n' : '+';
+
                     session.Io.Output(key.Value);
                     key = char.ToUpper(key.Value);
 
@@ -332,7 +332,7 @@ namespace miniBBS.Commands
                             break;
                         case 'P':
                             // post
-                            if (PostMessage(session, currentBoard, bulletinRepo, readBulletins))
+                            if (PostMessage(session, currentBoard, bulletinRepo))
                                 ReloadBulletins();
                             break;
                         case 'L':
@@ -899,7 +899,7 @@ namespace miniBBS.Commands
             };
         }
 
-        private static bool PostMessage(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo, List<int> readBulletins)
+        private static bool PostMessage(BbsSession session, BulletinBoard board, IRepository<Bulletin> repo)
         {
             var didPost = false;
 
