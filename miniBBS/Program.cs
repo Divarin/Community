@@ -1040,19 +1040,19 @@ namespace miniBBS
             return user;
         }
 
-        private static string ChoosePassword(BbsSession session)
-        {
-            session.Io.Output("Choose a password (and don't forget it): ");
-            string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
+        //private static string ChoosePassword(BbsSession session)
+        //{
+        //    session.Io.Output("Choose a password (and don't forget it): ");
+        //    string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
 
-            if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength || pw.Length > Constants.MaximumPasswordLength)
-            {
-                session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters and not more than {Constants.MaximumPasswordLength} characters.");
-                return null;
-            }
+        //    if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength || pw.Length > Constants.MaximumPasswordLength)
+        //    {
+        //        session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters and not more than {Constants.MaximumPasswordLength} characters.");
+        //        return null;
+        //    }
 
-            return pw;
-        }
+        //    return pw;
+        //}
 
         private static void ExecuteCommand(BbsSession session, string command)
         {

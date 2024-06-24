@@ -123,7 +123,12 @@ namespace miniBBS.Commands
                     var key = session.Io.InputKey();
 
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
-                        key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'n' : '+';
+                    {
+                        if (lastRead.HasValue)
+                            key = '+';
+                        else
+                            key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'n' : '+';
+                    }
 
                     session.Io.Output(key.Value);
                     key = char.ToUpper(key.Value);
