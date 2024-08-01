@@ -9,7 +9,15 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, string reason)
         {
-            session.Afk = !session.Afk;
+            if (session.Afk && !string.IsNullOrWhiteSpace(reason))
+            {
+                // don't toggle AFK if we're already AFK *AND* there is a reason.
+                // in this case we stay AFK but update the reason.
+            }
+            else
+            {
+                session.Afk = !session.Afk;
+            }
 
             if (string.IsNullOrWhiteSpace(reason))
                 reason = "away from keyboard";

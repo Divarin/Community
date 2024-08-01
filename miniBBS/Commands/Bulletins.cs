@@ -92,14 +92,16 @@ namespace miniBBS.Commands
                 {
                     // no new unread in current board
                     // try advance to next board
-                    session.Io.OutputLine($"No more unread messages in '{currentBoard.Name}'.".Color(ConsoleColor.Magenta));
+                    session.Io.OutputLine($"No more unread messages in '{currentBoard.Name.Color(ConsoleColor.Magenta)}'.");
                     var nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
                     if (nextBoard != null)
                     {
-                        session.Io.OutputLine($"Going to '{nextBoard.Name}' board.".Color(ConsoleColor.Magenta));
-                        currentBoard = nextBoard;
-                        ReloadBulletins();
-                        bulletinIndex = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                        if ('Y' == session.Io.Ask($"Proceeed to next board, '{nextBoard.Name.Color(ConsoleColor.Magenta)}'"))
+                        {
+                            currentBoard = nextBoard;
+                            ReloadBulletins();
+                            bulletinIndex = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                        }
                     }
                     if (bulletinIndex > 0)
                     {
