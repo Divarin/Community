@@ -20,6 +20,7 @@ namespace miniBBS.Menus
             $"{_clr("/dnd", ConsoleColor.Green)} : Toggle Do Not Disturb",
             $"{_clr("/afk", ConsoleColor.Green)} : Toggle Away from Keyboard",
             $"{_clr("/password", ConsoleColor.Green)} : Change your password",
+            $"{_clr("/ghosts", ConsoleColor.Green)} : See your other sessions and disconnect them",
             $"--- {_clr("Blurbs (one-liners at login)", ConsoleColor.Yellow)} ---",
             $"{_clr("/blurb", ConsoleColor.Green)} : Shows a random blurb",
             $"{_clr("/blurb {blurb}", ConsoleColor.Green)} : Adds a new blurb",

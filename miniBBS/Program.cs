@@ -1318,6 +1318,10 @@ namespace miniBBS
                 case "/sessioninfo":
                     SessionInfo.Execute(session, parts.Skip(1).ToArray());
                     return;
+                case "/ghost":
+                case "/ghosts":
+                    SessionInfo.Ghosts(session);
+                    return;
                 case "/shh":
                     if (session.ControlFlags.HasFlag(SessionControlFlags.DoNotSendNotifications))
                     {

@@ -286,8 +286,11 @@ namespace miniBBS.Core.Models.Control
 
             while (true)
             {
-                bool shouldHangUp = (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin;
-                shouldHangUp &= User == null || !Stream.CanRead || !Stream.CanWrite;
+                bool shouldHangUp = 
+                    ForceLogout ||
+                    (User == null && (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin) ||
+                    !Stream.CanRead ||
+                    !Stream.CanWrite;
 
                 if (shouldHangUp)
                 {
