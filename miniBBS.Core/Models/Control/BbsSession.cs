@@ -267,7 +267,7 @@ namespace miniBBS.Core.Models.Control
                 Messager?.Unsubscribe(EmoteSubscriber);
                 Messager?.Unsubscribe(GlobalMessageSubscriber);
 
-                _sessionsList.RemoveSession(this);
+                _sessionsList?.RemoveSession(this);
             }
         }
 
@@ -286,20 +286,31 @@ namespace miniBBS.Core.Models.Control
 
             while (true)
             {
-                bool shouldHangUp = 
-                    ForceLogout ||
-                    (User == null && (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin) ||
-                    !Stream.CanRead ||
-                    !Stream.CanWrite;
+                try
+                {
+                    bool shouldHangUp =
+                        ForceLogout ||
+                        Stream == null ||
+                        !Stream.CanRead ||
+                        !Stream.CanWrite ||
+                        (User == null && (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin);
 
-                if (shouldHangUp)
+                    if (shouldHangUp)
+                    {
+                        ForceLogout = true;
+                        Stream?.Close();
+                        Dispose();
+                        break;
+                    }
+                    Thread.Sleep(threadSleepTimeMs);
+                }
+                catch
                 {
                     ForceLogout = true;
-                    Stream.Close();
+                    Stream?.Close();
                     Dispose();
                     break;
                 }
-                Thread.Sleep(threadSleepTimeMs);
             }
         }
 
