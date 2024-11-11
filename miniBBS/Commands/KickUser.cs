@@ -47,7 +47,7 @@ namespace miniBBS.Commands
                 
                 if (targetSession.Channel.Name.Equals(Constants.DefaultChannelName))
                 {
-                    targetSession.ForceLogout = true;
+                    targetSession.SetForcedLogout(message);
                 }
                 else
                 {

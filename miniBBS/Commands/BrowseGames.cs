@@ -34,10 +34,9 @@ namespace miniBBS.Commands
             for (int i=0; i < gamesList.Count; i++)
             {
                 var parts = gamesList[i].Split('|');
-                var path = parts[0];
                 var desc = parts.Length > 1 ? parts[1] : string.Empty;
-                builder.AppendLine($"{(i + 1).ToString().PadLeft(3, Constants.Spaceholder)} : {UserIoExtensions.WrapInColor(path, ConsoleColor.DarkGray)}");
-                builder.AppendLine(desc.Color(ConsoleColor.Blue));
+                var owner = GetOwner(parts[0]);
+                builder.AppendLine($"{(i + 1).ToString().PadLeft(3, Constants.Spaceholder)} : {desc.Color(ConsoleColor.Blue)} by {owner}");
             }
 
             builder.AppendLine("Want to write your own programs in Basic?  Use '/feedback' to ask the Sysop about it to get started!".Color(ConsoleColor.White));
@@ -53,8 +52,20 @@ namespace miniBBS.Commands
                 var inp = session.Io.InputLine();
                 session.Io.OutputLine();
                 if (!string.IsNullOrWhiteSpace(inp) && int.TryParse(inp, out int n) && n >= 1 && n <= gamesList.Count)
+                {
                     ReadTextFile.Execute(session, inp);
+                }
             }
+        }
+
+        private static string GetOwner(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+            var parts = path.Split('/');
+            if (parts != null && parts.Length >= 2 && parts[0].Equals("users", StringComparison.CurrentCultureIgnoreCase))
+                return parts[1];
+            return null;
         }
     }
 }

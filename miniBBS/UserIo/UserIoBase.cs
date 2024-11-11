@@ -423,7 +423,7 @@ namespace miniBBS.UserIo
             char? result = null;
             session.Stream.Flush();
             if (session.ForceLogout)
-                throw new ForceLogoutException();
+                throw new ForceLogoutException(session.ForceLogoutReason);
             if (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite && (i = session.Stream.Read(bytes, 0, bytes.Length)) != 0)
             {
                 session.ResetIdleTimer();

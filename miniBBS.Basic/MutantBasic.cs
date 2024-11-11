@@ -755,10 +755,14 @@ namespace miniBBS.Basic
                                 if (f.Execute(args, variables, nextSp))
                                 {
                                     var variableName = f.VariableName;
-                                    if (true == variables.PeekAllScoped()?.Any(sc => sc is For && (sc as For).VariableName == variableName))
-                                        throw new RuntimeException($"scoped variable '{variableName}' already in use by parent scope.  Please choose a unique index variable name.");
+                                    if (variables.PeekAllScoped()?.FirstOrDefault(x => x is For && (x as For).VariableName == variableName) is For existing)
+                                    {
+                                        f = existing; // re-entered for loop without exiting the first time (probably goto above the FOR)
+                                    }
                                     else
+                                    {
                                         variables.PushScoped(f);
+                                    }
                                 }
                             }
                         }

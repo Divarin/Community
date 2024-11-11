@@ -20,8 +20,10 @@ namespace miniBBS.Core.Models.Control
         private static readonly string _on = $"{Constants.InlineColorizer}{(int)ConsoleColor.Red}{Constants.InlineColorizer}On{Constants.InlineColorizer}-1{Constants.InlineColorizer}";        
         private static readonly string _off = $"{Constants.InlineColorizer}{(int)ConsoleColor.Green}{Constants.InlineColorizer}Off{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
 
-        public BbsSession(ISessionsList sessionsList)
+        public BbsSession(ISessionsList sessionsList, Stream stream)
         {
+            _stream = stream;
+
             SessionStartUtc = DateTime.UtcNow;
             Rows = 24;
             Cols = 80;
@@ -45,7 +47,10 @@ namespace miniBBS.Core.Models.Control
 
         public Action ShowPrompt { get; set; }
         public Guid Id { get; set; }
-        public Stream Stream { get; set; }
+
+        private Stream _stream;
+        public Stream Stream => _stream;
+
         public IRepository<User> UserRepo { get; set; }
         public IRepository<UserChannelFlag> UcFlagRepo { get; set; }
         public User User { get; set; }
@@ -144,7 +149,10 @@ namespace miniBBS.Core.Models.Control
 
         public UserChannelFlag UcFlag { get; set; }
         public Channel Channel { get; set; }
-        public bool ForceLogout { get; set; }
+
+        private bool _forceLogout = false;
+        public bool ForceLogout => _forceLogout;
+
         public DateTime SessionStartUtc { get; private set; }
 
         /// <summary>
@@ -169,6 +177,12 @@ namespace miniBBS.Core.Models.Control
         public bool NoPingPong { get; set; }
         
         public Queue<Action> DndMessages { get; } = new Queue<Action>();
+
+        public void SetForcedLogout(string reason)
+        {
+            ForceLogoutReason = reason;
+            _forceLogout = true;
+        }
 
         public void StartPingPong(double delayMinutes, bool silently = true)
         {
@@ -209,6 +223,8 @@ namespace miniBBS.Core.Models.Control
                 return socket.Connected;
             }
         }
+
+        public string ForceLogoutReason { get; set; }
 
         private static void PingPong(object o)
         {
@@ -288,25 +304,35 @@ namespace miniBBS.Core.Models.Control
             {
                 try
                 {
-                    bool shouldHangUp =
-                        ForceLogout ||
-                        Stream == null ||
-                        !Stream.CanRead ||
-                        !Stream.CanWrite ||
-                        (User == null && (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin);
+                    string reason = null;
+                    if (ForceLogout)
+                        reason = $"Force Logout flag {ForceLogoutReason}";
+                    else if (Stream == null)
+                        reason = "Stream is null";
+                    else if (!Stream.CanRead)
+                        reason = "Can't read from Stream";
+                    else if (!Stream.CanWrite)
+                        reason = "Can't write to Stream";
+                    else if (User == null && (DateTime.UtcNow - SessionStartUtc).TotalMinutes > Constants.MaxLoginTimeMin)
+                        reason = "User took too long to log in";
+
+                    bool shouldHangUp = reason != null;
 
                     if (shouldHangUp)
                     {
-                        ForceLogout = true;
+                        if (!ForceLogout)
+                        {
+                            SetForcedLogout(reason);
+                        }
                         Stream?.Close();
                         Dispose();
                         break;
                     }
                     Thread.Sleep(threadSleepTimeMs);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    ForceLogout = true;
+                    SetForcedLogout($"Exception happened in suicide timer: {ex.Message}");
                     Stream?.Close();
                     Dispose();
                     break;

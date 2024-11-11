@@ -66,7 +66,7 @@ namespace miniBBS.Commands
                     return;
                 if (int.TryParse(line, out var killSessionNum) && killSessionNum >= 1 && killSessionNum <= userSessions.Count)
                 {
-                    userSessions[killSessionNum - 1].ForceLogout = true;
+                    userSessions[killSessionNum - 1].SetForcedLogout("Busting specific Ghost for this user");
                     var msg = $"{session.User.Name} is exorsizing a ghost.";
                     DI.Get<IMessager>().Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
                     session.Io.Error($"It may take up to {Constants.MaxLoginTimeMin} minutes for the ghost to be exorsized.");
@@ -75,7 +75,7 @@ namespace miniBBS.Commands
                 {
                     foreach (var s in userSessions.Where(s => s != session))
                     {
-                        s.ForceLogout = true;
+                        s.SetForcedLogout("Busting (A)ll ghosts for this user");
                     }
                     var msg = $"{session.User.Name} is exorsizing ghosts.";
                     DI.Get<IMessager>().Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));

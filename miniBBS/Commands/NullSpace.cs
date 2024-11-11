@@ -45,7 +45,7 @@ namespace miniBBS.Commands
 
             foreach (var ghost in ghosts)
             {
-                ghost.ForceLogout = true;
+                ghost.SetForcedLogout("Ghost auto-detected in NullSpace.");
                 session.Io.OutputLine("Your ghost session has 'gone into the light', so to speak.");
             }
 

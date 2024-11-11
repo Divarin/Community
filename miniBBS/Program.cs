@@ -124,12 +124,11 @@ namespace miniBBS
                 {
                     var userRepo = DI.GetRepository<User>();
 
-                    session = new BbsSession(sessionsList)
+                    session = new BbsSession(sessionsList, stream)
                     {
                         User = null,
                         UserRepo = userRepo,
                         UcFlagRepo = DI.GetRepository<UserChannelFlag>(),
-                        Stream = stream,
                         Messager = nodeParams.Messager,
                         IpAddress = ip,
                         PingType = PingPongType.Invisible,
