@@ -11,6 +11,12 @@ namespace miniBBS.Services.GlobalCommands
     {
         public static Chat Execute(BbsSession session, ChatWriteFlags chatWriteFlags)
         {
+            // can happen if user was reading old/archived posts then switched the archive filter back on.
+            if (session.Chats?.Any() == true && session.MsgPointer < session.Chats.Keys.First())
+            {
+                session.MsgPointer = session.Chats.Keys.First();
+            }
+
             if (!session.Chats.ContainsKey(session.MsgPointer))
             {
                 if (!chatWriteFlags.HasFlag(ChatWriteFlags.FormatForMessageBase) && !chatWriteFlags.HasFlag(ChatWriteFlags.DoNotShowMessage))

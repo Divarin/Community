@@ -1,6 +1,7 @@
 ﻿using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
+using System;
 using System.Linq;
 
 namespace miniBBS.Services.GlobalCommands
@@ -41,6 +42,14 @@ namespace miniBBS.Services.GlobalCommands
                 else
                     session.LastMsgPointer = msgPointer;
                 session.MsgPointer = msgPointer;
+            }
+            else if (reverse)
+            {
+                if (!session.Items.ContainsKey(SessionItem.ShowChatArchive) ||
+                    (bool)session.Items[SessionItem.ShowChatArchive] != true)
+                {
+                    session.Io.Error("There may be earlier messages, use '" + "/archive".Color(ConsoleColor.Yellow) + "' to unlock the archive!");
+                }
             }
 
             session.ContextPointer = null;

@@ -3,6 +3,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
+using miniBBS.Services.Persistence;
 using System;
 using System.Linq;
 
@@ -48,6 +49,10 @@ namespace miniBBS.Services.GlobalCommands
             var chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
             chat = chatRepo.Insert(chat);
             session.Chats[chat.Id] = chat;
+            var chatCache = GlobalDependencyResolver.Default.Get<IChatCache>().GetChannelChats(chat.ChannelId);
+            if (session.Chats != chatCache && !chatCache.ContainsKey(chat.Id))
+                chatCache[chat.Id] = chat;
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
                 session.Io.OutputLine($"Message {session.Chats.ItemNumber(chat.Id)} Posted to {session.Channel.Name}.");

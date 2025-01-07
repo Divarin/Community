@@ -64,8 +64,8 @@ namespace miniBBS.Commands
                 
                 numArchived = list.Count - 50;
 
-                if (!includeArchived && list.Count > Constants.NumberOfArchivedBulletins)
-                    list = list.Skip(list.Count - Constants.NumberOfArchivedBulletins).ToList();
+                if (!includeArchived && list.Count > Constants.MaxUnarchivedBulletins)
+                    list = list.Skip(list.Count - Constants.MaxUnarchivedBulletins).ToList();
 
                 var dict = list.ToDictionary(k => k.Id);
                 bulletins = new SortedList<int, Bulletin>(dict);
@@ -400,9 +400,18 @@ namespace miniBBS.Commands
                 return bulletins?.Keys?.FirstOrDefault();
 
             var lastReadMessage = bulletins[lastRead.Value];
-            if (!lastReadMessage.OriginalId.HasValue || !bulletins.ContainsKey(lastReadMessage.OriginalId.Value))
-                return bulletins?.Keys?.FirstOrDefault();
-            
+            if (!lastReadMessage.OriginalId.HasValue)
+            {
+                return bulletins?.Keys?.FirstOrDefault(x => x > lastRead);
+            }
+
+            if (!bulletins.ContainsKey(lastReadMessage.OriginalId.Value))
+            {
+                return bulletins
+                    ?.FirstOrDefault(x => x.Key > lastReadMessage.OriginalId.Value && x.Value.OriginalId != lastReadMessage.OriginalId.Value)
+                    .Key;
+            }
+
             var startOfThread = bulletins[lastReadMessage.OriginalId.Value];
             var nextMessage = bulletins.FirstOrDefault(x => x.Key > startOfThread.Id && x.Value.OriginalId != lastReadMessage.OriginalId);
             return nextMessage.Key;
@@ -549,7 +558,7 @@ namespace miniBBS.Commands
                 {
                     quote = string.Join(Environment.NewLine, new[]
                     {
-                        $" --- Quote Msg#{originalMessage.Id} from {originalUsername} ---".Color(ConsoleColor.DarkGray),
+                        $" --- Quote from {originalUsername} ---".Color(ConsoleColor.DarkGray),
                         quote.Color(ConsoleColor.Blue),
                         END_QUOTE.Color(ConsoleColor.DarkGray),
                     });
@@ -576,7 +585,7 @@ namespace miniBBS.Commands
                 editor.OnSave = body =>
                 {
                     if (!string.IsNullOrWhiteSpace(quote))
-                        body = $"{quote}{Environment.NewLine}{body}";
+                        body = $"{quote}{session.Io.NewLine}{body}";
                     var posted = repo.Insert(new Bulletin
                     {
                         BoardId = board.Id,
@@ -592,7 +601,7 @@ namespace miniBBS.Commands
                     didPost = true;
                     DI.Get<IMessager>().Publish(session, new GlobalMessage(
                         session.Id,
-                        $"{session.User.Name} has replied to a Bulletin in {board.Name}, #{posted.Id}, Subject: {subject.Color(ConsoleColor.Green)}.  Use '/b' to go to the Bulletin Boards."));
+                        $"{session.User.Name} has replied to a Bulletin in {board.Name}, Subject: {subject.Color(ConsoleColor.Green)}.  Use '/b' to go to the Bulletin Boards."));
                     return string.Empty;
                 };
 
@@ -641,7 +650,7 @@ namespace miniBBS.Commands
                 if ("L".Equals(inp, StringComparison.CurrentCultureIgnoreCase))
                 {
                     int l = 1;
-                    session.Io.OutputLine(string.Join(Environment.NewLine, split
+                    session.Io.OutputLine(string.Join(session.Io.NewLine, split
                         .Select(x => $"{l++}: {x}")));
                 }
                 else if (int.TryParse(inp, out var n))

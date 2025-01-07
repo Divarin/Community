@@ -1,8 +1,12 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace miniBBS.UserIo
 {
@@ -15,6 +19,8 @@ namespace miniBBS.UserIo
         }
 
         public override TerminalEmulation EmulationType => TerminalEmulation.Ansi;
+
+        private const string _deviceStatusRequest = "\u001b[6n";
 
         public override void ClearLine() { Output("\u001b[0K"); }
         public override void ClearScreen() { Output(Clear); }
@@ -121,6 +127,32 @@ namespace miniBBS.UserIo
             }
 
             return resultBuilder.ToString();
+        }
+
+        public static bool TryAutoDetect(BbsSession session)
+        {
+            var sw = new Stopwatch();
+            
+            session.Io.OutputLine(_deviceStatusRequest);
+            session.Io.Output("Does your terminal support ANSI color? (Y)es, (N)o or don't know: ");
+
+            sw.Start();
+            while (sw.ElapsedMilliseconds < 500)
+            {
+                Thread.Sleep(25);
+            }
+            var response = session.Io.InputRaw();
+            session.Io.OutputLine();
+
+            if (response == null || response.Length < 1)
+                return false;
+            if (response[0] == 27)
+            {
+                session.Io.OutputLine("ANSI Auto-Detected!");
+                return true;
+            }
+
+            return response[0] == 'y' || response[0] == 'Y';
         }
     }
 

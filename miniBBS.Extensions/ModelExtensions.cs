@@ -59,6 +59,8 @@ namespace miniBBS.Extensions
             string username = session.Usernames.ContainsKey(chat.FromUserId) ? session.Usernames[chat.FromUserId] : $"Unknown (ID:{chat.FromUserId})";
             var chatNum = session.Chats.ItemNumber(chat.Id);
             var reNum = session.Chats.ItemNumber(chat.ResponseToId)?.ToString() ?? "none";
+            if (reNum == "none" && chat.ResponseToId.HasValue)
+                reNum = "archived";
 
             string line;
 

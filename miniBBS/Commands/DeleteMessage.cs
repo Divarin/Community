@@ -6,6 +6,7 @@ using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using miniBBS.Services.GlobalCommands;
+using miniBBS.Services.Persistence;
 using System;
 using System.Linq;
 
@@ -53,10 +54,13 @@ namespace miniBBS.Commands
                     var k = session.Io.Ask("Delete this? ");
                     if (k == 'Y')
                     {
-                        string message = $"{session.User.Name} deleted message # {session.Chats.ItemNumber(toBeDeleted.Id)} from channel {session.Channel.Name}";
+                        string message = $"{session.User.Name} deleted a message from channel {session.Channel.Name}";
                         session.Chats.Remove(toBeDeleted.Id);
-                        session.Io.OutputLine("Done.");
+                        
                         DI.GetRepository<Chat>().Delete(toBeDeleted);
+                        DI.Get<IChatCache>().DeleteChat(toBeDeleted);
+                        session.Io.OutputLine("Done.");
+
                         session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message)
                         {
                             OnReceive = (s) =>

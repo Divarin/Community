@@ -88,9 +88,9 @@ namespace miniBBS.Commands
                 while (true)
                 {
                     session.Io.OutputLine($"{Environment.NewLine} -- Terminal Settings --");
-                    session.Io.OutputLine($"C)ols (width)  : {cols}");
-                    session.Io.OutputLine($"R)ows (height) : {rows}");
-                    session.Io.OutputLine($"E)mulation     : {emulation}");
+                    session.Io.OutputLine($"C)ols (width)      : {cols}");
+                    session.Io.OutputLine($"R)ows (height)     : {rows}");
+                    session.Io.OutputLine($"E)mulation (color) : {emulation}");
                     session.Io.OutputLine(" --- Presets --- ");
                     session.Io.OutputLine("A) Try Auto-Detect");
                     session.Io.OutputLine($"L) Last    : {lastCols}c, {lastRows}r, {lastEmu}");
@@ -139,7 +139,7 @@ namespace miniBBS.Commands
                         case 'e':
                         case 'E':
                             {
-                                session.Io.Output(string.Format("{0}1 = ASCII{0}2 = ANSI{0}3 = PETSCII (Commodore){0}4 = ATASCII (Atari){0}Emulation [{1}] : ", 
+                                session.Io.Output(string.Format("{0}1 = ASCII (no color){0}2 = ANSI (PCs, etc){0}3 = PETSCII (Commodore){0}4 = ATASCII (Atari){0}Emulation [{1}] : ", 
                                     Environment.NewLine, 
                                     emulation.ToString()));
                                 char? s = session.Io.InputKey();
@@ -304,12 +304,6 @@ namespace miniBBS.Commands
 
         private static void SavePreset(BbsSession session, ref List<TerminalSettings> userPresets)
         {
-            //if (userPresets.Count >= 9)
-            //{
-            //    session.Io.Error("You already have too many presets, try (D)eleting one.");
-            //    return;
-            //}
-
             session.Io.OutputLine("Current settings:");
             session.Io.OutputLine($"Columns: {session.User.Cols}");
             session.Io.OutputLine($"Rows: {session.User.Rows}");

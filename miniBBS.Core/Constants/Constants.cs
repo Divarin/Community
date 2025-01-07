@@ -5,7 +5,7 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "5.9b - 2024.11.09";
+        public const string Version = "5.12 - 2024.12.24";
         public const string SysopName = "Divarin";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
@@ -36,7 +36,22 @@ namespace miniBBS.Core
             }
         }
 
-        public const int NumberOfArchivedBulletins = 50;
+        /// <summary>
+        /// Messages older than this will be considered archived.  They won't show up unless either
+        /// a) there's less than (MaxUnnarchivedChats) in the channel or
+        /// b) the user has toggled show archived chats on with the /archive command.
+        /// </summary>
+        public const int ArchivedChatDays = 30;
+
+        /// <summary>
+        /// Try to retain this many visible chats in each channel.  If there are more chats than this 
+        /// then filter out older ones based on date (ArchivedChatDays).
+        /// There can be more than MaxUnarchivedChats in any given channel but only if they are newer than
+        /// ArchivedChatDays.
+        /// </summary>
+        public const int MaxUnarchivedChats = 50;
+
+        public const int MaxUnarchivedBulletins = 50;
 
         public const string BannerFile = "banners.txt";
 

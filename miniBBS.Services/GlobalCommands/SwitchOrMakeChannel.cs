@@ -14,14 +14,48 @@ namespace miniBBS.Services.GlobalCommands
 {
     public static class SwitchOrMakeChannel
     {
+        public static void ToggleArchive(BbsSession session)
+        {
+            var showChatArchive =
+                session.Items.ContainsKey(SessionItem.ShowChatArchive)
+                && (bool)session.Items[SessionItem.ShowChatArchive];
+
+            showChatArchive = !showChatArchive;
+
+            session.Items[SessionItem.ShowChatArchive] = showChatArchive;
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            {
+                session.Io.OutputLine($"Archvied chat messages will now be: {(showChatArchive ? "Shown".Color(ConsoleColor.Green) : "Hidden".Color(ConsoleColor.Red))}");
+                session.Io.OutputLine("Use '" + "/archive".Color(ConsoleColor.Yellow) + "' to toggle this.");
+            }
+
+            SetSessionChats(session);
+
+            // re-show current chat message
+            int? currentMessage = session.ContextPointer ?? session.LastReadMessageNumber;
+            if (!currentMessage.HasValue || session.Chats?.ContainsKey(currentMessage.Value) != true)
+            {
+                // when going back to "archive" mode, the message pointer might be pointing to an archived message
+                // if that's the case try to change it to the lowest message that is not archived.
+                currentMessage = session.Chats?.Keys?.FirstOrDefault();
+                if (currentMessage.HasValue)
+                    session.LastReadMessageNumber = currentMessage;
+            }
+            if (currentMessage.HasValue && true == session.Chats?.ContainsKey(currentMessage.Value))
+            {
+                var currentChat = session.Chats[currentMessage.Value];
+                currentChat.Write(session, ChatWriteFlags.None, GlobalDependencyResolver.Default);
+            }
+        }
+
         public static bool Execute(BbsSession session, string channelNameOrNumber, bool allowMakeNewChannel, bool fromMessageBase = false)
         {
-            bool invalidChannelName = 
-                channelNameOrNumber == null || 
-                channelNameOrNumber.Any(c => char.IsWhiteSpace(c)) || 
-                channelNameOrNumber.Length > Constants.MaxChannelNameLength || 
+            bool invalidChannelName =
+                channelNameOrNumber == null ||
+                channelNameOrNumber.Any(c => char.IsWhiteSpace(c)) ||
+                channelNameOrNumber.Length > Constants.MaxChannelNameLength ||
                 Constants.InvalidChannelNames.Contains(channelNameOrNumber, StringComparer.CurrentCultureIgnoreCase);
-            
+
             if (invalidChannelName)
             {
                 session.Io.Error($"Invalid channel name, must not include any whitespace characters and cannot be longer than {Constants.MaxChannelNameLength} characters.");
@@ -80,10 +114,11 @@ namespace miniBBS.Services.GlobalCommands
                 messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, $"{session.User.Name} has left {session.Channel.Name} for {channel.Name}."));
 
             session.Channel = channel;
-            session.Chats = GlobalDependencyResolver.Default.Get<IChatCache>().GetChannelChats(session.Channel.Id);
-            session.UcFlag = ucFlag;            
+            SetSessionChats(session);
+
+            session.UcFlag = ucFlag;
             SetMessagePointer.Execute(session, session.UcFlag.LastReadMessageNumber);
-            
+
             session.ContextPointer = null;
             session.LastReadMessageNumber = null;
 
@@ -115,12 +150,8 @@ namespace miniBBS.Services.GlobalCommands
             if (!fromMessageBase)
             {
                 messager.Publish(session, new ChannelMessage(session.Id, channel.Id, $"{session.User.Name} has joined {channel.Name}"));
-                //using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                //{
-                //    session.Io.OutputLine($"This is where you left off in {session.Channel.Name}:");
-                //}
 
-                var flags = 
+                var flags =
                     ChatWriteFlags.UpdateLastMessagePointer |
                     ChatWriteFlags.UpdateLastReadMessage |
                     ChatWriteFlags.DoNotShowMessage;
@@ -129,6 +160,54 @@ namespace miniBBS.Services.GlobalCommands
             }
 
             return true;
+        }
+
+        private static void SetSessionChats(BbsSession session)
+        {
+            var chatCache = GlobalDependencyResolver.Default
+                            .Get<IChatCache>()
+                            .GetChannelChats(session.Channel.Id);
+
+            var filterChatsToUnarchived = chatCache.Keys.Count > Constants.MaxUnarchivedChats;
+            if (session.Items.ContainsKey(SessionItem.ShowChatArchive) &&
+                (bool)session.Items[SessionItem.ShowChatArchive] == true)
+            {
+                filterChatsToUnarchived = false;
+            }
+
+            if (!filterChatsToUnarchived)
+            {
+                // user has unlocked archived messages so they have unfiltered access to the chat cache.
+                session.Chats = chatCache;
+            }
+            else
+            {
+                // user has not unlocked archived messages so they will see a filtered subset of the chat cache.
+                var today = DateTime.UtcNow.Date;
+
+                // start by filtering by date (recent chats only)
+                var filteredChats = chatCache
+                    .Values
+                    .Where(c => (today - c.DateUtc.Date).TotalDays <= Constants.ArchivedChatDays)
+                    .ToList();
+
+                if (filteredChats.Count < Constants.MaxUnarchivedChats)
+                {
+                    // not enough recent messages to have the desired number of chats (50)
+                    // so we'll ignore the date filter and just take the most recent 50, regardless of age.
+                    var skip = chatCache.Count - Constants.MaxUnarchivedChats;
+                    if (skip <= 0)
+                    {
+                        // there's not enough messages to bother filtering
+                        session.Chats = chatCache;
+                        return;
+                    }
+                    filteredChats = chatCache.Values.Skip(skip).ToList();
+                }
+
+                session.Chats = new SortedList<int, Chat>(filteredChats
+                    .ToDictionary(k => k.Id));
+            }
         }
 
         private static Channel MakeChannel(BbsSession session, string channelName, IRepository<Channel> channelRepo)

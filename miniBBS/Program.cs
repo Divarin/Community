@@ -156,6 +156,10 @@ namespace miniBBS
                                 detectedEmulation = session.Io.EmulationType;
                                 session.Cols = 40;
                             }
+                            else if (session.Io.EmulationType == TerminalEmulation.Ansi)
+                            {
+                                detectedEmulation = session.Io.EmulationType;
+                            }
 
                             TermSetup.Execute(session, detectedEmulation);
                             Banners.Show(session);
@@ -275,7 +279,7 @@ namespace miniBBS
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
                 session.StartPingPong(Constants.DefaultPingPongDelayMin);
-                session.Io.OutputLine("Type '/?' for help (DON'T FORGET THE SLASH!!!!).");
+                session.Io.OutputLine("Type '/?' for help.");
                 Blurbs.Execute(session);
                 session.Io.OutputLine(" ------------------- ");
                 session.Io.SetForeground(ConsoleColor.Green);
@@ -407,6 +411,16 @@ namespace miniBBS
                     return $"{c.SubsetCount.ToString().Color(color)} / {c.TotalCount}";
                 }).ToArray();
 
+                if (counts[BULLETINS].SubsetCount > Constants.MaxUnarchivedBulletins)
+                {
+                    formattedCounts[BULLETINS] = $"more than {Constants.MaxUnarchivedBulletins}";
+                }
+
+                if (counts[CHATS].SubsetCount > Constants.MaxUnarchivedChats)
+                {
+                    formattedCounts[CHATS] = $"more than {Constants.MaxUnarchivedChats}";
+                }
+
                 var builder = new StringBuilder();
                 if (startupMode == LoginStartupMode.ChatRooms)
                 {
@@ -439,7 +453,10 @@ namespace miniBBS
         private static void Prompt(BbsSession session)
         {
             session.Io.SetForeground(ConsoleColor.Cyan);
-            
+
+            if (session.LastMsgPointer.HasValue && session.Chats?.Any() == true && session.LastMsgPointer.Value < session.Chats.Keys.FirstOrDefault())
+                session.LastMsgPointer = session.Chats.Keys.First();
+
             var lastRead = session.Chats.ItemNumber(session.LastMsgPointer) ?? -1;
             var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
@@ -489,6 +506,11 @@ namespace miniBBS
                 }
                 return;
             }
+
+            // check if chat is in the session.Chats, it probably isn't
+            // in-fact it only would be if this session and the poster of the message have both unlocked the archive.
+            if (!session.Chats.ContainsKey(chat.Id))
+                session.Chats[chat.Id] = chat;
 
             int lastRead =
                 session.LastMsgPointer ??
@@ -769,12 +791,26 @@ namespace miniBBS
                 session.Cols = 40;
                 session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Green);
                 session.Io.OutputLine("Commodore Color Mode Activated.");
-            } else if (emuTest == (char)126)
+            }
+            else if (emuTest == (char)126)
             {
                 session.Io = new Atascii(session);
                 session.Cols = 40;
                 session.Io.OutputLine($"{session.Io.NewLine.Repeat(2)}Atascii Mode Activated.");
             }
+            else
+            {
+                if ('Y' == emuTest ||
+                    'y' == emuTest ||
+                    ANSI.TryAutoDetect(session))
+                {
+                    session.Io = new ANSI(session);
+                    session.Cols = 80;
+                    session.Io.OutputLine("Turning on ANSI color.");
+                }
+            }
+
+            session.Io.OutputLine(session.Io.NewLine.Repeat(2));
 
             int retries = 6;
             retryLogin:
@@ -1038,20 +1074,6 @@ namespace miniBBS
             user = userRepo.Insert(user);
             return user;
         }
-
-        //private static string ChoosePassword(BbsSession session)
-        //{
-        //    session.Io.Output("Choose a password (and don't forget it): ");
-        //    string pw = session.Io.InputLine(InputHandlingFlag.PasswordInput)?.ToLower();
-
-        //    if (string.IsNullOrWhiteSpace(pw) || pw.Length < Constants.MinimumPasswordLength || pw.Length > Constants.MaximumPasswordLength)
-        //    {
-        //        session.Io.OutputLine($"Password too short, must be at least {Constants.MinimumPasswordLength} characters and not more than {Constants.MaximumPasswordLength} characters.");
-        //        return null;
-        //    }
-
-        //    return pw;
-        //}
 
         private static void ExecuteCommand(BbsSession session, string command)
         {
@@ -1553,6 +1575,10 @@ namespace miniBBS
                 case "/debug":
                     Services.GlobalCommands.Debug.Execute(session, parts.Skip(1).ToArray());
                     return;
+                case "/archive":
+                case "/archived":
+                    SwitchOrMakeChannel.ToggleArchive(session);
+                    return;
                 case ",":
                 case "<":
                     SetMessagePointer.Execute(session, session.MsgPointer - 1, reverse: true);
@@ -1594,6 +1620,14 @@ namespace miniBBS
 
             if (command.Length > 1 && int.TryParse(command.Substring(1), out int msgNum))
             {
+                if (msgNum == 0)
+                {
+                    if (!session.Items.ContainsKey(SessionItem.ShowChatArchive) ||
+                        (bool)session.Items[SessionItem.ShowChatArchive] != true)
+                    {
+                        session.Io.Error("There may be earlier messages, use '" + "/archive".Color(ConsoleColor.Yellow) + "' to unlock the archive!");
+                    }
+                }
                 var n = session.Chats.ItemKey(msgNum);
                 if (n.HasValue)
                 {

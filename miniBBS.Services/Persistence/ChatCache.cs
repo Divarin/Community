@@ -9,6 +9,7 @@ namespace miniBBS.Services.Persistence
     public class ChatCache : IChatCache
     {
         private readonly IRepository<Chat> _chatRepo;
+        // [Channel ID][Chat ID] = Chat message.
         private readonly ConcurrentDictionary<int, SortedList<int, Chat>> _channelChats = new ConcurrentDictionary<int, SortedList<int, Chat>>();
 
         public ChatCache()
@@ -22,6 +23,24 @@ namespace miniBBS.Services.Persistence
                 _channelChats[channelId] = GetChannelChatsFromRepo(channelId);
 
             return _channelChats[channelId];
+        }
+
+        public void UpdateChat(Chat chat)
+        {
+            var channelChats = GetChannelChats(chat.ChannelId);
+            if (channelChats.ContainsKey(chat.Id))
+            {
+                channelChats[chat.Id] = chat;
+            }
+        }
+
+        public void DeleteChat(Chat chat)
+        {
+            var channelChats = GetChannelChats(chat.ChannelId);
+            if (channelChats.ContainsKey(chat.Id))
+            {
+                channelChats.Remove(chat.Id);
+            }
         }
 
         private SortedList<int, Chat> GetChannelChatsFromRepo(int channelId)

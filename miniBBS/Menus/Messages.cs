@@ -30,7 +30,7 @@ namespace miniBBS.Menus
             $"{_clr("<", ConsoleColor.Green)}, {_clr(">", ConsoleColor.Green)} : Move back or forward (same as {_clr("ENTER", ConsoleColor.Green)}) one message.",
             $"{_clr("[", ConsoleColor.Green)}, {_clr("]", ConsoleColor.Green)} : Move back or forward one channel (see '" + "/? channels".Color(ConsoleColor.Green) + "').",
             $"{_clr("/read", ConsoleColor.Green)} : Begins continuous output of messages starting at current message.  You can abort at page breaks (more prompts).",
-
+            $"{_clr("/archive", ConsoleColor.Green)} : Toggles whether archived (older) messages are shown or hidden (default).",
             $"--- {_clr("Search", ConsoleColor.Yellow)} ---",
             $"{_clr("/pin", ConsoleColor.Green)} : Pins the last message you read. Optional 'p' can be added to make it a 'private' pin: '/pin p'",
             $"{_clr("/pin (msg #)", ConsoleColor.Green)} : Pins the specified message.  Optional 'p' can be added to make it a 'private' pin: '/pin 5051 p'",

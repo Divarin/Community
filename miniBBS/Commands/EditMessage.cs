@@ -6,6 +6,7 @@ using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using miniBBS.Services;
+using miniBBS.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +53,7 @@ namespace miniBBS.Commands
                 {
                     string message = string.Join(Environment.NewLine, new[]
 {
-                        $"{session.User.Name} edited message # {session.Chats.ItemNumber(toBeEdited.Id)} in channel {session.Channel.Name}",
+                        $"{session.User.Name} edited a message in channel {session.Channel.Name}",
                         "The message now reads:",
                         _text
                     }); ;
@@ -60,6 +61,7 @@ namespace miniBBS.Commands
                     toBeEdited.Message = _text;
                     session.Io.OutputLine("Done.");
                     DI.GetRepository<Chat>().Update(toBeEdited);
+                    DI.Get<IChatCache>().UpdateChat(toBeEdited);
                     session.Messager.Publish(session, new ChannelMessage(session.Id, session.Channel.Id, message)
                     {
                         OnReceive = (s) => s.Chats[toBeEdited.Id].Message = _text
@@ -212,6 +214,7 @@ namespace miniBBS.Commands
             chat.ResponseToId = reId;
             chat = DI.GetRepository<Chat>().Update(chat);
             session.Chats[chat.Id] = chat;
+            DI.Get<IChatCache>().UpdateChat(chat);
 
             session.Io.OutputLine($"Updated re: number for message {session.Chats.ItemNumber(chat.Id)} to {(newRe.HasValue ? newRe.ToString() : "nothing")}.");
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
@@ -333,8 +336,12 @@ namespace miniBBS.Commands
                 .Where(c => c.ResponseToId == chat2.Id)
                 .ToList();
 
-            session.Chats.Remove(chat2.Id);            
+            session.Chats.Remove(chat2.Id);
             chatRepo.Delete(chat2);
+            
+            var chatCache = DI.Get<IChatCache>();
+            chatCache.UpdateChat(chat1);
+            chatCache.DeleteChat(chat2);
 
             if (true == chatsReferring?.Any())
             {

@@ -48,7 +48,10 @@ namespace miniBBS.Commands
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
                 {
-                    session.Io.OutputLine($"Message {session.Chats.ItemNumber(currentChat.Id)} does not appear to be in response to another message or that message has been deleted.");
+                    if (currentChat.ResponseToId.HasValue)
+                        session.Io.Error($"Message {session.Chats.ItemNumber(currentChat.Id)} is in response to a message which is archived.  Use the '/archive' command to unlock the archive.");
+                    else
+                        session.Io.OutputLine($"Message {session.Chats.ItemNumber(currentChat.Id)} does not appear to be in response to another message or that message has been deleted.");
                     return;
                 }
             }
