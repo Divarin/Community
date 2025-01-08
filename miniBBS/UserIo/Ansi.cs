@@ -142,7 +142,8 @@ namespace miniBBS.UserIo
                 Thread.Sleep(25);
             }
             var response = session.Io.InputRaw();
-            session.Io.OutputLine();
+            session.Io.OutputLine("\u001b[2K"); // clear line
+            session.Io.Output("\u001b[1A"); // up
 
             if (response == null || response.Length < 1)
                 return false;

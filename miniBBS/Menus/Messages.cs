@@ -27,6 +27,7 @@ namespace miniBBS.Menus
             $"{_clr("/123", ConsoleColor.Green)} : Jump to message # 123.  Example: '/10825' jumps to message 10825.",
             $"{_clr("/e", ConsoleColor.Green)}  : Jumps to end of messages.",
             $"{_clr("/0", ConsoleColor.Green)}  : Jumps to start of messages.",
+            $"{_clr("/since (date)", ConsoleColor.Green)}  : Jumps to first message on or after date.",
             $"{_clr("<", ConsoleColor.Green)}, {_clr(">", ConsoleColor.Green)} : Move back or forward (same as {_clr("ENTER", ConsoleColor.Green)}) one message.",
             $"{_clr("[", ConsoleColor.Green)}, {_clr("]", ConsoleColor.Green)} : Move back or forward one channel (see '" + "/? channels".Color(ConsoleColor.Green) + "').",
             $"{_clr("/read", ConsoleColor.Green)} : Begins continuous output of messages starting at current message.  You can abort at page breaks (more prompts).",

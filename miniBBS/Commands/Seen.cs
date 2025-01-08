@@ -12,7 +12,11 @@ namespace miniBBS.Commands
 {
     public static class Seen
     {
+        //                                  1234567890123456789012345678901234567890
         private const string _seenHeader = "Who       When               Bye";
+
+        //                                      12345678901234567890123456789012345678901234567890123456789012345678901234567890
+        private const string _seenHeaderWide = "Who                           When                  Bye";
 
         public static void Execute(BbsSession session, params string[] args)
         {
@@ -40,7 +44,8 @@ namespace miniBBS.Commands
                 });
 
             var builder = new StringBuilder();
-            builder.AppendLine(_seenHeader.Color(ConsoleColor.Magenta));
+            var header = session.Cols >= 80 ? _seenHeaderWide : _seenHeader;
+            builder.AppendLine(header.Color(ConsoleColor.Magenta));
 
             foreach (var d in data)
                 builder.AppendLine(GetLine(session, d.Data, d.UserId));
@@ -100,12 +105,26 @@ namespace miniBBS.Commands
         private static string GetLine(BbsSession session, SeenData seen, int userId)
         {
             var username = session.Usernames.ContainsKey(userId) ? session.Usernames[userId] : "Unknown";
-            var login = seen.SessionsStartUtc.Year == DateTime.Now.Year ?
-                $"{seen.SessionsStartUtc.AddHours(session.TimeZone):MMM dd HH:mm}" :
-                $"{seen.SessionsStartUtc.AddHours(session.TimeZone):yyMMdd HH:mm}";
+            string login;
+            if (session.Cols >= 80)
+            {
+                login = seen.SessionsStartUtc.Year == DateTime.Now.Year ?
+                    $"{seen.SessionsStartUtc.AddHours(session.TimeZone):MMM dd HH:mm}   " :
+                    $"{seen.SessionsStartUtc.AddHours(session.TimeZone):yy MMM dd HH:mm}";
+            }
+            else
+            {
+                login = seen.SessionsStartUtc.Year == DateTime.Now.Year ?
+                    $"{seen.SessionsStartUtc.AddHours(session.TimeZone):MMM dd HH:mm}" :
+                    $"{seen.SessionsStartUtc.AddHours(session.TimeZone):yyMMdd HH:mm}";
+            }
+
+            var nameLengh = 7; // 10 - 3 for elipsis (...)
+            if (session.Cols >= 80)
+                nameLengh += 20; // can afford to show more of the username
 
             return
-                username.MaxLength(10).PadRight(10).Color(ConsoleColor.Green) +
+                username.MaxLength(nameLengh).PadRight(nameLengh + 3).Color(ConsoleColor.Green) +
                 login.Color(ConsoleColor.Yellow) +
                 "-".Color(ConsoleColor.DarkGray) +
                 $"{seen.SessionEndUtc.AddHours(session.TimeZone):HH:mm} ".Color(ConsoleColor.White) +

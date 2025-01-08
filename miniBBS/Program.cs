@@ -810,7 +810,7 @@ namespace miniBBS
                 }
             }
 
-            session.Io.OutputLine(session.Io.NewLine.Repeat(2));
+            //session.Io.OutputLine(session.Io.NewLine.Repeat(2));
 
             int retries = 6;
             retryLogin:
@@ -821,7 +821,7 @@ namespace miniBBS
                 return;
             }
             
-            session.Io.Output("who are you?: ");
+            session.Io.Output("who are you?: ".Color(ConsoleColor.Green));
             string username = session.Io.InputLine();
             session.Io.OutputLine();
             var newUser = false;
@@ -1571,6 +1571,9 @@ namespace miniBBS
                     return;
                 case "/ur":
                     SetMessagePointer.SetToFirstUnreadMessage(session);
+                    return;
+                case "/since":
+                    SetMessagePointer.SetToDate(session, string.Join(" ", parts.Skip(1)));
                     return;
                 case "/debug":
                     Services.GlobalCommands.Debug.Execute(session, parts.Skip(1).ToArray());

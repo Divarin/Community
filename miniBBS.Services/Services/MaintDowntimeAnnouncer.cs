@@ -8,7 +8,7 @@ namespace miniBBS.Services.Services
 {
     public class MaintDowntimeAnnouncer
     {
-        private DateTime? _nextDowntime = null;
+        //private DateTime? _nextDowntime = null;
 
         public MaintDowntimeAnnouncer()
         {
