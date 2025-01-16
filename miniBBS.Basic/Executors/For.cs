@@ -57,6 +57,10 @@ namespace miniBBS.Basic.Executors
                 strStep = parts[1]; // assign step value
             }
 
+            strStart = Evaluate.Execute(strStart, variables);
+            strEnd = Evaluate.Execute(strEnd, variables);
+            strStep = Evaluate.Execute(strStep, variables);
+
             // try to parse all those ints
             if (!int.TryParse(strStart, out _current))
                 throw new RuntimeException("type mismatch for loop starting index");
