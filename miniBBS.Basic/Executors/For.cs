@@ -1,6 +1,8 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
+using miniBBS.Extensions;
 using System;
+using System.Linq;
 
 namespace miniBBS.Basic.Executors
 {
@@ -26,49 +28,43 @@ namespace miniBBS.Basic.Executors
             FirstStatementPosition = firstStatementPosition;
             _variables = variables;
 
-            // i=1 to 10 [step (step)]
+            // i=1 to 10 [step (step)] (whitespace optional here)
             if (string.IsNullOrWhiteSpace(line))
                 return false;
-            int pos = line.IndexOf('=');
-            string var = line.Substring(0, pos)?.Trim(); // i
-            line = line.Substring(pos+1)?.Trim(); // 1 to 10 ...
-            pos = line.IndexOf("TO", StringComparison.CurrentCultureIgnoreCase);
-            string strStart;
-            strStart = line.Substring(0, pos)?.Trim(); // 1
 
-            strStart = Evaluate.Execute(strStart, variables);
+            string var, strStart, strEnd, strStep;
+            strStep = "1";
 
-            line = line.Substring(pos + 3)?.Trim(); // 10 ...
-            int end = line.IndexOf(' ');
-            string strEnd;
-            if (end < 1)
-                strEnd = line?.Trim();
-            else
-                strEnd = line.Substring(0, end)?.Trim();
+            // find variable name left of '='
+            var parts = line.Split(new[] { '=' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2)
+                return false;
+            var = parts[0].Trim();
+            line = parts[1]; // everything right of '='
 
-            strEnd = Evaluate.Execute(strEnd, variables);
+            // find start & end values before & after 'to' (not case sensitive)
+            parts = line.Split("to");
+            if (parts == null || parts.Length != 2)
+                return false;
+            strStart = parts[0];
+            strEnd = parts[1];
 
-            pos = line.IndexOf("STEP", StringComparison.CurrentCultureIgnoreCase);
-            int step = 1;
-            if (pos >= 0)
+            // see if "step" is specified
+            parts = strEnd.Split("step");
+            if (parts != null && parts.Length == 2)
             {
-                string strStep = line.Substring(pos + 4);
-
-                strStep = Evaluate.Execute(strStep, variables);
-
-                if (!int.TryParse(strStep, out step))
-                {
-                    throw new RuntimeException("type mismatch for STEP");
-                }                
+                strEnd = parts[0]; // re-assign end to just the end value and not including STEP portion
+                strStep = parts[1]; // assign step value
             }
 
+            // try to parse all those ints
             if (!int.TryParse(strStart, out _current))
                 throw new RuntimeException("type mismatch for loop starting index");
             if (!int.TryParse(strEnd, out _end))
                 throw new RuntimeException("type mismatch for loop ending index");
-
-            _step = step;
-                        
+            if (!int.TryParse(strStep, out _step))
+                throw new RuntimeException("type mismatch for STEP");
+           
             VariableName = var;
             if (VariableName.StartsWith("_"))
                 LocalVariables[VariableName] = _current.ToString();

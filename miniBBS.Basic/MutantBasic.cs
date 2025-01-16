@@ -571,7 +571,7 @@ namespace miniBBS.Basic
 
         private IDictionary<string, Func<string>> GetEnvironmentVaraibles(User user)
         {
-            var vars = new Dictionary<string, Func<string>>();
+            var vars = new Dictionary<string, Func<string>>(StringComparer.OrdinalIgnoreCase);
             vars["USERNAME$"] = () => '"' + user.Name + '"';
             vars["USERID"] = () => user.Id.ToString();
             vars["EMULATION$"] = () => '"' + user.Emulation.ToString() + '"';

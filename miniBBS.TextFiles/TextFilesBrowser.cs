@@ -1,4 +1,5 @@
 ﻿using miniBBS.Basic;
+using miniBBS.Basic.Exceptions;
 using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
@@ -87,6 +88,10 @@ namespace miniBBS.TextFiles
 
                     cmd = ProcessCommand(command, links);
                 }
+            }
+            catch (RuntimeException rex)
+            {
+                session.Io.Error(rex.Message);
             }
             catch (Exception ex)
             {
@@ -402,7 +407,7 @@ namespace miniBBS.TextFiles
                     case "md":
                         {
                             var dirName = parts.Length >= 2 ? parts[1] : null;
-                            FileWriter.MakeDirectory(_session, _currentLocation, parts[1]);
+                            FileWriter.MakeDirectory(_session, _currentLocation, dirName);
                             result = CommandResult.ReadDirectory;
                         }
                         break;

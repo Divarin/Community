@@ -21,7 +21,7 @@ namespace miniBBS.Basic.Executors
 
             int ln;
             if (!int.TryParse(parts[0], out ln))
-                throw new RuntimeException("type mismatch, 'Edit' requirees a line number as the first argument.");
+                throw new RuntimeException("type mismatch, 'Edit' requires a line number as the first argument.");
 
             if (parts.Length == 3)
             {

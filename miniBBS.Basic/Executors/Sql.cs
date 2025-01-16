@@ -157,44 +157,56 @@ namespace miniBBS.Basic.Executors
 
         private DataTable Query(string sql)
         {
-            using (var db = new SQLiteConnection($"Data Source={_rootDirectory + _dbFilename};datetimeformat=CurrentCulture"))
+            try
             {
-                db.Open();
-
-                using (var cmd = new SQLiteCommand(sql, db))
+                using (var db = new SQLiteConnection($"Data Source={_rootDirectory + _dbFilename};datetimeformat=CurrentCulture"))
                 {
-                    using (var adapter = new SQLiteDataAdapter(sql, db))
+                    db.Open();
+
+                    using (var cmd = new SQLiteCommand(sql, db))
                     {
-                        DataSet set = new DataSet();
-                        adapter.Fill(set);
-                        if (set?.Tables?.Count > 0)
+                        using (var adapter = new SQLiteDataAdapter(sql, db))
                         {
-                            _variables.SetEnvironmentVariable("QCOUNT", set.Tables[0].Rows.Count.ToString());
-                            return set.Tables[0];
+                            DataSet set = new DataSet();
+                            adapter.Fill(set);
+                            if (set?.Tables?.Count > 0)
+                            {
+                                _variables.SetEnvironmentVariable("QCOUNT", set.Tables[0].Rows.Count.ToString());
+                                return set.Tables[0];
+                            }
+                            else
+                                _variables.SetEnvironmentVariable("QCOUNT", "0");
                         }
-                        else
-                            _variables.SetEnvironmentVariable("QCOUNT", "0");
                     }
+
+                    db.Close();
                 }
-
-                db.Close();
             }
-
+            catch (Exception ex)
+            {
+                throw new RuntimeException($"SQL Error: {ex.Message}");
+            }
             return null;
         }
 
         private void NonQuery(string sql)
         {
-            using (var db = new SQLiteConnection($"Data Source={_rootDirectory + _dbFilename};datetimeformat=CurrentCulture"))
+            try
             {
-                db.Open();
-
-                using (var cmd = new SQLiteCommand(sql, db))
+                using (var db = new SQLiteConnection($"Data Source={_rootDirectory + _dbFilename};datetimeformat=CurrentCulture"))
                 {
-                    cmd.ExecuteNonQuery();
-                }
+                    db.Open();
 
-                db.Close();
+                    using (var cmd = new SQLiteCommand(sql, db))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    db.Close();
+                }
+            } catch (Exception ex)
+            {
+                throw new RuntimeException($"SQL error: {ex.Message}");
             }
         }
 

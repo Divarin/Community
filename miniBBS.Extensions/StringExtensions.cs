@@ -67,6 +67,22 @@ namespace miniBBS.Extensions
             return arr;
         }
 
+        public static string[] Split(this string str, string delimiter)
+        {
+            if (string.IsNullOrWhiteSpace(str) || string.IsNullOrWhiteSpace(delimiter))
+                return null;
+
+            var pos = str.ToUpper().IndexOf(delimiter.ToUpper());
+            if (pos < 0)
+                return null;
+
+            var part1 = str.Substring(0, pos);
+            pos += delimiter.Length;
+            var part2 = str.Substring(pos);
+
+            return new[] { part1, part2 };
+        }
+
         public static IEnumerable<string> SplitAndWrap(this string str, BbsSession session, OutputHandlingFlag flags)
         {
             if (string.IsNullOrWhiteSpace(str) || session == null)

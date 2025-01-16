@@ -431,7 +431,10 @@ namespace miniBBS.Basic.Executors
                         case "int": value = Int.Execute(value).ToString(); break;
                         case "chr$":
                             {
-                                var c = (char)byte.Parse(value);
+                                if (string.IsNullOrWhiteSpace(value) || !byte.TryParse(value, out byte b))
+                                    throw new RuntimeException($"Unable to parse '{value}' as a numeric value.");
+                                var c = (char)b;
+                                //var c = (char)byte.Parse(value);
                                 if (c == Constants.Basic.Quote) c = Constants.Basic.QuoteSubstitute;
                                 value = $"{Constants.Basic.Quote}{c}{Constants.Basic.Quote}";
                             }
