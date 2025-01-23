@@ -50,6 +50,7 @@ namespace miniBBS.Core.Models.Control
 
         private Stream _stream;
         public Stream Stream => _stream;
+        public bool IsDisposed => _disposed;
 
         public IRepository<User> UserRepo { get; set; }
         public IRepository<UserChannelFlag> UcFlagRepo { get; set; }
@@ -225,7 +226,7 @@ namespace miniBBS.Core.Models.Control
         }
 
         public string ForceLogoutReason { get; set; }
-
+        
         private static void PingPong(object o)
         {
             BbsSession session = (BbsSession)o;

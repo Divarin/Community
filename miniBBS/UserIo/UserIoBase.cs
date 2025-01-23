@@ -461,6 +461,8 @@ namespace miniBBS.UserIo
                 StringBuilder lineBuilder = new StringBuilder();
 
                 while (
+                    session != null &&
+                    !session.IsDisposed &&
                     !session.ForceLogout &&
                     session.Stream.CanRead &&
                     session.Stream.CanWrite &&

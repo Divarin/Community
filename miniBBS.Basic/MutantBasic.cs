@@ -124,7 +124,7 @@ namespace miniBBS.Basic
 
             SortedList<int, string> progLines = ProgramData.Deserialize(_loadedData);
 
-            var variables = new Variables(GetEnvironmentVaraibles(_session.User));
+            var variables = new Variables(GetEnvironmentVaraibles(_session));
 
             if (!string.IsNullOrWhiteSpace(_loadedData))
                 TryLoad(ref progLines, ref variables);
@@ -255,7 +255,7 @@ namespace miniBBS.Basic
                     {
                         _loadedData = string.Empty;
                         progLines = ProgramData.Deserialize(_loadedData);
-                        variables = new Variables(GetEnvironmentVaraibles(_session.User));
+                        variables = new Variables(GetEnvironmentVaraibles(_session));
                     }
                 }
                 else if (line.StartsWith("rem", StringComparison.CurrentCultureIgnoreCase))
@@ -511,7 +511,7 @@ namespace miniBBS.Basic
             else
             {
                 progLines = ProgramData.Deserialize(_loadedData);
-                variables = new Variables(GetEnvironmentVaraibles(_session.User))
+                variables = new Variables(GetEnvironmentVaraibles(_session))
                 {
                     Labels = FindLabels(progLines)
                 };
@@ -569,17 +569,18 @@ namespace miniBBS.Basic
             return statements;
         }
 
-        private IDictionary<string, Func<string>> GetEnvironmentVaraibles(User user)
+        private IDictionary<string, Func<string>> GetEnvironmentVaraibles(BbsSession session)
         {
             var vars = new Dictionary<string, Func<string>>(StringComparer.OrdinalIgnoreCase);
-            vars["USERNAME$"] = () => '"' + user.Name + '"';
-            vars["USERID"] = () => user.Id.ToString();
-            vars["EMULATION$"] = () => '"' + user.Emulation.ToString() + '"';
-            vars["TERMROWS"] = () => _session.Rows.ToString();
-            vars["TERMCOLS"] = () => _session.Cols.ToString();
-            vars["DATE$"] = () => '"' + DateTime.Now.AddHours(_session.TimeZone).ToString("MM/dd/yyyy") + '"';
-            vars["TIME$"] = () => '"' + DateTime.Now.AddHours(_session.TimeZone).ToString("HH:mm:ss") + '"';
-            vars["TICKS"] = () => DateTime.Now.AddHours(_session.TimeZone).Ticks.ToString();
+            vars["USERNAME$"] = () => '"' + session.User.Name + '"';
+            vars["USERID"] = () => session.User.Id.ToString();
+            vars["SESSIONID$"] = () => '"' + $"{session.Id}" + '"';
+            vars["EMULATION$"] = () => '"' + session.User.Emulation.ToString() + '"';
+            vars["TERMROWS"] = () => session.Rows.ToString();
+            vars["TERMCOLS"] = () => session.Cols.ToString();
+            vars["DATE$"] = () => '"' + DateTime.Now.AddHours(session.TimeZone).ToString("MM/dd/yyyy") + '"';
+            vars["TIME$"] = () => '"' + DateTime.Now.AddHours(session.TimeZone).ToString("HH:mm:ss") + '"';
+            vars["TICKS"] = () => DateTime.Now.Ticks.ToString();
             vars["INKEY$"] = () =>
             {
                 var key = _session.Io.GetPolledKey();

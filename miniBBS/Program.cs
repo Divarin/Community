@@ -1257,7 +1257,7 @@ namespace miniBBS
                     Pin.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/pins":
-                    Pin.ShowPins(session, parts.Skip(1).ToArray());
+                    Pin.ShowPins(session);
                     return;
                 case "/unpin":
                     Pin.Unpin(session, parts.Skip(1).ToArray());

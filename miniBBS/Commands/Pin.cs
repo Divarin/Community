@@ -4,6 +4,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using miniBBS.Services;
+using miniBBS.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -114,7 +115,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine("Message pin removed");
         }
 
-        public static void ShowPins(BbsSession session, params string[] args)
+        public static void ShowPins(BbsSession session)
         {
             var pinRepo = DI.GetRepository<PinnedMessage>();
             
@@ -123,7 +124,7 @@ namespace miniBBS.Commands
             
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
-                var option = session.Io.Ask($"Channel Pins to Show{Environment.NewLine}(M)y pins, (A)ll public pins, (Q)uit");
+                var option = session.Io.Ask($"Pinned chats in channel: {session.Channel.Name}{session.Io.NewLine}Show{session.Io.NewLine}(M)y pins, (A)ll public pins, (Q)uit");
                 switch (option)
                 {
                     case 'M':
@@ -145,23 +146,31 @@ namespace miniBBS.Commands
 
                 var builder = new StringBuilder();
                 var odd = false;
+
+                var chatCache = DI.Get<IChatCache>();
+                var chanChats = chatCache.GetChannelChats(session.Channel.Id);
+
                 foreach (var pin in pins)
                 {
                     var msgNum = session.Chats.ItemNumber(pin.MessageId);
                     if (!msgNum.HasValue)
-                        continue;
-                    var msg = session.Chats[pin.MessageId];
+                    {
+                        if (!chanChats.ContainsKey(pin.MessageId))
+                            continue;
+                    }
+                    var strMsgNum = msgNum.HasValue ? $"{msgNum}" : "(archived)";
+                    var msg = chanChats[pin.MessageId];
                     var username = session.Usernames.ContainsKey(msg.FromUserId) ? session.Usernames[msg.FromUserId] : "Unknown";
 
                     ConsoleColor clr = odd ? ConsoleColor.Blue : ConsoleColor.Cyan;
                     var reNum = msg.ResponseToId.HasValue ? session.Chats.ItemNumber(msg.ResponseToId.Value) : null;
 
-                    builder.AppendLine($"{Constants.InlineColorizer}{(int)clr}{Constants.InlineColorizer}{(pin.Private ? "(pvt) " : "")}{msgNum} : [{msg.DateUtc:yy-MM-dd HH:mm}] <{username}> re:{reNum}");
+                    builder.AppendLine($"{Constants.InlineColorizer}{(int)clr}{Constants.InlineColorizer}{(pin.Private ? "(pvt) " : "")}{strMsgNum} : [{msg.DateUtc:yy-MM-dd HH:mm}] <{username}> re:{reNum}");
                     builder.AppendLine(msg.Message.MaxLength(session.Cols-6));
                     odd = !odd;
                 }
                 builder.AppendLine($"{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
-
+                builder.AppendLine("NOTE: To view archived pinned chats use '/archive' to show archived chats and then use '/pins' again.".Color(ConsoleColor.Red));
                 session.Io.OutputLine(builder.ToString(), OutputHandlingFlag.PauseAtEnd);
             }
         }
