@@ -276,15 +276,54 @@ namespace miniBBS.TextFiles
             }
         }
 
-        public static void Copy(BbsSession session, Link currentLocation, string linkNameOrNum, string destName, IList<Link> links)
+        public static void Copy(BbsSession session, Link currentLocation, string linkNameOrNum, string destNameOrNum, IList<Link> links)
         {
             if (string.IsNullOrWhiteSpace(linkNameOrNum))
                 return;
 
-            if (!ValidateFileOrDirectoryName(destName))
+            string dst = null;
+            if (destNameOrNum == "..")
             {
-                session.Io.OutputLine($"Invalid destination name '{destName}'.");
-                return;
+                if (!currentLocation.Parent.IsOwnedByUser(session.User))
+                {
+                    session.Io.Error("Cannot copy files outside of your user directory.");
+                    return;
+                }
+                destNameOrNum = currentLocation.Parent?.Path;
+                dst = $"{Constants.TextFileRootDirectory}{destNameOrNum}";
+            }
+            else if (destNameOrNum == "~")
+            {
+                destNameOrNum = $"{Constants.TextFileRootDirectory}/users/{session.User.Name}";
+                dst = destNameOrNum;
+            }
+            else if ("/xfer".Equals(destNameOrNum, StringComparison.CurrentCultureIgnoreCase))
+            {
+                destNameOrNum = $"{Constants.TextFileRootDirectory}/xfer";
+                dst = destNameOrNum;
+            }
+            else
+            {
+                Link destLink;
+                if (int.TryParse(destNameOrNum, out int d) && d >= 1 && d <= links.Count)
+                    destLink = links[d - 1];
+                else
+                    destLink = links.FirstOrDefault(l => l.DisplayedFilename.Equals(destNameOrNum, StringComparison.CurrentCultureIgnoreCase));
+
+                destNameOrNum = destLink?.DisplayedFilename;
+            }
+
+            if (dst == null)
+            {
+                if (!ValidateFileOrDirectoryName(destNameOrNum))
+                {
+                    session.Io.Error($"Invalid destination name '{destNameOrNum}'.");
+                    return;
+                }
+                else
+                {
+                    dst = $"{Constants.TextFileRootDirectory}{currentLocation.Path}{destNameOrNum}";
+                }
             }
 
             Link link;
@@ -294,17 +333,20 @@ namespace miniBBS.TextFiles
                 link = links.FirstOrDefault(l => l.DisplayedFilename.Equals(linkNameOrNum, StringComparison.CurrentCultureIgnoreCase));
 
             if (link == null)
-                session.Io.OutputLine("File or Directory not found.");
+                session.Io.Error("File or Directory not found.");
             else
             {
                 string src = link.IsDirectory ?
                     $"{Constants.TextFileRootDirectory}{link.Path}" :
                     $"{Constants.TextFileRootDirectory}{currentLocation.Path}{link.Path}";
 
-                string dst = $"{Constants.TextFileRootDirectory}{currentLocation.Path}{destName}";
+                if (Directory.Exists(dst))
+                {
+                    dst = dst + "/" + link.ActualFilename;
+                }
 
-                if (File.Exists(dst) || Directory.Exists(dst))
-                    session.Io.OutputLine($"A file or directory by the name of {destName} already exists.");
+                if (File.Exists(dst))// || Directory.Exists(dst))
+                    session.Io.Error($"A file or directory by the name of {destNameOrNum} already exists.");
                 else if (link.IsDirectory)
                 {
                     session.Io.Error("Cannot copy a directory.");
@@ -312,7 +354,7 @@ namespace miniBBS.TextFiles
                 else
                 {
                     File.Copy(src, dst);
-                    session.Io.OutputLine($"Copied file '{link.DisplayedFilename}' to '{destName}'.");
+                    session.Io.OutputLine($"Copied file '{link.DisplayedFilename}' to '{destNameOrNum}'.");
                 }
             }
         }

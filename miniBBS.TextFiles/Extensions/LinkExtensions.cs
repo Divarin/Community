@@ -46,7 +46,9 @@ namespace miniBBS.TextFiles.Extensions
 
         public static bool IsOwnedByUser(this Link link, Core.Models.Data.User user)
         {
-            return user.Name.Equals(GetOwningUser(link), StringComparison.CurrentCultureIgnoreCase);
+            return
+                link.ActualFilename == "xfer/index.html" ||
+                user.Name.Equals(GetOwningUser(link), StringComparison.CurrentCultureIgnoreCase);
         }
 
         /// <summary>

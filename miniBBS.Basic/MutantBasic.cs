@@ -5,11 +5,11 @@ using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
-using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -30,9 +30,11 @@ namespace miniBBS.Basic
         private readonly string _scriptInput;
         private readonly bool _isDebugging;
 
-        private const string _version = "2.6";
         private static bool _debug = false;
         private bool _prompt = false;
+
+        private static ConcurrentBag<WeakReference> _runningBasics = new ConcurrentBag<WeakReference>();
+        public BasicStateInfo State { get; private set; } = new BasicStateInfo();
 
         public Func<string, string> OnSave { get; set; }
 
@@ -44,6 +46,15 @@ namespace miniBBS.Basic
             _scriptName = scriptName;
             _scriptInput = scriptInput;
             _isDebugging = isDebugging;
+
+            _runningBasics.Add(new WeakReference(this));
+        }
+
+        ~MutantBasic()
+        {
+            var mywr = _runningBasics.FirstOrDefault(x => x.IsAlive && ReferenceEquals(this, x.Target));
+            if (mywr != null)
+                _runningBasics.TryTake(out WeakReference result);
         }
 
         //public static bool TryAutoLaunch(string[] args)
@@ -78,6 +89,10 @@ namespace miniBBS.Basic
             _session = session;
             _loadedData = parameters?.PreloadedBody;
             _parameters = parameters;
+
+            State.Session = session;
+            State.ProgramPath = $"{_rootDirectory}{parameters?.Filename}";
+
             Start();
         }
 
@@ -90,7 +105,7 @@ namespace miniBBS.Basic
             {
                 if (!_isScript)
                 {
-                    _session.Io.OutputLine($"  ***** Mutant Basic v{_version} ***** ");
+                    _session.Io.OutputLine("  ***** Mutant Basic  ***** ");
                     _session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Cyan);
                 }
 
@@ -109,6 +124,7 @@ namespace miniBBS.Basic
 
             if (!_autoStart)
             {
+                State.IsInEditor = true;
                 _session.Io.OutputLine("Programmer's Reference Guide is available at http://mutinybbs.com/mtbasic");
                 _session.Io.SetForeground(ConsoleColor.Cyan);
                 _session.Io.OutputLine("Type QUIT to return to BBS");
@@ -125,7 +141,7 @@ namespace miniBBS.Basic
             SortedList<int, string> progLines = ProgramData.Deserialize(_loadedData);
 
             var variables = new Variables(GetEnvironmentVaraibles(_session));
-
+            
             if (!string.IsNullOrWhiteSpace(_loadedData))
                 TryLoad(ref progLines, ref variables);
 
@@ -228,6 +244,8 @@ namespace miniBBS.Basic
                     }
                     finally
                     {
+                        State.IsRunning = false;
+                        State.Variables = null;
                         _session.CurrentLocation = _previousLocation;
                         _session.Io.SetLower();
                         if (_session.Items.ContainsKey(SessionItem.BasicLock))
@@ -432,6 +450,8 @@ namespace miniBBS.Basic
             variables.Data = Data.CreateFromDataStatements(progLines.Values);
             variables.Functions.Clear();
 
+            State.IsRunning = true;
+            State.Variables = variables;
             var runTimer = Stopwatch.StartNew();
             while (true)
             {
@@ -494,6 +514,8 @@ namespace miniBBS.Basic
                 }
             }
 
+            State.IsRunning = false;
+
             if (!_isScript)
             {
                 var wasPolling = _session.Io.IsPollingKeys;
@@ -517,6 +539,22 @@ namespace miniBBS.Basic
                 };
                 if (!_isScript)
                     _session.Io.OutputLine("program loaded");
+            }
+        }
+
+        public static IEnumerable<Variables> GetVariablesOfOtherSessionsRunningThisProgram(BasicStateInfo callingState)
+        {
+            foreach (var wr in _runningBasics)
+            {
+                if (!wr.IsAlive)
+                    continue;
+                if (!(wr.Target is MutantBasic mb) || mb.State == null || !mb.State.IsRunning || mb._session == null)
+                    continue;
+                if (mb.State.Session?.Id == callingState.Session?.Id)
+                    continue;
+                if (mb.State.ProgramPath != callingState.ProgramPath)
+                    continue;
+                yield return mb.State.Variables;
             }
         }
 
@@ -695,6 +733,9 @@ namespace miniBBS.Basic
                 {
                     case "lock":
                         _session.Items[SessionItem.BasicLock] = $"{_rootDirectory}{_parameters?.Filename}";
+                        break;
+                    case "share":
+                        Share.Execute(_session, variables, State, args);
                         break;
                     case "?":
                     case "??":

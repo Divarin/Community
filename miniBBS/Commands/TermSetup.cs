@@ -85,30 +85,38 @@ namespace miniBBS.Commands
                     ApplySettings();
                 };
 
+                bool showPresets = false;
                 while (true)
                 {
                     session.Io.OutputLine($"{Environment.NewLine} -- Terminal Settings --");
-                    session.Io.OutputLine($"C)ols (width)      : {cols}");
-                    session.Io.OutputLine($"R)ows (height)     : {rows}");
-                    session.Io.OutputLine($"E)mulation (color) : {emulation}");
-                    session.Io.OutputLine(" --- Presets --- ");
-                    session.Io.OutputLine("A) Try Auto-Detect");
-                    session.Io.OutputLine($"L) Last    : {lastCols}c, {lastRows}r, {lastEmu}");
-                    session.Io.OutputLine("S) 80c std : 80c, 24r");
-                    session.Io.OutputLine("T) 40c std : 40c, 24r");
-                    session.Io.OutputLine("X) Experiment");
-                    if (userPresets?.Count >= 9)
-                        session.Io.OutputLine("P) Presets");
+                    session.Io.OutputLine($"C) Cols (width)      : {cols}");
+                    session.Io.OutputLine($"R) Rows (height)     : {rows}");
+                    session.Io.OutputLine($"E) Emulation (color) : {emulation}");
+                    if (!showPresets)
+                    {
+                        session.Io.OutputLine($"M) More Options");
+                    }
                     else
                     {
-                        if (userPresets?.Count < 9)
-                            session.Io.OutputLine("V) Save Preset");
-                        if (true == userPresets?.Any())
-                            session.Io.OutputLine("D) Delete Preset");
-                        for (int i = 0; i < userPresets.Count; i++)
+                        session.Io.OutputLine(" --- Presets --- ");
+                        session.Io.OutputLine("A) Try Auto-Detect");
+                        session.Io.OutputLine($"L) Last    : {lastCols}c, {lastRows}r, {lastEmu}");
+                        session.Io.OutputLine("S) 80c std : 80c, 24r");
+                        session.Io.OutputLine("T) 40c std : 40c, 24r");
+                        session.Io.OutputLine("X) Experiment");
+                        if (userPresets?.Count >= 9)
+                            session.Io.OutputLine("P) Presets");
+                        else
                         {
-                            var up = userPresets[i];
-                            session.Io.OutputLine($"{i + 1}) {up.Name} : {up.Cols}c, {up.Rows}r, {up.Emulation}");
+                            if (userPresets?.Count < 9)
+                                session.Io.OutputLine("V) Save Preset");
+                            if (true == userPresets?.Any())
+                                session.Io.OutputLine("D) Delete Preset");
+                            for (int i = 0; i < userPresets.Count; i++)
+                            {
+                                var up = userPresets[i];
+                                session.Io.OutputLine($"{i + 1}) {up.Name} : {up.Cols}c, {up.Rows}r, {up.Emulation}");
+                            }
                         }
                     }
                     session.Io.Output("Enter = Continue > ");
@@ -204,10 +212,15 @@ namespace miniBBS.Commands
                         case 'D':
                             if (userPresets?.Count < 9) DeletePreset(session, ref userPresets);
                             break;
+                        case 'm':
+                        case 'M':
+                            showPresets = true;
+                            break;
                         case 'p':
                         case 'P':
                             if (userPresets?.Count >= 9)
                             {
+                                showPresets = true;
                                 var exitMenu = PresetMenu(session, ref userPresets, ApplyPreset);
                                 if (exitMenu)
                                 {

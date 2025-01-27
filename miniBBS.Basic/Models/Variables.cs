@@ -241,6 +241,7 @@ namespace miniBBS.Basic.Models
 
         public bool ContainsKey(string key)
         {
+            key = EvaluateArrayExpressions(key);
             return _globals.ContainsKey(key) || EnvironmentVariables.ContainsKey(key);
         }
 

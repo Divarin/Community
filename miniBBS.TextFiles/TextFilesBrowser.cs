@@ -224,13 +224,13 @@ namespace miniBBS.TextFiles
             _session.Io.OutputLine($"Something went wrong: {ex.Message}");
             _session.Io.OutputLine("Attempting to notify sysop...");
 
-            int toId = GlobalDependencyResolver.Default.GetRepository<Core.Models.Data.User>()
+            int toId = GlobalDependencyResolver.Default.GetRepository<User>()
                 .Get(u => u.Name, Constants.SysopName)
                 .First()
                 .Id;
 
-            GlobalDependencyResolver.Default.GetRepository<Core.Models.Data.Mail>()
-                .Insert(new Core.Models.Data.Mail
+            GlobalDependencyResolver.Default.GetRepository<Mail>()
+                .Insert(new Mail
                 {
                     ToUserId = toId,
                     FromUserId = _session.User.Id,
@@ -453,7 +453,9 @@ namespace miniBBS.TextFiles
                     case "cp":
                         if (parts.Length < 3)
                             _session.Io.OutputLine($"Usage: {parts[0]} (source filename) (destination filename)");
-                        else if (_currentLocation.IsOwnedByUser(_session.User))
+                        else if (
+                            _session.User.Access.HasFlag(AccessFlag.Administrator) ||
+                            _currentLocation.IsOwnedByUser(_session.User))
                         {
                             FileWriter.Copy(_session, _currentLocation, parts[1], parts[2], links);
                             result = CommandResult.ReadDirectory;

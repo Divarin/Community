@@ -789,14 +789,18 @@ namespace miniBBS
             {
                 session.Io = new Cbm(session);
                 session.Cols = 40;
-                session.Io.SetColors(ConsoleColor.Black, ConsoleColor.Green);
-                session.Io.OutputLine("Commodore Color Mode Activated.");
+                session.Io.SetColors(ConsoleColor.Black, ConsoleColor.White);
+                session.Io.OutputLine(
+                    "Commodore ".Color(ConsoleColor.Green) +
+                    "Color ".Color(ConsoleColor.Yellow) +
+                    "Mode ".Color(ConsoleColor.Blue) +
+                    "Activated.".Color(ConsoleColor.Red));
             }
             else if (emuTest == (char)126)
             {
                 session.Io = new Atascii(session);
                 session.Cols = 40;
-                session.Io.OutputLine($"{session.Io.NewLine.Repeat(2)}Atascii Mode Activated.");
+                session.Io.OutputLine($"{session.Io.NewLine.Repeat(2)}{Constants.Inverser}Atascii{Constants.Inverser} Mode Activated.");
             }
             else
             {
@@ -806,11 +810,14 @@ namespace miniBBS
                 {
                     session.Io = new ANSI(session);
                     session.Cols = 80;
-                    session.Io.OutputLine("Turning on ANSI color.");
+                    session.Io.SetColors(ConsoleColor.Black, ConsoleColor.White);
+                    session.Io.OutputLine(
+                        "Turning on ".Color(ConsoleColor.White) +
+                        "A".Color(ConsoleColor.Green) + "N".Color(ConsoleColor.Yellow) +
+                        "S".Color(ConsoleColor.Blue) + "I ".Color(ConsoleColor.Red) +
+                        "color.");
                 }
             }
-
-            //session.Io.OutputLine(session.Io.NewLine.Repeat(2));
 
             int retries = 6;
             retryLogin:
@@ -918,20 +925,20 @@ namespace miniBBS
             if (session.User.Timezone != 0)
                 Commands.TimeZone.Execute(session, session.User.Timezone.ToString());
 
-            if (user.Access.HasFlag(AccessFlag.Administrator))
-            {
-                WhoIsOn.Execute(session);
-                var k = session.Io.Ask("Admin login option: (N)ormal, (S)ilent, (I)nvisible");
-                switch (k)
-                {
-                    case 'S':
-                        session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
-                        break;
-                    case 'I':
-                        session.ControlFlags |= SessionControlFlags.Invisible | SessionControlFlags.DoNotSendNotifications;
-                        break;
-                }
-            }
+            //if (user.Access.HasFlag(AccessFlag.Administrator))
+            //{
+            //    WhoIsOn.Execute(session);
+            //    var k = session.Io.Ask("Admin login option: (N)ormal, (S)ilent, (I)nvisible");
+            //    switch (k)
+            //    {
+            //        case 'S':
+            //            session.ControlFlags |= SessionControlFlags.DoNotSendNotifications;
+            //            break;
+            //        case 'I':
+            //            session.ControlFlags |= SessionControlFlags.Invisible | SessionControlFlags.DoNotSendNotifications;
+            //            break;
+            //    }
+            //}
 
             _logger.Log(session, $"{session.User?.Name} has logged in", LoggingOptions.ToDatabase | LoggingOptions.WriteImmedately);
             session.Messager.Publish(session, new UserLoginOrOutMessage(session, true));

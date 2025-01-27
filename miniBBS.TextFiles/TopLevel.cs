@@ -293,6 +293,13 @@ namespace miniBBS.TextFiles
                 Description = "Mutiny Community User Area",
                 DisplayedFilename = "CommunityUsers"
             };
+
+            yield return new Link
+            {
+                ActualFilename = "xfer/index.html",
+                Description = "Mutiny File Transfer Exchange",
+                DisplayedFilename = "Xfer"
+            };
         }
     }
 }

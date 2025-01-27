@@ -89,17 +89,24 @@ namespace miniBBS.Services.GlobalCommands
                 parsedDate = pd;
             else
             {
-                var days = new[] { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
-                var longdays = new[] { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
-                var ix = days.IndexOf(x => x.Equals(date, StringComparison.OrdinalIgnoreCase));
-                if (ix < 0)
-                    ix = longdays.IndexOf(x => x.Equals(date, StringComparison.OrdinalIgnoreCase));
-                if (ix >= 0)
-                    parsedDate = GetDateFromDay((DayOfWeek)ix);
+                if (int.TryParse(date, out int daysAgo))
+                {
+                    parsedDate = DateTime.Now.AddHours(session.User.Timezone).AddDays(-daysAgo);
+                }
                 else
                 {
-                    session.Io.Error($"Unable to parse '{date}' as a date.");
-                    return;
+                    var days = new[] { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
+                    var longdays = new[] { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
+                    var ix = days.IndexOf(x => x.Equals(date, StringComparison.OrdinalIgnoreCase));
+                    if (ix < 0)
+                        ix = longdays.IndexOf(x => x.Equals(date, StringComparison.OrdinalIgnoreCase));
+                    if (ix >= 0)
+                        parsedDate = GetDateFromDay((DayOfWeek)ix);
+                    else
+                    {
+                        session.Io.Error($"Unable to parse '{date}' as a date.");
+                        return;
+                    }
                 }
             }
 
