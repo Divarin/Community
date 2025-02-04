@@ -522,6 +522,12 @@ namespace miniBBS.Basic.Executors
 
                                 parts[0] = parts[0].Detokenize(pkg.StringValues);
 
+                                if (start >= parts[0].Length)
+                                {
+                                    value = $"{Constants.Basic.Quote}{parts[0]}{Constants.Basic.Quote}";
+                                    break;
+                                }
+
                                 if (start + count > parts[0].Length)
                                     count = parts[0].Length - start;
 

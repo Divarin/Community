@@ -91,6 +91,19 @@ namespace miniBBS.Extensions
                 yield break;
             }
 
+            if (flags.HasFlag(OutputHandlingFlag.SplitOnNewlineOnly))
+            {
+                var lines = str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                if (lines == null)
+                {
+                    yield return str;
+                    yield break;
+                }
+                foreach (var line in lines)
+                    yield return $"{line}{session.Io.NewLine}";
+                yield break;
+            }
+
             int start = 0;
             int col = 0;
             int breakIndex = 0;

@@ -398,7 +398,7 @@ namespace miniBBS.Basic
 
         private void ListProgram(SortedList<int, string> progLines, int?[] range, bool continuous)
         {
-            const OutputHandlingFlag flag = OutputHandlingFlag.NoWordWrap;
+            const OutputHandlingFlag flag = OutputHandlingFlag.SplitOnNewlineOnly;
 
             var builder = new StringBuilder();
             foreach (var l in progLines)

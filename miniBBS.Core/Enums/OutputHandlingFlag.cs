@@ -9,6 +9,7 @@ namespace miniBBS.Core.Enums
         Nonstop = 1,
         DoNotTrimStart = 2,
         PauseAtEnd = 4,
-        NoWordWrap = 8
+        NoWordWrap = 8,
+        SplitOnNewlineOnly = 16,
     }
 }
