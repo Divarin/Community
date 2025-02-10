@@ -185,7 +185,7 @@ namespace miniBBS.Commands
         private static GopherBookmark GetBookmark(BbsSession session, List<GopherBookmark> bookmarks)
         {
             var page = 0;
-            const int bmsPerPage = 10; // # 0-9
+            const int bmsPerPage = 9;
             if (bookmarks == null)
                 bookmarks = new List<GopherBookmark>();
 

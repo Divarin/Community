@@ -132,7 +132,7 @@ namespace miniBBS.Commands
                     $"{Constants.Inverser}Q{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")uit, " +
                     $"{Constants.Inverser}B{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")ack, " +
                     $"{Constants.Inverser}H{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")istory, " +
-                    $"{Constants.Inverser}G{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")o #";
+                    $"{Constants.Inverser}G{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")o to";
                 if ( entries?.Any() == true )
                     prompt += $", {Constants.Inverser}#{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ") Go num";
                 prompt += ": ";
@@ -241,7 +241,7 @@ namespace miniBBS.Commands
                 backStack = new GopherEntry[0];
 
             int page = 0;
-            const int itemsPerPage = 10; // 0-9
+            const int itemsPerPage = 9;
             session.Io.SetForeground(ConsoleColor.White);
             while (true)
             {

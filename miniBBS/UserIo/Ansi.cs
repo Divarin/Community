@@ -83,15 +83,15 @@ namespace miniBBS.UserIo
                 case ConsoleColor.DarkBlue: return "\u001b[0;34m";
                 case ConsoleColor.DarkMagenta: return "\u001b[0;35m";
                 case ConsoleColor.DarkCyan: return "\u001b[0;36m";
-                case ConsoleColor.Gray: return "\u001b[37m";
                 case ConsoleColor.DarkGray: return "\u001b[0;37m";
-                case ConsoleColor.Red: return "\u001b[31;1m";
-                case ConsoleColor.Green: return "\u001b[32;1m";
-                case ConsoleColor.Yellow: return "\u001b[33;1m";
-                case ConsoleColor.Blue: return "\u001b[34;1m";
-                case ConsoleColor.Magenta: return "\u001b[35;1m";
-                case ConsoleColor.Cyan: return "\u001b[36;1m";
-                case ConsoleColor.White: return "\u001b[37;1m";
+                case ConsoleColor.Gray: return "\u001b[1;37m";
+                case ConsoleColor.Red: return "\u001b[1;31m";
+                case ConsoleColor.Green: return "\u001b[1;32m";
+                case ConsoleColor.Yellow: return "\u001b[1;33m";
+                case ConsoleColor.Blue: return "\u001b[1;34m";
+                case ConsoleColor.Magenta: return "\u001b[1;35m";
+                case ConsoleColor.Cyan: return "\u001b[1;36m";
+                case ConsoleColor.White: return "\u001b[1;37m";
                 default: return string.Empty;
             }
         }
