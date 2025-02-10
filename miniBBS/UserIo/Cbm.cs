@@ -349,13 +349,18 @@ namespace miniBBS.UserIo
 
         public override byte[] GetBytes(string text)
         {
-            byte[] bytes = text.Select(b => (byte)b).ToArray();// Encoding.ASCII.GetBytes(text);
+            byte[] bytes = text.Select(b => (byte)b).ToArray();
             
             // look for and replace inline color codes
             int p = text.IndexOf(Constants.InlineColorizer);
             while (p >= 0)
             {
                 int end = text.IndexOf(Constants.InlineColorizer, p + 1);
+                if (end == -1)
+                {
+                    // no ending inline colorizer found, assume end of string
+                    end = text.Length - 1;
+                }
                 if (end > p)
                 {
                     p++;

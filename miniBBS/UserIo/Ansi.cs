@@ -76,15 +76,15 @@ namespace miniBBS.UserIo
         {
             switch (color)
             {
-                case ConsoleColor.Black: return "\u001b[30m";
-                case ConsoleColor.DarkRed: return "\u001b[31m";
-                case ConsoleColor.DarkGreen: return "\u001b[32m";
-                case ConsoleColor.DarkYellow: return "\u001b[33m";
-                case ConsoleColor.DarkBlue: return "\u001b[34m";
-                case ConsoleColor.DarkMagenta: return "\u001b[35m";
-                case ConsoleColor.DarkCyan: return "\u001b[36m";
+                case ConsoleColor.Black: return "\u001b[0;30m";
+                case ConsoleColor.DarkRed: return "\u001b[0;31m";
+                case ConsoleColor.DarkGreen: return "\u001b[0;32m";
+                case ConsoleColor.DarkYellow: return "\u001b[0;33m";
+                case ConsoleColor.DarkBlue: return "\u001b[0;34m";
+                case ConsoleColor.DarkMagenta: return "\u001b[0;35m";
+                case ConsoleColor.DarkCyan: return "\u001b[0;36m";
                 case ConsoleColor.Gray: return "\u001b[37m";
-                case ConsoleColor.DarkGray: return "\u001b[37m";
+                case ConsoleColor.DarkGray: return "\u001b[0;37m";
                 case ConsoleColor.Red: return "\u001b[31;1m";
                 case ConsoleColor.Green: return "\u001b[32;1m";
                 case ConsoleColor.Yellow: return "\u001b[33;1m";

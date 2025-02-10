@@ -21,8 +21,9 @@ namespace miniBBS.Commands
             $"{_clr("L", ConsoleColor.Green)}) Live Chat Calendar",
             $"{_clr("E", ConsoleColor.Green)}) E-Mail",
             $"{_clr("T", ConsoleColor.Green)}) Text Files",
+            $"{_clr("G", ConsoleColor.Green)}) Gopher",
             $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
-            $"{_clr("G", ConsoleColor.Green)}) Games",
+            $"{_clr("D", ConsoleColor.Green)}) Door Games",
             $"{_clr("W", ConsoleColor.Green)}) Who is on",
             $"{_clr("U", ConsoleColor.Green)}) User List",
             $"{_clr("P", ConsoleColor.Green)}) Preferences",
@@ -98,6 +99,9 @@ namespace miniBBS.Commands
                             case 'E':
                                 Mail.Execute(session);
                                 break;
+                            case 'G':
+                                Gopher.Execute(session);
+                                break;
                             case 'T':
                                 {
                                     var browser = DI.Get<ITextFilesBrowser>();
@@ -111,7 +115,7 @@ namespace miniBBS.Commands
                             case 'V':
                                 Polls.Execute(session);
                                 break;
-                            case 'G':
+                            case 'D':
                                 BrowseGames.Execute(session);
                                 break;
                             case 'O':

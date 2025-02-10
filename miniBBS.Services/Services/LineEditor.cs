@@ -430,10 +430,25 @@ namespace miniBBS.Services.Services
                 }
                 _session.Io.OutputLine("After:");
                 _session.Io.SetForeground(ConsoleColor.White);
-                _session.Io.OutputLine(line);
+                // if the user added newlines, we replaced their newline markers with \n.
+                // however to display the edited line we'll replace that (\n) with \r\n 
+                // so that the cursor is moved to the start of the newline.
+                _session.Io.OutputLine(line.Replace("\n", Environment.NewLine));
                 if ('Y'==_session.Io.Ask("Make this edit?"))
                 {
-                    lines[lineNum] = line;
+                    var splitLines = line.Split(new[] { '\n' });
+                    if (splitLines.Length > 1)
+                    {
+                        lines[lineNum] = splitLines[0];
+                        for (var i=1; i < splitLines.Length; i++)
+                        {
+                            lines.Insert(lineNum + i, splitLines[i]);
+                        }
+                    }
+                    else
+                    {
+                        lines[lineNum] = line;
+                    }
                     _session.Io.OutputLine("Line edited");
                 } 
             }
@@ -441,6 +456,9 @@ namespace miniBBS.Services.Services
 
         private string Edit(string line, char option)
         {
+            var newLineMarkers = new[] { "\\n", "_n", "|n", "[n" };
+            _session.Io.OutputLine($"To split a line you can insert newlines with one of these markers: {string.Join(", ", newLineMarkers)}".Color(ConsoleColor.DarkGreen));
+
             switch (option)
             {
                 case 'P':
@@ -490,6 +508,8 @@ namespace miniBBS.Services.Services
                     break;
             }
 
+            foreach (var marker in newLineMarkers)
+                line = line.Replace(marker, "\n");
             return line;
         }
 

@@ -68,6 +68,7 @@
     <Compile Include="Enums\ChatWriteFlags.cs" />
     <Compile Include="Enums\CrossChannelNotificationMode.cs" />
     <Compile Include="Enums\FilesLaunchFlags.cs" />
+    <Compile Include="Enums\GopherEntryType.cs" />
     <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\LoggingOptions.cs" />
     <Compile Include="Enums\LoginStartupMode.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Enums\UCFlag.cs" />
     <Compile Include="Enums\FileTransferProtocolOptions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
+    <Compile Include="Helpers\LambdaComparer.cs" />
     <Compile Include="Interfaces\IChatCache.cs" />
     <Compile Include="Interfaces\ICompressor.cs" />
     <Compile Include="Interfaces\IDataModel.cs" />
@@ -116,6 +118,8 @@
     <Compile Include="Models\Data\Bulletin.cs" />
     <Compile Include="Models\Data\BulletinBoard.cs" />
     <Compile Include="Models\Data\CalendarItem.cs" />
+    <Compile Include="Models\Control\GopherEntry.cs" />
+    <Compile Include="Models\Data\GopherBookmark.cs" />
     <Compile Include="Models\Data\IpBan.cs" />
     <Compile Include="Models\Data\LogEntry.cs" />
     <Compile Include="Models\Control\NodeParams.cs" />

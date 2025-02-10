@@ -20,6 +20,7 @@
         Polls,
         MessageBase,
         BulletinBoard,
-        NullSpace
+        NullSpace,
+        GopherSpace
     }
 }

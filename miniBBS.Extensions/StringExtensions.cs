@@ -4,7 +4,6 @@ using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace miniBBS.Extensions
@@ -111,7 +110,7 @@ namespace miniBBS.Extensions
             bool trimStartOfNextLine = false;
             char enter = session.Io.NewLine?.FirstOrDefault() ?? (char)13;
             var newline = session.Io.NewLine;
-
+            
             for (int i=0; i < str.Length; i++)
             {
                 char c = str[i];
@@ -124,7 +123,7 @@ namespace miniBBS.Extensions
                     inAnsiCode = false;
                 else if (c == Constants.InlineColorizer)
                     inAnsiCode = !inAnsiCode;
-                else if (!inAnsiCode)
+                else if (!inAnsiCode && c != Constants.Inverser)
                     col++;
 
                 if (char.IsWhiteSpace(c) && true != newline?.Any(x => x == c))
@@ -367,5 +366,12 @@ namespace miniBBS.Extensions
         }
 
         public static byte[] ToByteArray(this string str) => (str ?? string.Empty).Select(c => (byte)c).ToArray();
+
+        public static bool ContainsIgnoreCase(this string haystack, string needle)
+        {
+            if (string.IsNullOrWhiteSpace(haystack) || string.IsNullOrWhiteSpace(needle))
+                return false;
+            return haystack.ToLower().Contains(needle.ToLower());
+        }
     }
 }

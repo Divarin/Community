@@ -387,6 +387,8 @@ namespace miniBBS
         {
             const int BULLETINS = 0, CHATS = 1, MAILS = 2, POLLS = 3, CALS = 4;
 
+            session.Io.Output("Gathering statistics...".Color(ConsoleColor.DarkGreen));
+
             var counts = new Count[]
             {
                 Bulletins.Count(session),
@@ -396,6 +398,7 @@ namespace miniBBS
                 Calendar.Count(session)
             };
 
+            session.Io.OutputLine();
             session.Io.OutputLine("Last 5 users".Color(ConsoleColor.Magenta));
             Seen.Execute(session, "5");
 
@@ -1561,6 +1564,9 @@ namespace miniBBS
                 case "/door":
                 case "/doors":
                     BrowseGames.Execute(session);
+                    return;
+                case "/gopher":
+                    Gopher.Execute(session);
                     return;
                 case "/sys":
                 case "/sysop":

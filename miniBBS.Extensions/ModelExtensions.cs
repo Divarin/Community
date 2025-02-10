@@ -227,5 +227,15 @@ namespace miniBBS.Extensions
                 return false;
             }
         }
+
+        public static string Url(this GopherEntry gopherEntry)
+        {
+            if (gopherEntry == null)
+                return string.Empty;
+            char typeChar = (char)gopherEntry.EntryType;
+            if (typeChar == 0)
+                typeChar = (char)GopherEntryType.Directory;
+            return $"gopher://{gopherEntry.Host}{(gopherEntry.Port == 70 ? "" : $":{gopherEntry.Port}")}/{typeChar}{(gopherEntry.Path != null && gopherEntry.Path.StartsWith("/") ? "" : "/")}{gopherEntry.Path}";
+        }
     }
 }

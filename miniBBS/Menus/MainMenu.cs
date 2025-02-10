@@ -38,6 +38,7 @@ namespace miniBBS.Menus
             $"{_clr("/mail", ConsoleColor.Green)} : E-Mail",
             $"{_clr("/polls", ConsoleColor.Green)} : Vote on stuff",
             $"{_clr("/files", ConsoleColor.Green)} : Files, Games, BASIC & more",
+            $"{_clr("/gopher", ConsoleColor.Green)} : Explore Gopherspace!",
             $"{_clr("/nullspace", ConsoleColor.Green)} : Enter NullSpace Chat",
         };
 

@@ -33,6 +33,7 @@ namespace miniBBS.Persistence
                 CreateMailTable(db);
                 CreateBlurbsTable(db);
                 CreatePinnedMessagesTable(db);
+                CreateGopherBookmarksTable(db);
                 CreatePollTables(db);
                 CreateMetadataTable(db);
 
@@ -138,6 +139,12 @@ namespace miniBBS.Persistence
         private void CreatePinnedMessagesTable(SQLiteConnection db)
         {
             string sql = "CREATE TABLE PinnedMessages (Id integer primary key autoincrement, MessageId integer not null, ChannelId integer not null, PinnedByUserId integer not null, Private TEXT not null, DatePinnedUtc TEXT not null)";
+            Exec(db, sql);
+        }
+
+        private void CreateGopherBookmarksTable(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE GopherBookmarks (Id integer primary key autoincrement, UserID integer not null, Private TEXT not null, DateCreatedUtc TEXT not null, Selector TEXT not null, Title TEXT not null, Tags TEXT null)";
             Exec(db, sql);
         }
 
