@@ -332,6 +332,9 @@ namespace miniBBS.Commands
                     $"{Constants.Inverser}L{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) +
                     ")ocation: " + bookmark.Selector.Color(ConsoleColor.DarkCyan));
                 session.Io.OutputLine(
+                    $"{Constants.Inverser}P{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) +
+                    ")ublic/Private: " + (bookmark.Private ? "Private".Color(ConsoleColor.Red) : "Public".Color(ConsoleColor.Green)));
+                session.Io.OutputLine(
                     $"{Constants.Inverser}A{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) +
                     ")dd Keyword(s)");
                 session.Io.OutputLine(
@@ -372,6 +375,10 @@ namespace miniBBS.Commands
                                 repo.Update(bookmark);
                             }
                         }
+                        break;
+                    case 'P':
+                        bookmark.Private = !bookmark.Private;
+                        repo.Update(bookmark);
                         break;
                     case 'A':
                     case 'K':

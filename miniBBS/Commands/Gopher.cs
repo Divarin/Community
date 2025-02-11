@@ -93,9 +93,9 @@ namespace miniBBS.Commands
                     doc = doc.Replace(Environment.NewLine, "\n"); // \r\n -> \n
                     doc = doc.Replace("\r", "\n"); // \r => \n
                     doc = doc.Replace("\n", session.Io.NewLine); // \n -> \r\n
-                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
+                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                     {
-                        session.Io.OutputLine(doc);
+                        session.Io.OutputLine(doc, OutputHandlingFlag.PauseAtEnd);
                     }
                 }
                 else

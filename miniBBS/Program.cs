@@ -451,6 +451,8 @@ namespace miniBBS
             {
                 Commands.Mail.Execute(session, "list");
             }
+
+            WhoIsOn.Execute(session);
         }
 
         private static void Prompt(BbsSession session)
