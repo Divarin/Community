@@ -19,7 +19,11 @@ namespace miniBBS.Commands
             if ("times".Equals(args?.FirstOrDefault(), StringComparison.CurrentCultureIgnoreCase))
             {
                 ShowSessionTimes(session);
-            }            
+            }
+            else if (args == null || args.Length <= 1)
+            {
+                ShowSessionInfo(session, args?.FirstOrDefault() ?? session.User.Name);
+            }
             else if (session.User.Access.HasFlag(AccessFlag.Administrator) && "flag".Equals(args[0]))
             {
                 if (args.Length < 2)
@@ -32,10 +36,6 @@ namespace miniBBS.Commands
                         session.ControlFlags |= f;
                     session.Io.OutputLine($"{session.ControlFlags}");
                 }
-            }
-            else if (args == null || args.Length <= 1)
-            {
-                ShowSessionInfo(session, args?.FirstOrDefault() ?? session.User.Name);
             }
         }
 
@@ -67,9 +67,9 @@ namespace miniBBS.Commands
                 if (int.TryParse(line, out var killSessionNum) && killSessionNum >= 1 && killSessionNum <= userSessions.Count)
                 {
                     userSessions[killSessionNum - 1].SetForcedLogout("Busting specific Ghost for this user");
-                    var msg = $"{session.User.Name} is exorsizing a ghost.";
+                    var msg = $"{session.User.Name} is killing a ghost.";
                     DI.Get<IMessager>().Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
-                    session.Io.Error($"It may take up to {Constants.MaxLoginTimeMin} minutes for the ghost to be exorsized.");
+                    session.Io.Error($"It may take up to {Constants.MaxLoginTimeMin} minutes for the ghost to be killed.");
                 }
                 if (line.StartsWith("A", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -77,9 +77,9 @@ namespace miniBBS.Commands
                     {
                         s.SetForcedLogout("Busting (A)ll ghosts for this user");
                     }
-                    var msg = $"{session.User.Name} is exorsizing ghosts.";
+                    var msg = $"{session.User.Name} is killing ghosts.";
                     DI.Get<IMessager>().Publish(session, new ChannelMessage(session.Id, session.Channel.Id, msg));
-                    session.Io.Error($"It may take up to {Constants.MaxLoginTimeMin} minutes for the ghosts to be exorsized.");
+                    session.Io.Error($"It may take up to {Constants.MaxLoginTimeMin} minutes for the ghosts to be killed.");
                 }
             }
 
@@ -115,7 +115,7 @@ namespace miniBBS.Commands
                     builder.AppendLine($"Do Not Disturb?: {s.DoNotDisturb}");
                     builder.AppendLine($"Time Zone: {s.TimeZone}");
                     builder.AppendLine($"Terminal: {s.Cols} x {s.Rows}  {s.Io?.EmulationType}");
-                    builder.AppendLine("---------------------------------------");
+                    builder.AppendLine("------------------------------------");
                 }
 
                 session.Io.OutputLine(builder.ToString());

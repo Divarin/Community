@@ -1198,7 +1198,7 @@ namespace miniBBS
                 case "/term":
                 case "/setup":
                 case "/emu":
-                    TermSetup.Execute(session);
+                    TermSetup.Execute(session, session.Io.EmulationType);
                     return;
                 case "/pref":
                     UserPreferences.Execute(session);

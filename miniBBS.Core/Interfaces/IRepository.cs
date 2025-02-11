@@ -16,6 +16,14 @@ namespace miniBBS.Core.Interfaces
         int GetCount<TProp>(Expression<Func<T, TProp>> propFunc, object value);
         int GetCount(IDictionary<string, object> filter);
         int GetCountWhereProp1EqualsAndProp2IsGreaterThan<TProp1, TProp2>(Expression<Func<T, TProp2>> prop1Func, int prop1Value, Expression<Func<T, TProp2>> prop2Func, int prop2Value);
+
+        /// <summary>
+        /// [<typeparamref name="TProp"/>] = count of records with each property value.
+        /// </summary>
+        /// <typeparam name="TProp"></typeparam>
+        /// <param name="propFunc"></param>
+        /// <returns></returns>
+        IDictionary<TProp, int> GetAggregate<TProp>(Expression<Func<T, TProp>> propFunc);
         T Insert(T entity);
         T Update(T entity);
         T InsertOrUpdate(T entity);

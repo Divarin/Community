@@ -408,27 +408,27 @@ namespace miniBBS.Commands
             {
                 case GopherEntryType.Directory:
                     entry.Number = index;
-                    builder.Append($"{index++}: ".Color(ConsoleColor.White));
-                    builder.Append("[MENU]: ".Color(ConsoleColor.Magenta));
+                    builder.Append($"{Constants.Inverser}{index++}{Constants.Inverser}: ".Color(ConsoleColor.White));
+                    builder.Append($"{Constants.Inverser}[MENU]{Constants.Inverser}: ".Color(ConsoleColor.Magenta));
                     nameColor = ConsoleColor.Cyan;
                     break;
                 case GopherEntryType.TextFile:
                     entry.Number = index;
-                    builder.Append($"{index++}: ".Color(ConsoleColor.White));
+                    builder.Append($"{Constants.Inverser}{index++}{Constants.Inverser}: ".Color(ConsoleColor.White));
                     nameColor = ConsoleColor.Cyan;
-                    builder.Append("[TEXT]: ".Color(ConsoleColor.Green));
+                    builder.Append($"{Constants.Inverser}[TEXT]{Constants.Inverser}: ".Color(ConsoleColor.Green));
                     break;
                 case GopherEntryType.IndexSearchServer:
                     entry.Number = index;
-                    builder.Append($"{index++}: ".Color(ConsoleColor.White));
+                    builder.Append($"{Constants.Inverser}{index++}{Constants.Inverser}: ".Color(ConsoleColor.White));
                     nameColor = ConsoleColor.Cyan;
-                    builder.Append("[SRCH]: ".Color(ConsoleColor.Blue));
+                    builder.Append($"{Constants.Inverser}[SRCH]{Constants.Inverser}: ".Color(ConsoleColor.Blue));
                     break;
                 case GopherEntryType.Information:
                     nameColor = ConsoleColor.DarkGreen;
                     break;
                 case GopherEntryType.Error:
-                    builder.Append("[ERR!]: ".Color(ConsoleColor.Red));
+                    builder.Append($"{Constants.Inverser}[ERR!]{Constants.Inverser}: ".Color(ConsoleColor.Red));
                     nameColor = ConsoleColor.Red;
                     break;
                 default:

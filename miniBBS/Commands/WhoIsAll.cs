@@ -14,21 +14,32 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, params string[] args)
         {
-            var sort = session.Io.Ask(string.Format("1) Most recent login{0}2) User's first login{0}3) Most Calls{0}4) Alphabetical{0}A) Aggregate{0}Sort By", session.Io.NewLine));
+            var sort = session.Io.Ask(string.Format("1) Most recent login{0}2) User's first login{0}3) Most Calls{0}4) Most Posts/Chats{0}5) Alphabetical{0}A) Aggregate{0}Sort By", session.Io.NewLine));
 
             IEnumerable<User> users = session.UserRepo.Get();
+            IDictionary<User, int> mostPostsDict = null;
+
             switch (sort)
             {
                 case '1': users = users.OrderByDescending(u => u.LastLogonUtc); break;
                 case '2': users = users.OrderBy(u => u.DateAddedUtc); break;
                 case '3': users = users.OrderByDescending(u => u.TotalLogons); break;
+                case '4':
+                    {
+                        mostPostsDict = GetUserPostCounts()
+                            .OrderByDescending(x => x.Value)
+                            .ToDictionary(k => users.FirstOrDefault(u => u.Id == k.Key), v => v.Value);
+                        users = mostPostsDict.Keys;
+                        break;
+                    }
+                case '5': users = users.OrderBy(u => u.Name); break;
                 case 'A': 
                     users = Aggregate(session, users);
                     if (users == null)
                         return;
                     break;
-                case 'Q': return;
-                default: users = users.OrderBy(u => u.Name); break;
+                default:
+                    return;
             }
 
             var online = DI.Get<ISessionsList>()
@@ -68,6 +79,7 @@ namespace miniBBS.Commands
                 case '1': builder.AppendLine("Last Login      Username".Color(ConsoleColor.White)); break;
                 case '2': builder.AppendLine("First Login     Username".Color(ConsoleColor.White)); break;
                 case '3': builder.AppendLine("Num Calls  Username".Color(ConsoleColor.White)); break;
+                case '4': builder.AppendLine("Num Posts       Username".Color(ConsoleColor.White)); break;
                 default: builder.AppendLine("Username".Color(ConsoleColor.White)); break;
             }
 
@@ -79,6 +91,7 @@ namespace miniBBS.Commands
                     case '1': l = $"{u.LastLogonUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".PadRight(16) + u.Name; break;
                     case '2': l = $"{u.DateAddedUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".PadRight(16) + u.Name; break;
                     case '3': l = u.TotalLogons.ToString().PadRight(11) + u.Name; break;
+                    case '4': l = $"{mostPostsDict[u]}".PadRight(16) + u.Name; break;
                     default: l = u.Name; break;
                 }
                 
@@ -106,6 +119,27 @@ namespace miniBBS.Commands
             {
                 session.Io.OutputLine(builder.ToString());
             }
+        }
+
+        /// <summary>
+        /// [User ID] = total bulletin posts + total chats
+        /// </summary>
+        /// <returns></returns>
+        private static Dictionary<int, int> GetUserPostCounts()
+        {
+            var bulletinsDict = DI.GetRepository<Bulletin>().GetAggregate(x => x.FromUserId);
+            var chatDict = DI.GetRepository<Chat>().GetAggregate(x => x.FromUserId);
+            var result = new Dictionary<int, int>();
+            foreach (var userId in bulletinsDict.Keys.Union(chatDict.Keys))
+            {
+                var total = 0;
+                if (bulletinsDict.ContainsKey(userId))
+                    total += bulletinsDict[userId];
+                if (chatDict.ContainsKey(userId))
+                    total += chatDict[userId];
+                result[userId] = total;
+            }
+            return result;
         }
 
         private static IEnumerable<User> Aggregate(BbsSession session, IEnumerable<User> users)

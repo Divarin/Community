@@ -112,6 +112,36 @@ namespace miniBBS.Services.Persistence
             }
         }
 
+        public IDictionary<TProp, int> GetAggregate<TProp>(Expression<Func<T, TProp>> propFunc)
+        {
+            string propName = (propFunc.Body as MemberExpression).Member.Name;
+
+            var sql = new StructuredQuery()
+                .Select($"{propName}, COUNT() ")
+                .From<T>()
+                .GroupBy(propName)
+                .Query;
+
+            IDictionary<TProp, int> result = null;
+
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                using (var adapter = new SQLiteDataAdapter(sql, connection))
+                {
+                    DataSet set = new DataSet();
+                    adapter.Fill(set);
+                    var results = from DataRow row in set.Tables[0].Rows
+                                  select $"'{row[0]}': '{row[1]}'";
+                    var json = "{" + string.Join($",{Environment.NewLine}", results) + "}";
+                    result = JsonConvert.DeserializeObject<Dictionary<TProp, int>>(json);
+                }
+                connection.Close();
+            }
+
+            return result;
+        }
+
         private T GetById(int id, SQLiteConnection connection)
         {
             var results = GetByProperty(nameof(IDataModel.Id), id, connection);

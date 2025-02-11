@@ -114,6 +114,9 @@ namespace miniBBS.Services.Persistence
         public StructuredQuery Select(int top, params string[] columns)
         { return Append($"SELECT TOP {top} {String.Join(", ", columns)} "); }
 
+        public StructuredQuery GroupBy(params string[] columns)
+        { return Append($"GROUP BY {string.Join(", ", columns)} ");  }
+
         /// <summary>
         /// Used to select only literal values, each value is enclosed in single quotes 
         /// unless it's NULL or of type Unquoted
