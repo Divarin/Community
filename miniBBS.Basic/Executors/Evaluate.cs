@@ -291,14 +291,15 @@ namespace miniBBS.Basic.Executors
                 return 0;
 
             ulong v = 0;
-            ulong multiplier = (ulong)strValue.Length;
+            ulong multiplier = 1;
 
             for (var i=0; i < strValue.Length; i++)
             {
                 char c = strValue[i];
                 ulong cv = c;
-                cv *= multiplier--;
+                cv *= multiplier;
                 v += cv;
+                multiplier *= 2;
             }
 
             return v;

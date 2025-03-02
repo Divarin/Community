@@ -1,7 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
-using miniBBS.Extensions;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -25,11 +24,15 @@ namespace miniBBS.UserIo
         public override void ClearLine() { Output("\u001b[0K"); }
         public override void ClearScreen() { Output(Clear); }
 
+        private const string Reset = "\u001b[0m";
+
         public override string Bold => "\u001b[1m";
 
         public override string Underline => "\u001b[4m";
 
         public override string Reversed => "\u001b[7m";
+
+        public override string NotReversed => "\u001b[27m";
 
         public override string Up => "\u001b[1A";
 
@@ -52,22 +55,22 @@ namespace miniBBS.UserIo
         {
             switch (color)
             {
-                case ConsoleColor.Black: return "\u001b[40m";
-                case ConsoleColor.DarkRed: return "\u001b[41m";
-                case ConsoleColor.DarkGreen: return "\u001b[42m";
-                case ConsoleColor.DarkYellow: return "\u001b[43m";
-                case ConsoleColor.DarkBlue: return "\u001b[44m";
-                case ConsoleColor.DarkMagenta: return "\u001b[45m";
-                case ConsoleColor.DarkCyan: return "\u001b[46m";
-                case ConsoleColor.Gray: return "\u001b[47m";
-                case ConsoleColor.DarkGray: return "\u001b[40;1m";
-                case ConsoleColor.Red: return "\u001b[41;1m";
-                case ConsoleColor.Green: return "\u001b[42;1m";
-                case ConsoleColor.Yellow: return "\u001b[43;1m";
-                case ConsoleColor.Blue: return "\u001b[44;1m";
-                case ConsoleColor.Magenta: return "\u001b[45;1m";
-                case ConsoleColor.Cyan: return "\u001b[46;1m";
-                case ConsoleColor.White: return "\u001b[47;1m";
+                case ConsoleColor.Black: return "\u001b[0;40m";
+                case ConsoleColor.DarkRed: return "\u001b[0;41m";
+                case ConsoleColor.DarkGreen: return "\u001b[0;42m";
+                case ConsoleColor.DarkYellow: return "\u001b[0;43m";
+                case ConsoleColor.DarkBlue: return "\u001b[0;44m";
+                case ConsoleColor.DarkMagenta: return "\u001b[0;45m";
+                case ConsoleColor.DarkCyan: return "\u001b[0;46m";
+                case ConsoleColor.Gray: return "\u001b[0;47m";
+                case ConsoleColor.DarkGray: return "\u001b[1;40m";
+                case ConsoleColor.Red: return "\u001b[1;41m";
+                case ConsoleColor.Green: return "\u001b[1;42m";
+                case ConsoleColor.Yellow: return "\u001b[1;43m";
+                case ConsoleColor.Blue: return "\u001b[1;44m";
+                case ConsoleColor.Magenta: return "\u001b[1;45m";
+                case ConsoleColor.Cyan: return "\u001b[1;46m";
+                case ConsoleColor.White: return "\u001b[1;47m";
                 default: return string.Empty;
             }
         }
@@ -155,6 +158,45 @@ namespace miniBBS.UserIo
 
             return response[0] == 'y' || response[0] == 'Y';
         }
-    }
 
+        //public override void Output(string s, OutputHandlingFlag flags = OutputHandlingFlag.None)
+        //{
+        //    base.Output(TransformText(s), flags);
+        //}
+
+        //public override void OutputLine(string s = null, OutputHandlingFlag flags = OutputHandlingFlag.None)
+        //{
+        //    base.OutputLine(TransformText(s), flags);
+        //}
+
+        //public override string TransformText(string text)
+        //{
+        //    if (string.IsNullOrWhiteSpace(text) || !text.Any(c => c == Constants.Inverser))
+        //        return base.TransformText(text);
+
+        //    var isReversed = false;
+        //    ConsoleColor fg = GetForeground();
+        //    ConsoleColor bg = GetBackground();
+        //    var builder = new StringBuilder();
+        //    foreach (var c in text)
+        //    {
+        //        if (c != Constants.Inverser)
+        //        {
+        //            builder.Append(c);
+        //            continue;
+        //        }
+        //        isReversed = !isReversed;
+        //        if (isReversed)
+        //            builder.Append(Reversed);
+        //        else
+        //            builder.Append(NotReversed);
+        //    }
+
+        //    if (isReversed)
+        //        builder.Append(NotReversed);
+
+        //    text = builder.ToString();
+        //    return text;
+        //}
+    }
 }

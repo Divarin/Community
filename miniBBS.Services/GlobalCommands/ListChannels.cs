@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models;
 using miniBBS.Core.Models.Control;
@@ -8,13 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
+//using System.Threading;
 
 namespace miniBBS.Services.GlobalCommands
 {
     public static class ListChannels
     {
-        private const int _totalUnreadToNotifiyAboutIndexes = 100;
+       // private const int _totalUnreadToNotifiyAboutIndexes = 100;
 
         public static void Execute(BbsSession session, IRepository<Channel> channelRepo = null)
         {
@@ -36,10 +37,10 @@ namespace miniBBS.Services.GlobalCommands
                 var readIds = session.ReadChatIds(GlobalDependencyResolver.Default);
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
-                var header = $"#   : Channel Name {' '.Repeat(longestChannelName - "Channel Name".Length)}Unread";
-                session.Io.OutputLine(header);
+                var header = $"{Constants.Inverser}#   : Channel Name {' '.Repeat(longestChannelName - "Channel Name".Length)}Unread{Constants.Inverser}";
+                session.Io.OutputLine(header, OutputHandlingFlag.NoWordWrap);
                 session.Io.SetForeground(ConsoleColor.DarkGray);
-                session.Io.OutputLine('-'.Repeat(header.Length));
+                session.Io.OutputLine('-'.Repeat(header.Length-2));
 
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
                 {
@@ -55,10 +56,10 @@ namespace miniBBS.Services.GlobalCommands
                             lastRead = userFlags[chan.Id].LastReadMessageNumber;
                         else
                             lastRead = -1;
-                        //var unread = chatRepo.GetCountWhereProp1EqualsAndProp2IsGreaterThan<int, int>(x => x.ChannelId, chan.Id, x => x.Id, lastRead);
+
                         var unread = GetChannelCount(readIds, chatRepo, chan.Id).SubsetCount;
 
-                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{i + 1,-3}");
+                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{Constants.Inverser}{i + 1,-3}{Constants.Inverser}");
                         builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
                         builder.Append($"{chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}");
                         if (unread > 0)
@@ -68,8 +69,10 @@ namespace miniBBS.Services.GlobalCommands
                         builder.AppendLine($"{unread}{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
                     }
                     
-                    builder.AppendLine("Change channels with [, ], or /ch #".Color(ConsoleColor.Blue));
                     session.Io.Output(builder.ToString());
+                    session.Io.OutputLine(
+                        $"Change channels with {Constants.Inverser}[{Constants.Inverser}, {Constants.Inverser}]{Constants.Inverser}, or {Constants.Inverser}/ch #{Constants.Inverser}"
+                        .Color(ConsoleColor.Blue), OutputHandlingFlag.NoWordWrap);
                 }
             } 
             finally

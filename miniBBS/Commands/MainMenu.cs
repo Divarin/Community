@@ -15,19 +15,19 @@ namespace miniBBS.Commands
         private static readonly string[] _menu = new[]
         {
             $"{_clr("***", ConsoleColor.Yellow)} {_clr($"{Constants.Inverser}Mutiny Community Main Menu{Constants.Inverser}", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
-            $"{_clr("M", ConsoleColor.Green)}) Message Bases / Bulletin Boards",
-            $"{_clr("C", ConsoleColor.Green)}) Chat Rooms (with history)",
-            $"{_clr("N", ConsoleColor.Green)}) NullSpace Chat",
-            $"{_clr("L", ConsoleColor.Green)}) Live Chat Calendar",
-            $"{_clr("E", ConsoleColor.Green)}) E-Mail",
-            $"{_clr("T", ConsoleColor.Green)}) Text Files",
-            $"{_clr("G", ConsoleColor.Green)}) Gopher",
-            $"{_clr("V", ConsoleColor.Green)}) Voting Booth",
-            $"{_clr("D", ConsoleColor.Green)}) Door Games",
-            $"{_clr("W", ConsoleColor.Green)}) Who is on",
-            $"{_clr("U", ConsoleColor.Green)}) User List",
-            $"{_clr("P", ConsoleColor.Green)}) Preferences",
-            $"{_clr("O", ConsoleColor.Green)}) Logoff",
+            $"{_clr($"{Constants.Inverser}M{Constants.Inverser}", ConsoleColor.Green)}) Message Bases / Bulletin Boards",
+            $"{_clr($"{Constants.Inverser}C{Constants.Inverser}", ConsoleColor.Green)}) Chat Rooms (with history)",
+            $"{_clr($"{Constants.Inverser}N{Constants.Inverser}", ConsoleColor.Green)}) NullSpace Chat",
+            $"{_clr($"{Constants.Inverser}L{Constants.Inverser}", ConsoleColor.Green)}) Live Chat Calendar",
+            $"{_clr($"{Constants.Inverser}E{Constants.Inverser}", ConsoleColor.Green)}) E-Mail",
+            $"{_clr($"{Constants.Inverser}T{Constants.Inverser}", ConsoleColor.Green)}) Text Files",
+            $"{_clr($"{Constants.Inverser}G{Constants.Inverser}", ConsoleColor.Green)}) Gopher",
+            $"{_clr($"{Constants.Inverser}V{Constants.Inverser}", ConsoleColor.Green)}) Voting Booth",
+            $"{_clr($"{Constants.Inverser}D{Constants.Inverser}", ConsoleColor.Green)}) Door Games",
+            $"{_clr($"{Constants.Inverser}W{Constants.Inverser}", ConsoleColor.Green)}) Who is on",
+            $"{_clr($"{Constants.Inverser}U{Constants.Inverser}", ConsoleColor.Green)}) User List",
+            $"{_clr($"{Constants.Inverser}P{Constants.Inverser}", ConsoleColor.Green)}) Preferences",
+            $"{_clr($"{Constants.Inverser}O{Constants.Inverser}", ConsoleColor.Green)}) Logoff",
             //$"{_clr("L", ConsoleColor.Green)}) Learn how to do more with Community!"
         };
 

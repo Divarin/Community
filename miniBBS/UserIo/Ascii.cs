@@ -25,6 +25,7 @@ namespace miniBBS.UserIo
         public override string Underline => string.Empty;
 
         public override string Reversed => string.Empty;
+        public override string NotReversed => string.Empty;
 
         public override string Up => string.Empty;
 

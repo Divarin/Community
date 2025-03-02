@@ -2,19 +2,20 @@
 using miniBBS.Core.Enums;
 using miniBBS.Interfaces;
 using System;
+using System.Threading;
 
 namespace miniBBS.Extensions
 {
     public static class UserIoExtensions
     {
-        public static char Ask(this IUserIo io, string question)
+        public static char Ask(this IUserIo io, string question, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
             if (io == null)
                 return (char)0;
 
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                io.Output($"{Constants.Inverser}{question}:{Constants.Inverser} ");
+                io.Output($"{Constants.Inverser}{question}:{Constants.Inverser} ", flags);
                 var result = io.InputKey();
                 io.OutputLine();
                 return char.ToUpper(result ?? (char)0);
@@ -63,6 +64,16 @@ namespace miniBBS.Extensions
                 io.InputKey();
                 io.OutputLine();
             }
+        }
+
+        public static void OutputLineSlow(this IUserIo io, string text, int delayMs = 25)
+        {
+            foreach (var c in text)
+            {
+                io.Output(c);
+                Thread.Sleep(delayMs);
+            }
+            io.Output(io.NewLine);
         }
     }
 }

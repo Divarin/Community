@@ -8,7 +8,7 @@ namespace miniBBS.Menus
     {
         private static readonly string[] _lines = new[]
         {
-            "*** Emotes ***",
+            $"{Constants.Inverser}*** Emotes ***{Constants.Inverser}",
             $"{Constants.Spaceholder}",
             "Emotes are a way you can get the attention of another user or anyone in the channel without actually posting a message.",
             "Emotes, unlike messages, are not added to the chat history so they cannot be seen by users that log in later, they can " +
@@ -17,12 +17,12 @@ namespace miniBBS.Menus
             "At this time there is a limited number of emotes that can be used.  For each of these you can either direct them to " +
             "a particular user or to the channel as a whole.  If they are directed to a user then only you and that user will see " +
             "the emote.",
-            $"{Constants.Spaceholder} example: '/wave' notifies everyone in the channel: 'Soandso waves to the channel'.",
-            $"{Constants.Spaceholder} example: '/wave jimbob' notifies only jimbob (if he is online): 'Soandso waves to Jimbob'.",
+            $"{Constants.Spaceholder} example: '{Constants.Inverser}/wave{Constants.Inverser}' notifies everyone in the channel: 'Soandso waves to the channel'.",
+            $"{Constants.Spaceholder} example: '{Constants.Inverser}/wave jimbob{Constants.Inverser}' notifies only jimbob (if he is online): 'Soandso waves to Jimbob'.",
             $"{Constants.Spaceholder}",
             "The emotes available at this time are: /wave, /smile, /frown, /wink, /nod, /poke, /goodbye, /me, and /online",
             $"{Constants.Spaceholder}",
-            $"/me allows you to use an arbitrary emote like '/me dances in the moonlight'.  This is limited to {Constants.MaxInputLength-4} characters."
+            $"{Constants.Inverser}/me{Constants.Inverser} allows you to use an arbitrary emote like '/me dances in the moonlight'.  This is limited to {Constants.MaxInputLength-4} characters."
         };
         public static void Show(BbsSession session)
         {

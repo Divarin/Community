@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -45,7 +46,7 @@ namespace miniBBS.Commands
 
             var builder = new StringBuilder();
             var header = session.Cols >= 80 ? _seenHeaderWide : _seenHeader;
-            builder.AppendLine(header.Color(ConsoleColor.Magenta));
+            builder.AppendLine($"{Constants.Inverser}{header}{Constants.Inverser}".Color(ConsoleColor.Magenta));
 
             foreach (var d in data)
                 builder.AppendLine(GetLine(session, d.Data, d.UserId));
@@ -124,7 +125,7 @@ namespace miniBBS.Commands
                 nameLengh += 20; // can afford to show more of the username
 
             return
-                username.MaxLength(nameLengh).PadRight(nameLengh + 3).Color(ConsoleColor.Green) +
+                $"{Constants.Inverser}{username.MaxLength(nameLengh).PadRight(nameLengh + 3)}{Constants.Inverser}".Color(ConsoleColor.Green) +
                 login.Color(ConsoleColor.Yellow) +
                 "-".Color(ConsoleColor.DarkGray) +
                 $"{seen.SessionEndUtc.AddHours(session.TimeZone):HH:mm} ".Color(ConsoleColor.White) +

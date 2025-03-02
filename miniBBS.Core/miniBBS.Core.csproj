@@ -106,6 +106,7 @@
     <Compile Include="Interfaces\ITextFilesBrowser.cs" />
     <Compile Include="Interfaces\IUserIo.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
+    <Compile Include="Models\Control\GopherDocumentFetchContext.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />
     <Compile Include="Models\Control\LoginRecord.cs" />

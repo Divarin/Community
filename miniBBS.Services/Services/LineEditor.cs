@@ -177,7 +177,7 @@ namespace miniBBS.Services.Services
                     // list (with or without line numbers)
                     {
                         var range = args.Length >= 2 ? args[1] : null;
-                        var k = _session.Io.Ask("With line numbers? (Y)es, (N)o, (A)bort");
+                        var k = _session.Io.Ask("Line numbers? (Y)es, (N)o, (A)bort", OutputHandlingFlag.NoWordWrap);
                         List(lines, 'Y' == k, range);
                     }
                     break;

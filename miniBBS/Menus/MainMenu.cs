@@ -9,37 +9,36 @@ namespace miniBBS.Menus
     {
         private static readonly Func<string, ConsoleColor, string> _clr = (str, clr) => UserIoExtensions.WrapInColor(str, clr);
 
-        //    12345678901234567890123456789012345678901234567890123456789012345678901234567890
-        //    1234567890123456789012345678901234567890
         private static readonly string[] _lines = new[]
         {
-            $"*** {_clr("Community Main Menu", ConsoleColor.Yellow)} ***",
+            $"{Constants.Inverser}*** {_clr("Community Chat Menu", ConsoleColor.Yellow)} ***{Constants.Inverser}",
             $"{_clr("Commands start with a forward slash (/)", ConsoleColor.Cyan)}",
             $"{Constants.Spaceholder}",
-            $"{_clr("ENTER", ConsoleColor.Green)} : Show the next message",
+            $"{_clr($"{Constants.Inverser}ENTER{Constants.Inverser}", ConsoleColor.Green)} : Show the next message",
             "To post or respond to one, just type!",
-            $"{_clr("/a", ConsoleColor.Green)} : About this sytem",
-            $"{_clr("/o", ConsoleColor.Green)} : Logoff",
-            $"{_clr("/who", ConsoleColor.Green)} : List of users currently logged on",
-            $"--- {_clr("More Help Menus", ConsoleColor.Yellow)} ---",
-                $"{_clr("/? channels", ConsoleColor.Green)}, " + 
-                $"{_clr("/? msgs", ConsoleColor.Green)}, " +
-                $"{_clr("/? users", ConsoleColor.Green)}, " + 
-                $"{_clr("/? bells", ConsoleColor.Green)}, " + 
-                $"{_clr("/? emotes", ConsoleColor.Green)}, " + 
-                $"{_clr("/? context", ConsoleColor.Green)}, " + 
-                $"{_clr("/? mod", ConsoleColor.Green)}, " + 
-                $"{_clr("/? voice", ConsoleColor.Green)}, " +
-                $"{_clr("/? misc", ConsoleColor.Green)} ",
-            $"--- {_clr("Subsystems", ConsoleColor.Yellow)} ---",
+            $"{_clr($"{Constants.Inverser}/a{Constants.Inverser}", ConsoleColor.Green)} : About this sytem",
+            $"{_clr($"{Constants.Inverser}/o{Constants.Inverser}", ConsoleColor.Green)} : Logoff",
+            $"{_clr($"{Constants.Inverser}/who{Constants.Inverser}", ConsoleColor.Green)} : List of users currently logged on",
+            $"{_clr($"{Constants.Inverser}/chl{Constants.Inverser}", ConsoleColor.Green)} : List chat channels",
+            $"{Constants.Inverser}--- {_clr("More Help Menus", ConsoleColor.Yellow)} ---{Constants.Inverser}",
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} channels", ConsoleColor.Green)}, " + 
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} msgs", ConsoleColor.Green)}, " +
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} users", ConsoleColor.Green)}, " + 
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} bells", ConsoleColor.Green)}, " + 
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} emotes", ConsoleColor.Green)}, " + 
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} context", ConsoleColor.Green)}, " + 
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} mod", ConsoleColor.Green)}, " + 
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} voice", ConsoleColor.Green)}, " +
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} misc", ConsoleColor.Green)} ",
+            $"{Constants.Inverser}--- {_clr("Subsystems", ConsoleColor.Yellow)} ---{Constants.Inverser}",
             //$"{_clr("/msg", ConsoleColor.Green)} : Message Base view",
-            $"{_clr("/b", ConsoleColor.Green)} : Bulletin Boards",
-            $"{_clr("/cal", ConsoleColor.Green)} : Live-chat events calendar",
-            $"{_clr("/mail", ConsoleColor.Green)} : E-Mail",
-            $"{_clr("/polls", ConsoleColor.Green)} : Vote on stuff",
-            $"{_clr("/files", ConsoleColor.Green)} : Files, Games, BASIC & more",
-            $"{_clr("/gopher", ConsoleColor.Green)} : Explore Gopherspace!",
-            $"{_clr("/nullspace", ConsoleColor.Green)} : Enter NullSpace Chat",
+            $"{_clr($"{Constants.Inverser}/b{Constants.Inverser}", ConsoleColor.Green)} : Bulletin Boards",
+            $"{_clr($"{Constants.Inverser}/cal{Constants.Inverser}", ConsoleColor.Green)} : Live-chat events calendar",
+            $"{_clr($"{Constants.Inverser}/mail{Constants.Inverser}", ConsoleColor.Green)} : E-Mail",
+            $"{_clr($"{Constants.Inverser}/polls{Constants.Inverser}", ConsoleColor.Green)} : Vote on stuff",
+            $"{_clr($"{Constants.Inverser}/files{Constants.Inverser}", ConsoleColor.Green)} : Files, Games, BASIC & more",
+            $"{_clr($"{Constants.Inverser}/gopher{Constants.Inverser}", ConsoleColor.Green)} : Explore Gopherspace!",
+            $"{_clr($"{Constants.Inverser}/nullspace{Constants.Inverser}", ConsoleColor.Green)} : Enter NullSpace Chat",
         };
 
         public static void Show(BbsSession session)

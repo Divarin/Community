@@ -8,7 +8,7 @@ namespace miniBBS.Menus
     {
         private static readonly string[] _lines = new[]
         {
-            "*** About Community ***",
+            $"{Constants.Inverser}*** About Community ***{Constants.Inverser}",
             $"Version: {Constants.Version}",
             $"{Constants.Spaceholder}",
             "Mutiny Community is a new kind of Bulletin Board System (BBS).  " +

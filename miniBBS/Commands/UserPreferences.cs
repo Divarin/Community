@@ -32,14 +32,14 @@ namespace miniBBS.Commands
 
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                 {
-                    session.Io.OutputLine("1) Terminal Setup");
-                    session.Io.OutputLine($"2) Login Startup Mode: {mode.FriendlyName()}");
-                    session.Io.OutputLine("3) Chat Header Format");
-                    session.Io.OutputLine("4) Cross-Channel Notifications");
-                    session.Io.OutputLine("5) Set Internet E-Mail Address");
-                    session.Io.OutputLine("6) Change your password");
-                    session.Io.OutputLine("7) Set your Time Zone");
-                    session.Io.OutputLine("Q) Quit");
+                    session.Io.OutputLine($"{Constants.Inverser}1{Constants.Inverser}) Terminal Setup");
+                    session.Io.OutputLine($"{Constants.Inverser}2{Constants.Inverser}) Login Startup Mode: {mode.FriendlyName()}");
+                    session.Io.OutputLine($"{Constants.Inverser}3{Constants.Inverser}) Chat Header Format");
+                    session.Io.OutputLine($"{Constants.Inverser}4{Constants.Inverser}) Cross-Channel Notifications");
+                    session.Io.OutputLine($"{Constants.Inverser}5{Constants.Inverser}) Set Internet E-Mail Address");
+                    session.Io.OutputLine($"{Constants.Inverser}6{Constants.Inverser}) Change your password");
+                    session.Io.OutputLine($"{Constants.Inverser}7{Constants.Inverser}) Set your Time Zone");
+                    session.Io.OutputLine($"{Constants.Inverser}Q{Constants.Inverser}) Quit");
                 }
 
                 session.Io.Output($"{Constants.Inverser}[PREFS] :{Constants.Inverser} ".Color(ConsoleColor.White));

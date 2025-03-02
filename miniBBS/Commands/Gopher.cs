@@ -9,13 +9,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 
 namespace miniBBS.Commands
 {
     public static class Gopher
     {
         const int BufferSize = 1024 * 1024;
+        const int TimeoutSec = 15;
 
         public static void Execute(BbsSession session)
         {
@@ -72,9 +72,20 @@ namespace miniBBS.Commands
                     }
                 }
 
-                session.Io.Output($"Fetching {currentLocation.Url()}...".Color(ConsoleColor.DarkGray), OutputHandlingFlag.NoWordWrap);
-                var doc = GetDocument(currentLocation, searchTerm);
-                session.Io.OutputLine();
+                string doc;
+                if (currentLocation.CachedDocument != null)
+                {
+                    session.Io.OutputLine($"Cached {currentLocation.Url()}...".Color(ConsoleColor.DarkGray), OutputHandlingFlag.NoWordWrap);
+                    doc = currentLocation.CachedDocument;
+                }
+                else
+                {
+                    session.Io.Output($"Fetching {currentLocation.Url()}...".Color(ConsoleColor.DarkGray), OutputHandlingFlag.NoWordWrap);
+                    doc = GetDocument(currentLocation, searchTerm);
+                    session.Io.OutputLine();
+                    currentLocation.CachedDocument = doc;
+                }
+
                 if (string.IsNullOrWhiteSpace(doc))
                 {
                     session.Io.Error("No content at this location.");
@@ -95,7 +106,7 @@ namespace miniBBS.Commands
                     doc = doc.Replace("\n", session.Io.NewLine); // \n -> \r\n
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
                     {
-                        session.Io.OutputLine(doc, OutputHandlingFlag.PauseAtEnd);
+                        session.Io.OutputLine(doc, OutputHandlingFlag.PauseAtEnd | OutputHandlingFlag.DoNotTrimStart);
                     }
                 }
                 else
@@ -128,7 +139,8 @@ namespace miniBBS.Commands
                 // Q)uit, B)ack, H)istory, G)o to, #) Go #
                 var prompt =
                     $"{Constants.Inverser}gopher://{currentLocation.Host}{(currentLocation.Port == 70 ? "" : $":{currentLocation.Port}")}/{(char)currentLocation.EntryType}{currentLocation.Path}{Constants.Inverser}{session.Io.NewLine}".Color(ConsoleColor.DarkRed) +
-                    $"{Constants.Inverser}K{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + $": Bookmarks Menu{session.Io.NewLine}".Color(ConsoleColor.Cyan) +
+                    $"{Constants.Inverser}K{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + $": Bookmarks   ".Color(ConsoleColor.Cyan) +
+                    $"{Constants.Inverser}R{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + $": Reload{session.Io.NewLine}".Color(ConsoleColor.Cyan) +
                     $"{Constants.Inverser}Q{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")uit, " +
                     $"{Constants.Inverser}B{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")ack, " +
                     $"{Constants.Inverser}H{Constants.Inverser}".Color(ConsoleColor.DarkMagenta) + ")istory, " +
@@ -185,6 +197,10 @@ namespace miniBBS.Commands
                                     session.Io.Error("No previous location.");
                                     redoMenu = true;
                                 }
+                                break;
+                            case 'R':
+                                if (currentLocation != null)
+                                    currentLocation.CachedDocument = null; // clear cache
                                 break;
                             //case 'U':
                             //    {
@@ -465,7 +481,7 @@ namespace miniBBS.Commands
 
                     var request = Encoding.ASCII.GetBytes(requestPath);
                     stream.Write(request, 0, request.Length);
-                    
+
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     do
@@ -484,10 +500,109 @@ namespace miniBBS.Commands
                     } while (stopwatch.Elapsed.TotalSeconds < 15);
                 }
                 return builder.ToString();
-            } catch (SocketException ex)
+            }
+            catch (SocketException ex)
             {
                 return $"3{ex.Message}{Environment.NewLine}";
             }
         }
+
+        //private static string GetDocument(BbsSession session, GopherEntry entry, string searchTerm)
+        //{
+        //    var builder = new StringBuilder();
+
+        //    var context = new GopherDocumentFetchContext
+        //    {
+        //        Entry = entry,
+        //        SearchTerm = searchTerm,
+        //        ResultBuilder = builder,
+        //        IsComplete = false,
+        //        Stopwatch = new Stopwatch(),
+        //    };
+
+        //    TcpClient client = null;
+        //    try
+        //    {
+        //        client = new TcpClient();
+        //        context.Client = client;
+        //        context.Stopwatch.Start();
+        //        client.BeginConnect(entry.Host, entry.Port ?? 70, GetDocumentWithConnection, context);
+        //        do
+        //        {
+        //            while (!context.IsComplete && context.Stopwatch.Elapsed.TotalSeconds <  TimeoutSec)
+        //            {
+        //                Thread.Sleep(25);
+        //            }
+        //            if (context.IsComplete)
+        //                return builder.ToString();
+
+        //            if ('Y' != session.Io.Ask($"{session.Io.NewLine}Server is being slow today, keep waiting?"))
+        //            {
+        //                return $"3Connection Timeout{Environment.NewLine}";
+        //            }
+        //            context.Stopwatch.Restart();
+        //        } while (true);
+        //    }
+        //    catch (SocketException ex)
+        //    {
+        //        return $"3{ex.Message}{Environment.NewLine}";
+        //    }
+        //    finally
+        //    {
+        //        if (client != null)
+        //            client.Close();
+        //    }
+        //}
+
+        //private static void GetDocumentWithConnection(IAsyncResult ar)
+        //{
+        //    var context = ar.AsyncState as GopherDocumentFetchContext;
+
+        //    try
+        //    {
+        //        context.Client.EndConnect(ar);
+        //        using (var stream = context.Client.GetStream())
+        //        {
+        //            if (context.Entry.Path == null)
+        //                context.Entry.Path = string.Empty;
+
+        //            if (context.Entry.Path.StartsWith("//"))
+        //                context.Entry.Path = context.Entry.Path.Substring(1); // remove double-slash if it exists
+
+        //            var requestPath = context.Entry.Path;
+        //            if (!string.IsNullOrWhiteSpace(context.SearchTerm))
+        //                requestPath += $"\t{context.SearchTerm}";
+        //            requestPath += Environment.NewLine;
+
+        //            var request = Encoding.ASCII.GetBytes(requestPath);
+        //            stream.Write(request, 0, request.Length);
+
+        //            while (stream.CanRead)
+        //            {
+        //                byte[] buffer = new byte[BufferSize];
+        //                if (!stream.CanRead)
+        //                    break;
+        //                var bytesRead = stream.Read(buffer, 0, BufferSize);
+        //                if (bytesRead > 0)
+        //                {
+        //                    var text = Encoding.ASCII.GetString(buffer.Where(c => c > 0).ToArray());
+        //                    context.ResultBuilder.Append(text);
+        //                }
+        //                else
+        //                {
+        //                    break;
+        //                }
+        //            } while (context.Stopwatch.Elapsed.TotalSeconds < TimeoutSec) ;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        context.ResultBuilder.AppendLine($"3{ex.Message}");
+        //    }
+        //    finally
+        //    {
+        //        context.IsComplete = true;
+        //    }
+        //}
     }
 }

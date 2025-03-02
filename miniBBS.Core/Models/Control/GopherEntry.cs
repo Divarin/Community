@@ -16,5 +16,6 @@ namespace miniBBS.Core.Models.Control
         /// the user will type in to go to the entry.
         /// </summary>
         public int? Number { get; set; }
+        public string CachedDocument { get; set; }
     }
 }

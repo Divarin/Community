@@ -404,7 +404,7 @@ namespace miniBBS
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
-                session.Io.Output($"{Constants.Inverser}{Constants.Spaceholder}*** Community Login Notifications *** {Constants.Inverser}");
+                session.Io.Output($"{Constants.Inverser}* Community Login Notifications *{Constants.Inverser}");
                 session.Io.SetForeground(ConsoleColor.White);
                 session.Io.OutputLine();
 
@@ -470,18 +470,16 @@ namespace miniBBS
                 string.IsNullOrWhiteSpace(session?.Channel?.Name) ? -1 :
                 chanList.IndexOf(c => c.Name == session.Channel.Name) + 1;
 
-            var prompt = 
-                $"{Constants.Inverser}" +
+            var prompt =
                 $"{DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}" + 
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
                 UserIoExtensions.WrapInColor(lastRead.ToString(), lastRead == count ? ConsoleColor.Cyan : ConsoleColor.Magenta) +
                 UserIoExtensions.WrapInColor("/", ConsoleColor.DarkGray) +
                 $"{count}" +
                 UserIoExtensions.WrapInColor(", ", ConsoleColor.DarkGray) +
-                $"{chanNum}:{session?.Channel?.Name} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)}" +
-                $"{Constants.Inverser} " ;
+                $"{Constants.Inverser}{chanNum}:{session?.Channel?.Name}{Constants.Inverser} {UserIoExtensions.WrapInColor(">", ConsoleColor.White)} ";
 
-            session.Io.Output(prompt);
+            session.Io.Output(prompt, OutputHandlingFlag.NoWordWrap);
             session.Io.SetForeground(ConsoleColor.White);
         }
 
@@ -843,6 +841,28 @@ namespace miniBBS
                 username = session.Io.InputLine();
                 session.Io.OutputLine();
                 newUser = true;
+            }
+            else if ("help".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.OutputLineSlow("Help not available\r\n\r\n--- connection terminated ---");
+                return;
+            }
+            else if ("help games".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.OutputLineSlow("'games' refers to models, simulations and games which have tactical and strategic applications.\r\n\r\n--- connection terminated ---");
+                return;
+            }
+            else if ("list games".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.OutputLineSlow("falken's maze\r\nblack jack\r\ngin rummy\r\nhearts\r\nbridge\r\ncheckers\r\nchess\r\npoker\r\nfighter combat\r\nguerrilla engagement\r\ndesert warfare\r\nair-to-ground actions\r\ntheaterwide tactical warfare\r\ntheaterwide biotoxic and chemical warfare\r\n\r\nglobal thermonuclear war\r\n\r\n--- connection terminated ---");
+                return;
+            }
+            else if ("joshua".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.OutputLineSlow("greetings professor falken.\r\n\r\n");
+                Thread.Sleep(5000);
+                session.Io.OutputLineSlow("--- connection terminated ---");
+                return;
             }
 
             if (string.IsNullOrWhiteSpace(username))

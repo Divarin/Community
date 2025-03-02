@@ -103,7 +103,9 @@ namespace miniBBS.UserIo
 
         public override string Underline => string.Empty;
 
-        public override string Reversed => $"{(char)18}";
+        public override string Reversed => $"{_revOn}";
+
+        public override string NotReversed => $"{_revOff}";
 
         public override string Up => $"{(char)145}";
 
@@ -253,13 +255,17 @@ namespace miniBBS.UserIo
                 return text;
 
             var chrs = new List<char>();
+            bool isReverse = false;
 
             for (int i=0; i < text.Length; i++)
             {
                 char c = text[i];
                 if (c == Constants.Inverser)
-                    continue;
-                if (_asciiToCbm.TryGetValue((byte)c, out var b))
+                {
+                    chrs.Add(isReverse ? (char)_revOff : (char)_revOn);
+                    isReverse = !isReverse;
+                }
+                else if (_asciiToCbm.TryGetValue((byte)c, out var b))
                     chrs.AddRange(b.Select(x => (char)x));
                 else if (c == 8)
                     chrs.Add((char)20); // backspace
@@ -268,6 +274,9 @@ namespace miniBBS.UserIo
                 else
                     chrs.Add(char.ToUpper(c));
             }
+
+            if (isReverse)
+                chrs.Add((char)_revOff);
 
             var arr = chrs.ToArray();
             text = new string(arr, 0, arr.Length);
@@ -343,7 +352,6 @@ namespace miniBBS.UserIo
             var ctrls = line?.Count(c => c == Constants.InlineColorizer) ?? 0;
             ctrls /= 2;
             actualTextLength -= ctrls * 3;
-
             return line;
         }
 

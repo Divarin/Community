@@ -151,6 +151,7 @@ namespace miniBBS.UserIo
         public abstract string Bold { get; }
         public abstract string Underline { get; }
         public abstract string Reversed { get; }
+        public abstract string NotReversed { get; }
 
         public abstract string Up { get; }
         public abstract string Down { get; }
