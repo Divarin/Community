@@ -117,8 +117,8 @@ namespace miniBBS.TextFiles
             "This is useful if you're writing the file to a buffer file or sending it directly to a printer and don't want the 'more?' " +
             "prompt to show up in the buffer or on the printout.";
 
-        private const string _exit =
-            "The 'exit', 'quit', and '/o' commands leave the text files browser and return to Community Chat.";
+        private static string _exit =
+            "The 'exit', 'quit', and '/o' commands leave the text files browser and return to chat.";
 
         private const string _dnd =
             "By default when you enter the text files browser you automatically go into Do Not Disturb mode.  In this mode you will not see " +
@@ -136,13 +136,13 @@ namespace miniBBS.TextFiles
             "without having to go into the text files browser, navigate to the file, and call it up manually.";
 
         private const string _mkdir =
-            "For use only in your own user file area.  Please see the help topic on Community Users area.\r\n\r\n" +
+            "For use only in your own user file area.  Please see the help topic on Users area.\r\n\r\n" +
             "Examples: md MyStuff, mkdir MyReceipies\r\n\r\n" +
             "The 'md' or 'mkdir' commands will " +
-            "create a new subdirectory within the current directory.  You need to be in your own Community Users area.";
+            "create a new subdirectory within the current directory.  You need to be in your own Users area.";
 
         private const string _edit =
-            "For use only in your own user file area.  Please see the help topic on Community Users area.\r\n\r\n" +
+            "For use only in your own user file area.  Please see the help topic on Users area.\r\n\r\n" +
             "Examples: edit 13, edit example.txt\r\n\r\n" +
             "The 'edit' or 'nano' commands will enter a text editor to edit the contents of the specified file.  If the file does not exist " +
             "and you entered a name (and not a number) then a new file will be created.  Help about how to use the editor is available in " +
@@ -160,19 +160,19 @@ namespace miniBBS.TextFiles
             "Example: rename foo.txt bar.txt\r\n";
 
         private const string _del =
-            "For use only in your own user file area.  Please see the help topic on Community Users area.\r\n\r\n" +
+            "For use only in your own user file area.  Please see the help topic on Users area.\r\n\r\n" +
             "Examples: del 13, del example.txt\r\n\r\n" +
             "The 'del' or 'rm' commands will delete a file if it is in your text file area.  If you just want to hide the file from other users " +
             "while you work on changing it then please refer to the 'unpublish' command instead.";
 
         private const string _rd =
-            "For use only in your own user file area.Please see the help topic on Community Users area.\r\n\r\n" +
+            "For use only in your own user file area.Please see the help topic on Users area.\r\n\r\n" +
             "Examples: rd 11, rd MyDocs\r\n\r\n" +
-            "The 'deltree', 'rd', and 'rmdir' commands remove one of your Community Users sub-directories and anything contained within it.  " +
+            "The 'deltree', 'rd', and 'rmdir' commands remove one of your Users sub-directories and anything contained within it.  " +
             "This includes any files and other sub-directories.  Please use with caution.";
 
         private const string _pub =
-            "For use only in your own user file area.Please see the help topic on Community Users area.\r\n\r\n" +
+            "For use only in your own user file area.Please see the help topic on Users area.\r\n\r\n" +
             "Examples: pub 11, pub example.txt, publish 11, unpublish example.txt\r\n\r\n" +
             "The 'publish' and 'pub' commands can be used to make unpublished files published.  This is where you can add a description of the file " +
             "and then the file will be listed for other users to read.\r\n\r\n" +
@@ -180,12 +180,12 @@ namespace miniBBS.TextFiles
             "but retains the file contents.  You can then edit the contents, do any changes you want, and when you're ready for the file to be made " +
             "visible by other users then use the 'publish' command again.";
 
-        private const string _users =
-            "In addition to the Jason Scott text files archive the area under /CommunityUsers is reserved for users such as yourself " +
+        private static readonly string _users =
+            $"In addition to the Jason Scott text files archive the area under /{Constants.Files.UserAreaDirectoryDisplayName} is reserved for users such as yourself " +
             "to create your own text files for the whole world to read!  To do this you will need a sub-directory with your username.  " +
-            "For example if your username is JimBob then your text files area will be located in /CommunityUsers/JimBob.  To get this " +
+            $"For example if your username is JimBob then your text files area will be located in /{Constants.Files.UserAreaDirectoryDisplayName}/JimBob.  To get this " +
             "sub-directory just send me (" + Constants.SysopName + ") an email requesting it.  You will then be able to use commands like " +
-            "md, edit, and publish to create your own text files here on Mutiny Community!";
+            $"md, edit, and publish to create your own text files here on {Constants.BbsName}!";
 
         private const string _searching = 
             "Searching: \r\n"+

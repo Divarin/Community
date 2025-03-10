@@ -65,6 +65,7 @@
     <Compile Include="Extensions\LinkExtensions.cs" />
     <Compile Include="FileReader.cs" />
     <Compile Include="FileWriter.cs" />
+    <Compile Include="GopherServer.cs" />
     <Compile Include="Help.cs" />
     <Compile Include="IndexUpdater.cs" />
     <Compile Include="LinkParser.cs" />

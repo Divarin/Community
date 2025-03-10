@@ -11,7 +11,7 @@ namespace miniBBS.Menus
 
         private static readonly string[] _lines = new[]
         {
-            $"{Constants.Inverser}*** {_clr("Community Chat Menu", ConsoleColor.Yellow)} ***{Constants.Inverser}",
+            $"{Constants.Inverser}*** {_clr($"{Constants.BbsName} Chat Menu", ConsoleColor.Yellow)} ***{Constants.Inverser}",
             $"{_clr("Commands start with a forward slash (/)", ConsoleColor.Cyan)}",
             $"{Constants.Spaceholder}",
             $"{_clr($"{Constants.Inverser}ENTER{Constants.Inverser}", ConsoleColor.Green)} : Show the next message",

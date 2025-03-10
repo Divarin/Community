@@ -81,7 +81,7 @@ namespace miniBBS.TextFiles
             {
                 var txt = FileReader.ReadFile(new FileInfo(dir));
                 links = GetLinks(txt).ToList();
-                if (indexLocation.IsOwnedByUser(session.User))
+                if (session != null && indexLocation.IsOwnedByUser(session.User))
                 {
                     var unpublished = GetUnindexedLinks(dir, indexLocation, includeBackups)
                         ?.Where(l => !l.IsDirectory && !links.Any(x => x.DisplayedFilename.Equals(l.DisplayedFilename)))

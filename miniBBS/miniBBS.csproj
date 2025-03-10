@@ -136,7 +136,6 @@
     <Compile Include="DI.cs" />
     <Compile Include="Exceptions\ForceLogoutException.cs" />
     <Compile Include="Exceptions\IdleTimeoutException.cs" />
-    <Compile Include="Helpers\TcpClientFactory.cs" />
     <Compile Include="Helpers\VoiceRequestQueueManager.cs" />
     <Compile Include="Menus\About.cs" />
     <Compile Include="Menus\Bells.cs" />

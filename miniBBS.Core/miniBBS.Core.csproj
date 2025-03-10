@@ -94,6 +94,7 @@
     <Compile Include="Interfaces\IDataModel.cs" />
     <Compile Include="Interfaces\IDependencyResolver.cs" />
     <Compile Include="Interfaces\IFileTransferProtocol.cs" />
+    <Compile Include="Interfaces\IGopherServer.cs" />
     <Compile Include="Interfaces\IHasher.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IMessager.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Interfaces\IUserIo.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
     <Compile Include="Models\Control\GopherDocumentFetchContext.cs" />
+    <Compile Include="Models\Control\GopherServerOptions.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />
     <Compile Include="Models\Control\LoginRecord.cs" />

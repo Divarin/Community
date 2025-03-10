@@ -858,7 +858,7 @@ namespace miniBBS.Commands
             var eq = "=".Color(ConsoleColor.DarkGray);
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
             {
-                session.Io.OutputLine($"{Constants.Inverser}*** Community Bulletins Menu ***{Constants.Inverser}\r\n".Color(ConsoleColor.DarkMagenta));
+                session.Io.OutputLine($"{Constants.Inverser}*** {Constants.BbsName} Bulletins Menu ***{Constants.Inverser}\r\n".Color(ConsoleColor.DarkMagenta));
                 session.Io.OutputLine(
                     $"{Constants.Inverser}I{Constants.Inverser}".Color(ConsoleColor.Green) + eq + $"{numArchived} Archived: {(includeArchived ? "Shown".Color(ConsoleColor.Red) : "Hidden".Color(ConsoleColor.Cyan))}");
                 session.Io.OutputLine(

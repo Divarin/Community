@@ -5,8 +5,10 @@ namespace miniBBS.Core
 {
     public static class Constants
     {
-        public const string Version = "5.18c - 2025.03.02";
+        public const string BbsName = "Community";
+        public const string Version = "5.19 - 2025.03.10";
         public const string SysopName = "Divarin";
+        public const string BbsLocation = "Cleveland";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
         public const int MinimumPasswordLength = 5;
@@ -33,6 +35,14 @@ namespace miniBBS.Core
             get
             {
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
+            }
+        }
+
+        public static string Hostname
+        {
+            get
+            {
+                return IsLocal ? "127.0.0.1" : "mutinybbs.com";
             }
         }
 
@@ -78,7 +88,7 @@ namespace miniBBS.Core
         
         public const int MaxFileBackups = 9;
 
-        public const string local_TextFileRootDirectory = @"C:\code\textfiles\";
+        public const string local_TextFileRootDirectory = @"c:\textfiles\"; // @"C:\code\textfiles\";
         public const string local_UploadDirectory = @"c:\work\";
 
         public static readonly string[] IllegalUsernames = new[]
@@ -175,12 +185,20 @@ namespace miniBBS.Core
         public static class Files
         {
             public const string NewUser = "newuser.txt";
+            // how the "users" directory is displayed.
+            public const string UserAreaDirectoryDisplayName = "CommunityUsers";
         }
 
         public static class Basic
         {
             public const char QuoteSubstitute = (char)159;
             public const char Quote = '"';
+        }
+
+        public static class Gopher
+        {
+            public static bool ServerEnabled = true;
+            public static int ServerPort = 70;
         }
     }
 }

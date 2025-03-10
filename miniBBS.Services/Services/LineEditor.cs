@@ -40,7 +40,7 @@ namespace miniBBS.Services.Services
                 var cmdResult = CommandResult.None;
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
-                session.Io.OutputLine($"Mutiny Community Line Editor.  Type '/?' on a blank line for help.");
+                session.Io.OutputLine($"{Constants.BbsName} Line Editor.  Type '/?' on a blank line for help.");
                 if (!string.IsNullOrWhiteSpace(parameters?.Filename))
                     session.Io.OutputLine($"Now Editing: {parameters.Filename.Color(ConsoleColor.Yellow)}");
                 session.Io.OutputLine($" {'-'.Repeat(session.Cols - 3)} ");

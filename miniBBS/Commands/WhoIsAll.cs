@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
@@ -73,7 +74,7 @@ namespace miniBBS.Commands
                 users = users.Where(u => u.TotalLogons >= n);
 
             var builder = new StringBuilder();
-            builder.AppendLine("* Community users *".Color(ConsoleColor.Magenta));
+            builder.AppendLine($"* {Constants.BbsName} users *".Color(ConsoleColor.Magenta));
             switch (sort)
             {
                 case '1': builder.AppendLine("Last Login      Username".Color(ConsoleColor.White)); break;

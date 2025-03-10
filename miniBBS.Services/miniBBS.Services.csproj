@@ -74,6 +74,7 @@
     <Compile Include="Services\NotificationHandler.cs" />
     <Compile Include="Services\SessionsList.cs" />
     <Compile Include="Services\SqlUi.cs" />
+    <Compile Include="Services\TcpClientFactory.cs" />
     <Compile Include="Services\Xmodem.cs" />
   </ItemGroup>
   <ItemGroup>

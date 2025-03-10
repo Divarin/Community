@@ -70,7 +70,7 @@ namespace miniBBS.TextFiles
                     if (flags.HasFlag(FilesLaunchFlags.MoveToUserHomeDirectory))
                     {
                         flags &= ~FilesLaunchFlags.MoveToUserHomeDirectory;
-                        command = $"cd /CommunityUsers/{_session.User.Name}";
+                        command = $"cd /{Constants.Files.UserAreaDirectoryDisplayName}/{_session.User.Name}";
                     }
                     else if (flags.HasFlag(FilesLaunchFlags.ReturnToPreviousDirectory) && !string.IsNullOrWhiteSpace(_session.PreviousFilesDirectory))
                     {
@@ -160,7 +160,7 @@ namespace miniBBS.TextFiles
         public IEnumerable<string> FindBasicPrograms(BbsSession session, bool scripts = false)
         {
             var root = TopLevel.GetLinks()
-                .FirstOrDefault(l => l.IsDirectory && "CommunityUsers".Equals(l.DisplayedFilename, StringComparison.CurrentCultureIgnoreCase));
+                .FirstOrDefault(l => l.IsDirectory && Constants.Files.UserAreaDirectoryDisplayName.Equals(l.DisplayedFilename, StringComparison.CurrentCultureIgnoreCase));
             Queue<Link> subdirs = new Queue<Link>();
             subdirs.Enqueue(root);
             do
@@ -858,8 +858,8 @@ namespace miniBBS.TextFiles
         {
             if (dirNameOrNumber == "~" || string.IsNullOrWhiteSpace(dirNameOrNumber))
             {
-                _session.Io.Error($"Interpreting '{dirNameOrNumber}' as '/CommunityUsers/{_session.User.Name}'");
-                dirNameOrNumber = $"/CommunityUsers/{_session.User.Name}";
+                _session.Io.Error($"Interpreting '{dirNameOrNumber}' as '/{Constants.Files.UserAreaDirectoryDisplayName}/{_session.User.Name}'");
+                dirNameOrNumber = $"/{Constants.Files.UserAreaDirectoryDisplayName}/{_session.User.Name}";
             }
             
             if (dirNameOrNumber.Length > 1 && (dirNameOrNumber.StartsWith("/") || dirNameOrNumber.StartsWith("\\")))
@@ -894,7 +894,7 @@ namespace miniBBS.TextFiles
                     if (linkNum < 0)
                     {
                         if ("desktop".Equals(dirNameOrNumber, StringComparison.CurrentCultureIgnoreCase))
-                            ChangeDirectory($"/CommunityUsers/{_session.User.Name}", links);
+                            ChangeDirectory($"/{Constants.Files.UserAreaDirectoryDisplayName}/{_session.User.Name}", links);
                         else
                             _session.Io.OutputLine("Invalid file/directory name.");
                     }

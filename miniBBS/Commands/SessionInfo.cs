@@ -134,8 +134,8 @@ namespace miniBBS.Commands
             var builder = new StringBuilder();
 
             builder.AppendLine($"{now:yy-MM-dd HH:mm:ss} - UTC");
-            var communityUptime = now - SysopScreen.StartedAtUtc;
-            builder.AppendLine($"{DateTime.Now:yy-MM-dd HH:mm:ss} - Community (Cleveland) ({communityUptime.Dhm()})");
+            var bbsUptime = now - SysopScreen.StartedAtUtc;
+            builder.AppendLine($"{DateTime.Now:yy-MM-dd HH:mm:ss} - {Constants.BbsName} ({Constants.BbsLocation}) ({bbsUptime.Dhm()})");
             builder.AppendLine(" --- Active Sessions ---".Color(ConsoleColor.DarkGray));
 
             foreach (var s in sessions)

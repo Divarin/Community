@@ -310,7 +310,8 @@ namespace miniBBS.TextFiles
                 else
                     destLink = links.FirstOrDefault(l => l.DisplayedFilename.Equals(destNameOrNum, StringComparison.CurrentCultureIgnoreCase));
 
-                destNameOrNum = destLink?.DisplayedFilename;
+                if (destLink != null)
+                    destNameOrNum = destLink.DisplayedFilename;
             }
 
             if (dst == null)

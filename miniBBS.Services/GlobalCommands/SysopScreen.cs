@@ -87,7 +87,7 @@ namespace miniBBS.Services.GlobalCommands
             Console.Write("║");
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write($"Mutiny Community Version {Constants.Version}".PadAndCenter(78));
+            Console.Write($"{Constants.BbsName} Version {Constants.Version}".PadAndCenter(78));
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("║║");

@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
@@ -379,7 +380,7 @@ namespace miniBBS.Commands
                 ConsoleColor.Magenta
             };
 
-            const string msg = "Welcome to Mutiny Community!";
+            var msg = $"Welcome to {Constants.BbsName}!";
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
             {

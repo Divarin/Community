@@ -13,7 +13,8 @@ namespace miniBBS
         private static Dictionary<Type, Func<object>> _dictionary = new Dictionary<Type, Func<object>>()
         {
             {typeof(IHasher), () => GetOrSetSingleton(() => new Hasher())},
-            {typeof(ITextFilesBrowser), () =>  new TextFiles.TextFilesBrowser()}
+            {typeof(ITextFilesBrowser), () =>  new TextFiles.TextFilesBrowser()},
+            {typeof(IGopherServer), () => new TextFiles.GopherServer()},
         };
 
         public static IRepository<T> GetRepository<T>()

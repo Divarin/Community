@@ -11,7 +11,7 @@ namespace miniBBS.Menus
 
         private static readonly string[] _lines = new[]
         {
-            $"{Constants.Inverser}*** {_clr("Community Misc Menu", ConsoleColor.Yellow)} ***{Constants.Inverser}",
+            $"{Constants.Inverser}*** {_clr($"{Constants.BbsName} Misc Menu", ConsoleColor.Yellow)} ***{Constants.Inverser}",
             $"{_clr($"{Constants.Inverser}/main{Constants.Inverser}", ConsoleColor.Green)} : Shows the BBS's Main Menu",
             $"{_clr($"{Constants.Inverser}/newuser{Constants.Inverser}", ConsoleColor.Green)} : Read new user docs",
             $"{_clr($"{Constants.Inverser}/doors{Constants.Inverser}", ConsoleColor.Green)} : Finds all user-made BASIC programs and quick-launch them.",

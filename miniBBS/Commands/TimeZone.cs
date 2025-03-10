@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Models.Control;
+﻿using miniBBS.Core;
+using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
 
@@ -29,10 +30,11 @@ namespace miniBBS.Commands
 
         private static string AskForAdjustment(BbsSession session)
         {
-            int et = (int)(DateTime.Now - DateTime.UtcNow).TotalHours;
+            var utcNow = DateTime.UtcNow;
             session.Io.OutputLine($"Currently times are being adjusted from UTC by {session.TimeZone} hours.");
-            session.Io.OutputLine($"For Time Zone offset (examples: 0 = UTC, {et} = US Eastern Time)");
-            session.Io.Output("Time Zone Offet (-23 to 23): ");
+            session.Io.OutputLine($"Current Time UTC:      {utcNow:HH:mm:ss}");
+            session.Io.OutputLine($"Current Time Adjusted: {utcNow.AddHours(session.TimeZone):HH:mm:ss}");
+            session.Io.Output("Time Zone Offet (-23 to 23): ".Color(ConsoleColor.Yellow));
             return session.Io.InputLine()?.Trim();
         }
     }

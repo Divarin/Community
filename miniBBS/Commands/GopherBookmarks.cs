@@ -19,6 +19,12 @@ namespace miniBBS.Commands
                 Selector = "gopher://gopher.floodgap.com"
             };
 
+            var localStart = new GopherBookmark
+            {
+                Title = Constants.BbsName,
+                Selector = $"gopher://{Constants.Hostname}",
+            };
+
             while (true)
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.White))
@@ -29,14 +35,17 @@ namespace miniBBS.Commands
                         " Default Start: Floodgap");
                     session.Io.OutputLine(
                         $"{Constants.Inverser}2{Constants.Inverser})".Color(ConsoleColor.DarkMagenta) +
-                        " Your Private Bookmarks");
+                        $" Default Start: {Constants.BbsName} Users");
                     session.Io.OutputLine(
                         $"{Constants.Inverser}3{Constants.Inverser})".Color(ConsoleColor.DarkMagenta) +
+                        " Your Private Bookmarks");
+                    session.Io.OutputLine(
+                        $"{Constants.Inverser}4{Constants.Inverser})".Color(ConsoleColor.DarkMagenta) +
                         " Public Bookmarks");
                     if (currentLocation != null)
                     {
                         session.Io.OutputLine(
-                            $"{Constants.Inverser}4{Constants.Inverser})".Color(ConsoleColor.DarkMagenta) +
+                            $"{Constants.Inverser}5{Constants.Inverser})".Color(ConsoleColor.DarkMagenta) +
                             " Add Bookmark of Current Location");
                     }
                     session.Io.OutputLine(
@@ -50,15 +59,16 @@ namespace miniBBS.Commands
                     switch (key)
                     {
                         case '1': return defaultStart;
-                        case '2':
+                        case '2': return localStart;
+                        case '3':
                             bookmark = GetPrivateBookmark(session);
                             if (bookmark != null) return bookmark;
                             break;
-                        case '3':
+                        case '4':
                             bookmark = GetPublicBookmark(session);
                             if (bookmark != null) return bookmark;
                             break;
-                        case '4':
+                        case '5':
                         case 'A':
                             if (currentLocation != null)
                             {

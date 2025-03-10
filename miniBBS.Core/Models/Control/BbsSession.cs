@@ -251,7 +251,7 @@ namespace miniBBS.Core.Models.Control
                             case PingPongType.ScreenSaver:
                                 session.Io.Output(Repeat(Environment.NewLine, _random.Next(3, 8)));
                                 session.Io.Output(Repeat(" ", _random.Next(5, session.Cols-31)));
-                                session.Io.Output($"[Mutiny Community ({DateTime.UtcNow.AddHours(session.TimeZone):HH:mm:ss})]");
+                                session.Io.Output($"[{Constants.BbsName} ({DateTime.UtcNow.AddHours(session.TimeZone):HH:mm:ss})]");
                                 session.Io.Output(Repeat(Environment.NewLine, _random.Next(3, 8)));
                                 session.Io.Output(Repeat(" ", _random.Next(5, session.Cols - 1)));
                                 break;

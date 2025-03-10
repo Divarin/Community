@@ -1,4 +1,5 @@
-﻿using miniBBS.TextFiles.Models;
+﻿using miniBBS.Core;
+using miniBBS.TextFiles.Models;
 using System.Collections.Generic;
 
 namespace miniBBS.TextFiles
@@ -290,14 +291,14 @@ namespace miniBBS.TextFiles
             yield return new Link
             {
                 ActualFilename = "users/index.html",
-                Description = "Mutiny Community User Area",
-                DisplayedFilename = "CommunityUsers"
+                Description = $"{Constants.BbsName} User Area",
+                DisplayedFilename = Constants.Files.UserAreaDirectoryDisplayName
             };
 
             yield return new Link
             {
                 ActualFilename = "xfer/index.html",
-                Description = "Mutiny File Transfer Exchange",
+                Description = "File Transfer Exchange",
                 DisplayedFilename = "Xfer"
             };
         }

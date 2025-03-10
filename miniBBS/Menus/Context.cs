@@ -10,7 +10,7 @@ namespace miniBBS.Menus
         {
             $"{Constants.Inverser}*** Context Help ***{Constants.Inverser}",
             $"{Constants.Spaceholder}",
-            "Although Mutiny Community is a chat system modelled after IRC (but with history for non-real-time converstaion) there is still " +
+            $"Although {Constants.BbsName} is a chat system modelled after IRC (but with history for non-real-time converstaion) there is still " +
             "a concept of threads.  When someone types something into the chat, the last message that they read before entering their own is attached " +
             $"to their message.  This is shown as '{Constants.Inverser}re: 123{Constants.Inverser}' (where 123 is the last message they read before typing).",
             $"{Constants.Spaceholder}",

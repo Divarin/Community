@@ -21,7 +21,7 @@ namespace miniBBS.Commands
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
-                session.Io.OutputLine($"{Constants.Inverser}* Who is on Community right now *{Constants.Inverser}");
+                session.Io.OutputLine($"{Constants.Inverser}* Who is on {Constants.BbsName} right now *{Constants.Inverser}");
 
                 var sessionGroups = sessionsList
                     .Sessions

@@ -377,7 +377,7 @@ namespace miniBBS.Commands
         };
 
         private static readonly string _menu =
-            " *** Community Message Base Menu *** \n".Color(ConsoleColor.Magenta) +
+            $" *** {Constants.BbsName} Message Base Menu *** \n".Color(ConsoleColor.Magenta) +
             Environment.NewLine +
             "[".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Previous Channel  ".Replace(" ", $"{Constants.Spaceholder}").Color(ConsoleColor.White) +
             "]".Color(ConsoleColor.Green) + "=".Color(ConsoleColor.DarkGray) + "Next Channel".Color(ConsoleColor.White) +

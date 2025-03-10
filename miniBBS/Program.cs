@@ -33,15 +33,27 @@ namespace miniBBS
         public static SystemControlFlag SysControl = SystemControlFlag.Normal;
 
         static void Main(string[] args)
-        {            
+        {
+            if (args?.Length < 1 || !int.TryParse(args[0], out int port))
+                port = 23;
+
+            if (Constants.Gopher.ServerEnabled)
+            {
+                var gopherServerThread = new Thread(new ParameterizedThreadStart(StartGophserServer));
+                Console.WriteLine("Starting Gopher Server");
+                gopherServerThread.Start(new GopherServerOptions
+                {
+                    BbsPort = port,
+                    GopherServerPort = Constants.Gopher.ServerPort,
+                    SystemControl = SysControl,
+                });
+            }
+
             TcpListener listener = null;
 
             try
             {
-                if (args?.Length < 1 || !int.TryParse(args[0], out int port))
-                    port = 23;
-
-                if (args?.Length >= 2 && args[1] == "local")
+                if (true == args?.Any(a => "local".Equals(a, StringComparison.CurrentCultureIgnoreCase)))
                     Constants.IsLocal = true;
 
                 _logger = DI.Get<ILogger>();
@@ -90,7 +102,13 @@ namespace miniBBS
                 }
             }
 
-            listener?.Stop();            
+            listener?.Stop();
+        }
+
+        static void StartGophserServer(object o)
+        {
+            var options = o as GopherServerOptions;
+            DI.Get<IGopherServer>().StartServer(options);
         }
 
         private static void BeginConnection(object o)
@@ -164,7 +182,7 @@ namespace miniBBS
                             TermSetup.Execute(session, detectedEmulation);
                             Banners.Show(session);
 
-                            session.Io.OutputLine("Mutiny".Color(ConsoleColor.Red) + " Community".Color(ConsoleColor.Cyan) + $" Version {Constants.Version}.".Color(ConsoleColor.Yellow));
+                            session.Io.OutputLine(Constants.BbsName.Color(ConsoleColor.Cyan) + $" Version {Constants.Version}.".Color(ConsoleColor.Yellow));
                             
                             try
                             {
@@ -404,7 +422,7 @@ namespace miniBBS
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
             {
-                session.Io.Output($"{Constants.Inverser}* Community Login Notifications *{Constants.Inverser}");
+                session.Io.Output($"{Constants.Inverser}* {Constants.BbsName} Login Notifications *{Constants.Inverser}");
                 session.Io.SetForeground(ConsoleColor.White);
                 session.Io.OutputLine();
 
@@ -1569,8 +1587,8 @@ namespace miniBBS
                 case "/uptime":
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                     {
-                        var communityUptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
-                        session.Io.OutputLine($"Community Uptime: {communityUptime.Days}d {communityUptime.Hours}h {communityUptime.Minutes}m");
+                        var bbsUptime = DateTime.UtcNow - SysopScreen.StartedAtUtc;
+                        session.Io.OutputLine($"{Constants.BbsName} Uptime: {bbsUptime.Days}d {bbsUptime.Hours}h {bbsUptime.Minutes}m");
                     }
                     return;
                 case "/vote":

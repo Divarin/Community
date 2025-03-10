@@ -14,7 +14,7 @@ namespace miniBBS.Commands
 
         private static readonly string[] _menu = new[]
         {
-            $"{_clr("***", ConsoleColor.Yellow)} {_clr($"{Constants.Inverser}Mutiny Community Main Menu{Constants.Inverser}", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
+            $"{_clr("***", ConsoleColor.Yellow)} {_clr($"{Constants.Inverser}{Constants.BbsName} Main Menu{Constants.Inverser}", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
             $"{_clr($"{Constants.Inverser}M{Constants.Inverser}", ConsoleColor.Green)}) Message Bases / Bulletin Boards",
             $"{_clr($"{Constants.Inverser}C{Constants.Inverser}", ConsoleColor.Green)}) Chat Rooms (with history)",
             $"{_clr($"{Constants.Inverser}N{Constants.Inverser}", ConsoleColor.Green)}) NullSpace Chat",
@@ -28,28 +28,7 @@ namespace miniBBS.Commands
             $"{_clr($"{Constants.Inverser}U{Constants.Inverser}", ConsoleColor.Green)}) User List",
             $"{_clr($"{Constants.Inverser}P{Constants.Inverser}", ConsoleColor.Green)}) Preferences",
             $"{_clr($"{Constants.Inverser}O{Constants.Inverser}", ConsoleColor.Green)}) Logoff",
-            //$"{_clr("L", ConsoleColor.Green)}) Learn how to do more with Community!"
         };
-
-//        private const string _learn =
-//"Mutiny Community BBS is not a traditional BBS.  The vast majority of its functionality is based in the Chat Rooms because " +
-//"this is primarily a chat based system.  The chats posted to the chat rooms are persisted and act as a message base.  That means you can read " +
-//"and respond to chats that have been left in the past and you can post chats that can be read in the future. " +
-//"\r\n\r\n" +
-//"This means that the M)essage Base messages and the C)hat room messages are one and the same.  The only difference is the look and feel of how you " +
-//"interact with those messages.  If you prefer a traditional Message Base style then feel free to use it.  However, in this mode, you cannot engage in real-time chats " +
-//"with users who are currently on Community.  Alternatively you can use the Chat room interface to read and post messages and if people are online " +
-//"right now they will see these messages and can respond right away and you'll see their response and thus real-time conversation will ensue!" +
-//"\r\n\r\n" +
-//"Since this BBS was originally built out as a chat based system most of the functionality is accessed via slash commands (commands starting with a '/') " +
-//"in the chat room.  For example you can /whisper to another user or /wave to users or run bots using commands like /guessbot. " +
-//"\r\n\r\n" +
-//"You can also create your own channels (remember a chat channel *IS* a message base, they are one and the same).  But you can only create channels from chat mode. " +
-//"Although, once created they are accessible from the Message Base interface as well." +
-//"\r\n\r\n" +
-//"Everything that you can do from this Main Menu can be done through some sort of slash command in chat and more.  There is a lot of functionality that is not " +
-//"covered in this main menu.  The main menu is to help new users who are familiar with traditional BBSs.  If you want to learn more about the unique features " +
-//"of Community then go into C)hat mode and use the slash command '/?' to start learning.";
 
         /// <summary>
         /// Returns true if the user has decided to keep using the BBS in normal (chat) mode, otherwise false if they want to leave
