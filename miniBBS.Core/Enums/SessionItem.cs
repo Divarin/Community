@@ -26,6 +26,8 @@
         /// <summary>
         /// If true then all chats will be shown, otherwise will be filtered to unarchived chats only.
         /// </summary>
-        ShowChatArchive
+        ShowChatArchive,
+        BookmarkPercentage,
+        MenuFiles
     }
 }

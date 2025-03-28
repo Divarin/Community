@@ -199,6 +199,8 @@ namespace miniBBS.UserIo
                     case (char)13: result.Add((char)155); break; // newline
                     case (char)10: break; // skip linefeeds
                     case '\b': result.Add((char)126); break; // backspace
+                    case (char)253: break; // ² skip bell
+                    case (char)125: break; // } skip clear screen
                     default:
                         if (_asciiToAtascii.TryGetValue((byte)text[i], out var atascii))
                             result.Add((char)atascii);

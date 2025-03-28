@@ -8,7 +8,7 @@
         NewUserRegistration,
         Chat,
         Email,
-        TextFilesBrowser,
+        FileSystem,
         TextFileEditor,
         TextFileReader,
         MainMenu,

@@ -1,5 +1,6 @@
 ﻿using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 using System;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace miniBBS.Basic.Executors
         /// <summary>
         /// Returns the statement portion (the THEN) if the condition is true, otherwise returns null
         /// </summary>
-        public static string Execute(string line, Variables variables)
+        public static string Execute(BbsSession session, string line, Variables variables)
         {
             const string then = "THEN";
             // if condition then statement
@@ -27,11 +28,11 @@ namespace miniBBS.Basic.Executors
 
                 //condition = line.Substring(0, pos)?.Trim();
                 string b;
-                bool? variableExists = CheckingVariableIsDefined(condition, variables);
+                bool? variableExists = CheckingVariableIsDefined(session, condition, variables);
                 if (variableExists.HasValue)
                     b = variableExists.Value ? "1" : "0";
                 else
-                    b = Evaluate.Execute(condition, variables);
+                    b = Evaluate.Execute(session, condition, variables);
 
                 if ("1".Equals(b))
                 {
@@ -46,20 +47,20 @@ namespace miniBBS.Basic.Executors
             return null;
         }
 
-        private static bool? CheckingVariableIsDefined(string condition, Variables variables)
+        private static bool? CheckingVariableIsDefined(BbsSession session, string condition, Variables variables)
         {
             string variableName = null;
 
             if (condition.StartsWith("defined ", StringComparison.CurrentCultureIgnoreCase))
             {
                 variableName = condition.Substring(8).Replace(" ", "");
-                variableName = variables.EvaluateArrayExpressions(variableName);
+                variableName = variables.EvaluateArrayExpressions(session, variableName);
                 return variables.Keys.Any(k => k.Equals(variableName, StringComparison.CurrentCultureIgnoreCase));
             }
             else if (condition.StartsWith("not defined ", StringComparison.CurrentCultureIgnoreCase))
             {
                 variableName = condition.Substring(12).Trim();
-                variableName = variables.EvaluateArrayExpressions(variableName);
+                variableName = variables.EvaluateArrayExpressions(session, variableName);
                 return !variables.Keys.Any(k => k.Equals(variableName, StringComparison.CurrentCultureIgnoreCase));
             }
 

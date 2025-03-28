@@ -20,7 +20,7 @@ namespace miniBBS.Commands
             $"{_clr($"{Constants.Inverser}N{Constants.Inverser}", ConsoleColor.Green)}) NullSpace Chat",
             $"{_clr($"{Constants.Inverser}L{Constants.Inverser}", ConsoleColor.Green)}) Live Chat Calendar",
             $"{_clr($"{Constants.Inverser}E{Constants.Inverser}", ConsoleColor.Green)}) E-Mail",
-            $"{_clr($"{Constants.Inverser}T{Constants.Inverser}", ConsoleColor.Green)}) Text Files",
+            $"{_clr($"{Constants.Inverser}F{Constants.Inverser}", ConsoleColor.Green)}) File System",
             $"{_clr($"{Constants.Inverser}G{Constants.Inverser}", ConsoleColor.Green)}) Gopher",
             $"{_clr($"{Constants.Inverser}V{Constants.Inverser}", ConsoleColor.Green)}) Voting Booth",
             $"{_clr($"{Constants.Inverser}D{Constants.Inverser}", ConsoleColor.Green)}) Door Games",
@@ -47,14 +47,18 @@ namespace miniBBS.Commands
 
             var originalLocation = session.CurrentLocation;
             var originalDnd = session.DoNotDisturb;
-            session.CurrentLocation = Core.Enums.Module.MainMenu;
+            session.CurrentLocation = Module.MainMenu;
             session.DoNotDisturb = true;
 
             try
             {
                 while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
                 {
-                    session.Io.OutputLine(string.Join(Environment.NewLine, _menu));
+                    session.Io.SetForeground(ConsoleColor.White);
+
+                    if (!DI.Get<IMenuFileLoader>().TryShow(session, MenuFileType.Main))
+                        session.Io.OutputLine(string.Join(Environment.NewLine, _menu));
+
                     session.Io.Output($"{Constants.Inverser}[Main Menu] >{Constants.Inverser} ");
                     var key = session.Io.InputKey();
                     session.Io.OutputLine();
@@ -81,6 +85,7 @@ namespace miniBBS.Commands
                             case 'G':
                                 Gopher.Execute(session);
                                 break;
+                            case 'F':
                             case 'T':
                                 {
                                     var browser = DI.Get<ITextFilesBrowser>();

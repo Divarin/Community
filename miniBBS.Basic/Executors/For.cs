@@ -1,8 +1,8 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
-using System.Linq;
 
 namespace miniBBS.Basic.Executors
 {
@@ -23,7 +23,7 @@ namespace miniBBS.Basic.Executors
 
         }
 
-        public bool Execute(string line, Variables variables, StatementPointer firstStatementPosition)
+        public bool Execute(BbsSession session, string line, Variables variables, StatementPointer firstStatementPosition)
         {
             FirstStatementPosition = firstStatementPosition;
             _variables = variables;
@@ -57,9 +57,9 @@ namespace miniBBS.Basic.Executors
                 strStep = parts[1]; // assign step value
             }
 
-            strStart = Evaluate.Execute(strStart, variables);
-            strEnd = Evaluate.Execute(strEnd, variables);
-            strStep = Evaluate.Execute(strStep, variables);
+            strStart = Evaluate.Execute(session, strStart, variables);
+            strEnd = Evaluate.Execute(session, strEnd, variables);
+            strStep = Evaluate.Execute(session, strStep, variables);
 
             // try to parse all those ints
             if (!int.TryParse(strStart, out _current))

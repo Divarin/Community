@@ -3,6 +3,7 @@ using miniBBS.Basic.Executors;
 using miniBBS.Basic.Interfaces;
 using miniBBS.Core;
 using miniBBS.Core.Interfaces;
+using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using miniBBS.Services;
 using Newtonsoft.Json;
@@ -31,7 +32,7 @@ namespace miniBBS.Basic.Models
                     .Replace('\t', ',')
                     .Replace(" ", "");
 
-                key = EvaluateArrayExpressions(key);
+                key = EvaluateArrayExpressions(null, key);
 
                 if (_environmentVariableValues.ContainsKey(key))
                     return _environmentVariableValues[key];
@@ -44,7 +45,7 @@ namespace miniBBS.Basic.Models
             }
             set
             {
-                key = EvaluateArrayExpressions(key);
+                key = EvaluateArrayExpressions(null, key);
                 if (true == EnvironmentVariables?.ContainsKey(key))
                     throw new RuntimeException($"'{key}' is an Environment Variable");
 
@@ -175,7 +176,7 @@ namespace miniBBS.Basic.Models
             }
         }
 
-        public string EvaluateArrayExpressions(string key)
+        public string EvaluateArrayExpressions(BbsSession session, string key)
         {
             if (string.IsNullOrWhiteSpace(key))
                 return key;
@@ -207,7 +208,7 @@ namespace miniBBS.Basic.Models
 
                         string value = exp;
                         if (!string.IsNullOrWhiteSpace(value) && !int.TryParse(value, out int _i))
-                            value = Evaluate.Execute(exp, this);
+                            value = Evaluate.Execute(session, exp, this);
                         if (exp.EndsWith("$"))
                             value = '\'' + value + '\'';
 
@@ -241,7 +242,7 @@ namespace miniBBS.Basic.Models
 
         public bool ContainsKey(string key)
         {
-            key = EvaluateArrayExpressions(key);
+            key = EvaluateArrayExpressions(null, key);
             return _globals.ContainsKey(key) || EnvironmentVariables.ContainsKey(key);
         }
 

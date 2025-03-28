@@ -40,7 +40,7 @@ namespace miniBBS.TextFiles
             var origionalShowPrompt = _session.ShowPrompt;
             var originalDnd = _session.DoNotDisturb;
             var originalLocation = _session.CurrentLocation;
-            _session.CurrentLocation = Module.TextFilesBrowser;
+            _session.CurrentLocation = Module.FileSystem;
 
             _session.Io.Error("Entering Files subsystem, use DOS/*NIX like commands to get around.  Type 'QUIT' to exit or '?' for help.");
 

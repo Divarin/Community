@@ -8,7 +8,7 @@ namespace miniBBS.Basic.Executors
     {
         public static void Execute(BbsSession session, string line, Variables variables)
         {
-            InputParameters p = ParseInputParameters(line, variables);
+            InputParameters p = ParseInputParameters(session, line, variables);
             if (!string.IsNullOrWhiteSpace(p.Question))
                 session.Io.Output(p.Question);
 
@@ -32,14 +32,14 @@ namespace miniBBS.Basic.Executors
             }
         }
 
-        private static InputParameters ParseInputParameters(string line, Variables variables)
+        private static InputParameters ParseInputParameters(BbsSession session, string line, Variables variables)
         {
             InputParameters p = new InputParameters();
             int pos = line.IndexOf(';');
             if (pos > 0)
             {
                 string question = line.Substring(0, pos);
-                question = Evaluate.Execute(question, variables);
+                question = Evaluate.Execute(session, question, variables);
                 p.Question = question;
                 line = line.Substring(pos + 1);
             }

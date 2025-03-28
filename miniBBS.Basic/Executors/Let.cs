@@ -49,7 +49,7 @@ namespace miniBBS.Basic.Executors
                         variableName.Contains("$") ||
                         (value.StartsWith("\"") && value.EndsWith("\""));
 
-                    value = Evaluate.Execute(value, variables);
+                    value = Evaluate.Execute(session, value, variables);
 
                     if (!string.IsNullOrWhiteSpace(rootDirectory) && value.StartsWith("@") && value.Length > 1)
                     {

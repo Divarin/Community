@@ -112,14 +112,17 @@ namespace miniBBS.Commands
         {
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                session.Io.OutputLine($"{Constants.Inverser} *** E-Mail ***{Constants.Inverser}");
-                session.Io.SetForeground(ConsoleColor.Yellow);
-                session.Io.OutputLine("L".Color(ConsoleColor.Green) + $") List your mail (+read & delete)");
-                session.Io.OutputLine("O".Color(ConsoleColor.Green) + $") List outgoing (sent) mails");
-                session.Io.OutputLine("D".Color(ConsoleColor.Green) + $") Delete all of your mail");
-                session.Io.OutputLine("S".Color(ConsoleColor.Green) + $") Send mail");
-                session.Io.OutputLine("F".Color(ConsoleColor.Green) + $") Feedback to Sysop");
-                session.Io.OutputLine("Q".Color(ConsoleColor.Green) + $") Quit E-Mail");
+                if (!DI.Get<IMenuFileLoader>().TryShow(session, MenuFileType.Email))
+                {
+                    session.Io.OutputLine($"{Constants.Inverser} *** E-Mail ***{Constants.Inverser}");
+                    session.Io.SetForeground(ConsoleColor.Yellow);
+                    session.Io.OutputLine("L".Color(ConsoleColor.Green) + $") List your mail (+read & delete)");
+                    session.Io.OutputLine("O".Color(ConsoleColor.Green) + $") List outgoing (sent) mails");
+                    session.Io.OutputLine("D".Color(ConsoleColor.Green) + $") Delete all of your mail");
+                    session.Io.OutputLine("S".Color(ConsoleColor.Green) + $") Send mail");
+                    session.Io.OutputLine("F".Color(ConsoleColor.Green) + $") Feedback to Sysop");
+                    session.Io.OutputLine("Q".Color(ConsoleColor.Green) + $") Quit E-Mail");
+                }
 
                 var k = session.Io.Ask("[Mail]");
                 switch (k)

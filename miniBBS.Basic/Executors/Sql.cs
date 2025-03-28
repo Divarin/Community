@@ -38,7 +38,7 @@ namespace miniBBS.Basic.Executors
                 return;
             }
 
-            sql = Evaluate.Execute(sql, variables);
+            sql = Evaluate.Execute(session, sql, variables);
 
             if (sql.StartsWith("\"") && sql.Length > 1)
                 sql = sql.Substring(1);
@@ -82,7 +82,7 @@ namespace miniBBS.Basic.Executors
 
             var arguments = args?.Split(' ');
             var stateKey = arguments?.First();
-            stateKey = Evaluate.Execute(stateKey, variables);
+            stateKey = Evaluate.Execute(session, stateKey, variables);
 
             stateKey = stateKey
                 ?.Replace("\"", "")

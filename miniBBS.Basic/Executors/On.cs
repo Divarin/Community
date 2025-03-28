@@ -1,5 +1,6 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 using System;
 using System.Linq;
 
@@ -7,7 +8,7 @@ namespace miniBBS.Basic.Executors
 {
     public static class On
     {
-        public static OnResult Execute(string line, Variables variables)
+        public static OnResult Execute(BbsSession session, string line, Variables variables)
         {
             OnResult result = new OnResult()
             {
@@ -37,12 +38,12 @@ namespace miniBBS.Basic.Executors
                     .Substring(lineNumbersStart, line.Length - lineNumbersStart)
                     .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-                var expressionValue = Evaluate.Execute(exp, variables);
+                var expressionValue = Evaluate.Execute(session, exp, variables);
                 if (int.TryParse(expressionValue, out int v))
                 {
                     if (v>=1 && v<= gotos.Length)
                     {
-                        result.LineNumber = GetLineNumber(gotos[v - 1], variables);
+                        result.LineNumber = GetLineNumber(session, gotos[v - 1], variables);
                         result.Success = true;
                     }
                 }
@@ -51,7 +52,7 @@ namespace miniBBS.Basic.Executors
             return result;
         }
 
-        private static int GetLineNumber(string val, Variables variables)
+        private static int GetLineNumber(BbsSession session, string val, Variables variables)
         {
             if (val.StartsWith("!") && val.Length > 1)
                 val = val.Substring(1);
@@ -61,7 +62,7 @@ namespace miniBBS.Basic.Executors
                 return lineNum;
             else if (variables.Labels.ContainsKey(val))
                 return variables.Labels[val];
-            else if (int.TryParse(Evaluate.Execute(val, variables), out lineNum))
+            else if (int.TryParse(Evaluate.Execute(session, val, variables), out lineNum))
                 return lineNum;
             else
                 throw new RuntimeException($"Unable to parse {val} as a line number on GO statement.");

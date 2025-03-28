@@ -1,6 +1,7 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace miniBBS.Basic.Executors
         private List<string> _values = new List<string>();
         private int _readPointer = 0;
 
-        public void Read(string line, Variables variables)
+        public void Read(BbsSession session, string line, Variables variables)
         {
             if (_readPointer >= _values.Count)
                 throw new RuntimeException("out of data");
@@ -21,7 +22,7 @@ namespace miniBBS.Basic.Executors
             foreach (var varb in varbs)
             {
                 string value = _values[_readPointer++];
-                value = Evaluate.Execute(value, variables);
+                value = Evaluate.Execute(session, value, variables);
                 variables[varb] = value;
             }
         }

@@ -72,6 +72,7 @@
     <Compile Include="Enums\InputHandlingFlag.cs" />
     <Compile Include="Enums\LoggingOptions.cs" />
     <Compile Include="Enums\LoginStartupMode.cs" />
+    <Compile Include="Enums\MenuFileType.cs" />
     <Compile Include="Enums\MetadataType.cs" />
     <Compile Include="Enums\Module.cs" />
     <Compile Include="Enums\OneTimeQuestion.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="Interfaces\IGopherServer.cs" />
     <Compile Include="Interfaces\IHasher.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
+    <Compile Include="Interfaces\IMenuFileLoader.cs" />
     <Compile Include="Interfaces\IMessager.cs" />
     <Compile Include="Interfaces\INotificationHandler.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
@@ -107,7 +109,7 @@
     <Compile Include="Interfaces\ITextFilesBrowser.cs" />
     <Compile Include="Interfaces\IUserIo.cs" />
     <Compile Include="Models\Control\BbsSession.cs" />
-    <Compile Include="Models\Control\GopherDocumentFetchContext.cs" />
+    <Compile Include="Models\Control\BookmarkedRead.cs" />
     <Compile Include="Models\Control\GopherServerOptions.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />

@@ -142,7 +142,7 @@ namespace miniBBS
                 {
                     var userRepo = DI.GetRepository<User>();
 
-                    session = new BbsSession(sessionsList, stream)
+                    session = new BbsSession(sessionsList, stream, client)
                     {
                         User = null,
                         UserRepo = userRepo,
@@ -180,7 +180,12 @@ namespace miniBBS
                             }
 
                             TermSetup.Execute(session, detectedEmulation);
-                            Banners.Show(session);
+                            
+                            if (!DI.Get<IMenuFileLoader>().TryShow(session, MenuFileType.Login))
+                                Banners.Show(session);
+
+                            session.Io.SetBackground(ConsoleColor.Black);
+                            session.Io.OutputLine();
 
                             session.Io.OutputLine(Constants.BbsName.Color(ConsoleColor.Cyan) + $" Version {Constants.Version}.".Color(ConsoleColor.Yellow));
                             
@@ -326,14 +331,17 @@ namespace miniBBS
             }
 
             ShowLoginNotifications(session, startupMode);
+            BookmarkManager.CheckBookmarkedRead(session);
 
             if (startupMode == LoginStartupMode.MainMenu)
             {
                 session.CurrentLocation = Module.MainMenu;
                 if (!Commands.MainMenu.Execute(session))
                 {
-                    session.Io.OutputLine("Goodbye!");
-                    session.Stream.Close();
+                    if (!DI.Get<IMenuFileLoader>().TryShow(session, MenuFileType.Logout))
+                        session.Io.OutputLine("Goodbye!");
+                    session.Disconnect();
+                    Thread.Sleep(100);
                     return;
                 }
             }
@@ -1156,6 +1164,11 @@ namespace miniBBS
                         session.Io.OutputLine(Constants.Version);
                     }
                     return;
+                case "/bookmark":
+                case "/bookmarks":
+                    if (!BookmarkManager.CheckBookmarkedRead(session))
+                        session.Io.Error("You have no saved bookmarks.");
+                    return;
                 case "/m":
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                     {
@@ -1199,7 +1212,7 @@ namespace miniBBS
                     if (Logout.Execute(session, parts[0], string.Join(" ", parts.Skip(1))))
                     {
                         session.Io.OutputLine("Goodbye!");
-                        session.Stream.Close();
+                        session.Disconnect();
                     }
                     return;
                 case "/seen":
@@ -1227,7 +1240,7 @@ namespace miniBBS
                     {
                         // logoff
                         session.Io.OutputLine("Goodbye!");
-                        session.Stream.Close();
+                        session.Disconnect();
                     }
                     return;
                 case "/ignore":
@@ -1775,6 +1788,9 @@ namespace miniBBS
                 case "messages":
                     Messages.Show(session);
                     break;
+                case "more":
+                    More.Show(session);
+                    break;
                 case "context":
                     Menus.Context.Show(session);
                     break;
@@ -1834,6 +1850,5 @@ namespace miniBBS
                 session.Io.OutputLine(line, OutputHandlingFlag.Nonstop);
             }
         }
-
     }
 }

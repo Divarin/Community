@@ -6,16 +6,17 @@ namespace miniBBS.Basic.Executors
 {
     public static class Get
     {
+        private const char Quote = '"';
+
         public static void Execute(BbsSession session, string line, Variables variables)
         {
-            //session.Io.Output("? ");
-            var inp = session.Io.InputLine(InputHandlingFlag.ReturnFirstCharacterOnly);
-            
-            session.Io.OutputLine();
+            var inp = session.Io.InputKey();// .InputLine(InputHandlingFlag.ReturnFirstCharacterOnly);
+
+            //session.Io.OutputLine();
             if (line.EndsWith("$"))
-                variables[line] = '"' + inp + '"';
+                variables[line] = $"{Quote}{inp}{Quote}";
             else
-                variables[line] = inp;
+                variables[line] = $"{inp}";
         }
     }
 }

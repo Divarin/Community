@@ -373,5 +373,15 @@ namespace miniBBS.Extensions
                 return false;
             return haystack.ToLower().Contains(needle.ToLower());
         }
+
+        public static int LastIndexOf(this string str, Func<char, bool> predicate)
+        {
+            for (var i=str.Length-1; i >= 0; i--)
+            {
+                if (predicate(str[i]))
+                    return i;
+            }
+            return -1;
+        }
     }
 }

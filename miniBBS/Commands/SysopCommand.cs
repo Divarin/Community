@@ -1,4 +1,5 @@
 ﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
@@ -41,6 +42,10 @@ namespace miniBBS.Commands
                 case "newthread":
                 case "chain":
                     ChainMessages(session, startNewThread: "newthread".Equals(args[0], StringComparison.CurrentCultureIgnoreCase), args.Skip(1).ToArray());
+                    break;
+                case "menucache":
+                    DI.Get<IMenuFileLoader>().ClearCache();
+                    session.Io.Error("Menu cache cleared.");
                     break;
             }
         }
@@ -160,6 +165,7 @@ namespace miniBBS.Commands
             builder.AppendLine("maint - run maintenence");
             builder.AppendLine("newthread (n1) (n2) - chains contiguous messages together using re: numbers starting with message # n1 and ending with n2.  n1 is marked as 'new thread'.");
             builder.AppendLine("chain (n1) (n2) - chains contiguous messages together using re: numbers starting with message # n1 and ending with n2.  n1's re: number is left untouched.");
+            builder.AppendLine("menucache - cleared cached menu file data, use if a menu file was updated.");
 
             session.Io.Output(builder.ToString());
         }

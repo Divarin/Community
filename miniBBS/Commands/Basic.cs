@@ -69,7 +69,7 @@ namespace miniBBS.Commands
             string result;
             try
             {
-                result = miniBBS.Basic.Executors.Evaluate.Execute(expr, _variables);
+                result = miniBBS.Basic.Executors.Evaluate.Execute(session, expr, _variables);
             }
             catch (Exception ex)
             {

@@ -113,6 +113,7 @@ namespace miniBBS.Basic
             } 
             finally
             {
+                Files.CloseAllFileHandlers(_session);
                 _session.Io.AbortPollKey();
                 _session.CurrentLocation = originalLocation;
             }
@@ -244,6 +245,7 @@ namespace miniBBS.Basic
                     }
                     finally
                     {
+                        Files.CloseAllFileHandlers(_session);
                         State.IsRunning = false;
                         State.Variables = null;
                         _session.CurrentLocation = _previousLocation;
@@ -515,7 +517,7 @@ namespace miniBBS.Basic
             }
 
             State.IsRunning = false;
-
+            
             if (!_isScript)
             {
                 var wasPolling = _session.Io.IsPollingKeys;
@@ -765,14 +767,14 @@ namespace miniBBS.Basic
                         break;
                     case "goto":
                         {
-                            int ln = Goto.Execute(args, variables);
+                            int ln = Goto.Execute(this._session, args, variables);
                             nextSp.LineNumber = ln;
                             nextSp.StatementNumber = 0;
                         }
                         break;
                     case "if":
                         {
-                            string s = If.Execute(args, variables);
+                            string s = If.Execute(this._session, args, variables);
                             if (!string.IsNullOrWhiteSpace(s))
                             {
                                 nextSp = Execute(s, variables, fromSp, currentLineHasMoreStatements, progLines);
@@ -794,7 +796,7 @@ namespace miniBBS.Basic
                             else
                             {
                                 For f = new For();
-                                if (f.Execute(args, variables, nextSp))
+                                if (f.Execute(this._session, args, variables, nextSp))
                                 {
                                     var variableName = f.VariableName;
                                     if (variables.PeekAllScoped()?.FirstOrDefault(x => x is For && (x as For).VariableName == variableName) is For existing)
@@ -827,14 +829,14 @@ namespace miniBBS.Basic
                         {
                             Gosub g = new Gosub();
                             variables.PushScoped(g);
-                            int _gosubLineNum = g.Execute(args, variables, nextSp);
+                            int _gosubLineNum = g.Execute(this._session, args, variables, nextSp);
                             nextSp.LineNumber = _gosubLineNum;
                             nextSp.StatementNumber = 0;
                         }
                         break;
                     case "on":
                         {
-                            var result = On.Execute(args, variables);
+                            var result = On.Execute(this._session, args, variables);
                             if (result.Success)
                             {
                                 if (result.Gosub)
@@ -919,7 +921,7 @@ namespace miniBBS.Basic
                         _session.Io.SetLower();
                         break;
                     case "randomize":
-                        Rnd.SetSeed(args, variables);
+                        Rnd.SetSeed(this._session, args, variables);
                         break;
                     case "pollon":
                         if (!_isScript)
@@ -949,7 +951,7 @@ namespace miniBBS.Basic
                         // ignore data line
                         break;
                     case "read":
-                        variables.Data.Read(args, variables);
+                        variables.Data.Read(this._session, args, variables);
                         break;
                     case "restore":
                         variables.Data.Restore();
@@ -970,7 +972,28 @@ namespace miniBBS.Basic
                         }
                         break;
                     case "showfile":
-                        ShowFile.Execute(_session, _rootDirectory, args, variables);
+                        Files.ShowFile(_session, _rootDirectory, args, variables);
+                        break;
+                    case "open#":
+                        Files.Open(_session, _rootDirectory, string.Join(" ", args), variables);
+                        break;
+                    case "print#":
+                        Files.Print(_session,  string.Join(" ", args), variables);
+                        break;
+                    case "close#":
+                        Files.Close(_session, string.Join(" ", args), variables);
+                        break;
+                    case "get#":
+                        Files.Get(_session, string.Join(" ", args), variables);
+                        break;
+                    case "input#":
+                        Files.Input(_session, string.Join(" ", args), variables);
+                        break;
+                    case "seek#":
+                        Files.Seek(_session, string.Join(" ", args), variables);
+                        break;
+                    case "files#":
+                        Files.ShowHandlers(_session);
                         break;
                     case "notify" when _session.User.Access.HasFlag(AccessFlag.Administrator):
                         Notify.Execute(_session, args, variables);

@@ -20,7 +20,7 @@ namespace miniBBS.Basic.Executors
 
         private static void DimArray(BbsSession session, string variablesName, string defaultValue, Variables variables)
         {
-            var indicies = GetIndicies(variablesName, variables);
+            var indicies = GetIndicies(session, variablesName, variables);
             var arrayName = variablesName
                 .Substring(0, variablesName.IndexOf("("))
                 .Trim();
@@ -58,7 +58,7 @@ namespace miniBBS.Basic.Executors
             }
         }
 
-        private static int[] GetIndicies(string variablesName, Variables variables)
+        private static int[] GetIndicies(BbsSession session, string variablesName, Variables variables)
         {
             var start = variablesName.IndexOf('(');
             var end = variablesName.IndexOf(')', start);
@@ -69,7 +69,7 @@ namespace miniBBS.Basic.Executors
             var substr = variablesName.Substring(start, len);
             var indicies = substr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var results = new List<int>();
-            foreach (var index in indicies.Select(x => Evaluate.Execute(x, variables)))
+            foreach (var index in indicies.Select(x => Evaluate.Execute(session, x, variables)))
             {
                 if (int.TryParse(index, out var i))
                     results.Add(i);

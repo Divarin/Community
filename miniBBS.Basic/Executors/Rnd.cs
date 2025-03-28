@@ -1,5 +1,6 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 using System;
 
 namespace miniBBS.Basic.Executors
@@ -14,7 +15,7 @@ namespace miniBBS.Basic.Executors
             return r;
         }
 
-        public static void SetSeed(string strSeed, Variables variables)
+        public static void SetSeed(BbsSession session, string strSeed, Variables variables)
         {
             if (string.IsNullOrWhiteSpace(strSeed))
             {
@@ -22,7 +23,7 @@ namespace miniBBS.Basic.Executors
             }
             else
             {
-                strSeed = Evaluate.Execute(strSeed, variables);
+                strSeed = Evaluate.Execute(session, strSeed, variables);
                 int seed;
                 if (int.TryParse(strSeed, out seed))
                     _random = new Random(seed);

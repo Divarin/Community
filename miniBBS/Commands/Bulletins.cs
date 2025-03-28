@@ -802,7 +802,7 @@ namespace miniBBS.Commands
                 session.Io.OutputLine("--------------------------------------");
                 if (numHidden > 0)
                 {
-                    session.Io.Error($"Hiding {numHidden} archived, use 'I' to show.");
+                    session.Io.Error($"Hiding {numHidden} archived, use 'I' to show.", OutputHandlingFlag.NoWordWrap);
                 }
                 foreach (var bull in toList)
                 {
@@ -853,6 +853,10 @@ namespace miniBBS.Commands
 
         private static void ShowMenu(BbsSession session, bool includeArchived, int numArchived)
         {
+            if (DI.Get<IMenuFileLoader>()
+                .TryShow(session, MenuFileType.Bulletins, numArchived, includeArchived ? "Shown" : "Hidden"))
+                return;
+
             // 1234567890123456789012345678901234567890
             // <=Prev. in Thread    >/CR=Next in Thread
             var eq = "=".Color(ConsoleColor.DarkGray);

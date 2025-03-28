@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Services;
+using miniBBS.Services.GlobalCommands;
 using miniBBS.TextFiles.Extensions;
 using System;
 using System.Collections.Generic;
@@ -96,25 +97,40 @@ namespace miniBBS.TextFiles
         {
             var client = obj as TcpClient;
 
-            using (var stream = client.GetStream())
+            try
             {
-                var buffer = new byte[2048];
-                var builder = new StringBuilder();
-                while (stream.CanRead)
+                using (var stream = client.GetStream())
                 {
-                    var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead > 0)
-                        builder.Append(new string(buffer.Select(b => (char)b).ToArray(), 0, bytesRead));
-                    if (buffer.Any(x => x == 13))
-                        break;
+                    var buffer = new byte[2048];
+                    var builder = new StringBuilder();
+                    while (stream.CanRead)
+                    {
+                        var bytesRead = stream.Read(buffer, 0, buffer.Length);
+                        if (bytesRead > 0)
+                            builder.Append(new string(buffer.Select(b => (char)b).ToArray(), 0, bytesRead));
+                        if (buffer.Any(x => x == 13))
+                            break;
+                    }
+                    var request = builder.ToString();
+
+                    var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
+                    SysopScreen.RegisterGopherServerRequest(ip, request.Replace("\r", "").Replace("\n", ""));
+
+                    var response = $"{GetResponse(request)}{Environment.NewLine}.{Environment.NewLine}";
+                    var responseBytes = Encoding.ASCII.GetBytes(response);
+                    stream.Write(responseBytes, 0, responseBytes.Length);
+                    Thread.Sleep(250);
+                    stream.Close();
+                    client.Close();
                 }
-                var request = builder.ToString();
-                var response = $"{GetResponse(request)}{Environment.NewLine}.{Environment.NewLine}";
-                var responseBytes = Encoding.ASCII.GetBytes(response);
-                stream.Write(responseBytes, 0, responseBytes.Length);
-                Thread.Sleep(250);
-                stream.Close();
-                client.Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(null, ex.Message, LoggingOptions.ToDatabase | LoggingOptions.WriteImmedately);
+            }
+            finally
+            {
+                client?.Close();
             }
         }
 

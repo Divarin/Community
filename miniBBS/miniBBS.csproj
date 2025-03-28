@@ -143,6 +143,7 @@
     <Compile Include="Menus\CommandList.cs" />
     <Compile Include="Menus\Context.cs" />
     <Compile Include="Menus\Emotes.cs" />
+    <Compile Include="Menus\More.cs" />
     <Compile Include="Menus\Misc.cs" />
     <Compile Include="Menus\Messages.cs" />
     <Compile Include="Menus\Moderator.cs" />

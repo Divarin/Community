@@ -25,6 +25,7 @@ namespace miniBBS.Menus
             $"{_clr($"{Constants.Inverser}/blurb" + " {blurb}" + $"{Constants.Inverser}", ConsoleColor.Green)} : Adds a new blurb",
             $"{_clr($"{Constants.Inverser}/blurbs{Constants.Inverser}", ConsoleColor.Green)} : Lists all blurbs",
             $"{_clr($"{Constants.Inverser}/blurbadmin del #{Constants.Inverser}", ConsoleColor.Green)} : Delete a blurb (if yours)",
+            $"{_clr($"{Constants.Inverser}/bookmark{Constants.Inverser}", ConsoleColor.Green)} : Checks to see if you have a 'save for later' text, and if so lets you continue reading it.",
         };
 
         public static void Show(BbsSession session)

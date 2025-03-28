@@ -39,13 +39,13 @@ namespace miniBBS.Extensions
             }
         }
 
-        public static void Error(this IUserIo io, string message)
+        public static void Error(this IUserIo io, string message, OutputHandlingFlag outputHandlingFlags = OutputHandlingFlag.None)
         {
             if (io == null)
                 return;
 
             using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Red))
-                io.OutputLine($"{Constants.Inverser}{message}{Constants.Inverser}");
+                io.OutputLine($"{Constants.Inverser}{message}{Constants.Inverser}", outputHandlingFlags);
         }
 
         public static string WrapInColor(string message, ConsoleColor color)

@@ -5,6 +5,7 @@ using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace miniBBS.Commands
 {
@@ -66,15 +67,25 @@ namespace miniBBS.Commands
                 ?.OrderByDescending(c => c.Id)
                 ?.Take(Constants.MaxSearchResults);
 
-            if (true == results?.Any())
+            if (true != results?.Any())
+                return;
+
+            var builder = new StringBuilder();
+            builder.AppendLine($"Messages in this channel {matchDescription} the term '{searchTerm}', most recent first, limited to at most {Constants.MaxSearchResults} matches.");
+            builder.AppendLine();
+            foreach (var result in results)
             {
-                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkCyan))
-                {
-                    session.Io.OutputLine($"Messages in this channel {matchDescription} the term '{searchTerm}', most recent first, limited to at most {Constants.MaxSearchResults} matches.");
-                    session.Io.OutputLine();
-                    string allResults = string.Join(Environment.NewLine, results.Select(c => $"{session.Chats.ItemNumber(c.Id)} : {GetExcerpt(c, searchTerm)}"));
-                    session.Io.OutputLine(allResults);
-                }
+                var itemNum = session.Chats.ItemNumber(result.Id);
+                var line =
+                    $"{Constants.Inverser}{(itemNum.HasValue ? $"{itemNum}" : "Archived")}{Constants.Inverser}".Color(ConsoleColor.White) +
+                    $" : {GetExcerpt(result, searchTerm)}";
+                line = line.MaxLength(session.Cols);
+                builder.AppendLine(line);
+            }
+
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkCyan))
+            {
+                session.Io.OutputLine(builder.ToString());
             }
         }
 
@@ -82,10 +93,14 @@ namespace miniBBS.Commands
         {
             int p = chat.Message.IndexOf(searchTerm, StringComparison.CurrentCultureIgnoreCase);
             int start = Math.Max(0, p - 10);
-            int end = Math.Min(chat.Message.Length - 1, p + 10);
-            int len = end - start + 1;
-            string excerpt = chat.Message.Substring(start, len);
-            return excerpt;
+            var before = chat.Message.Substring(start, p - start);
+            var during = chat.Message.Substring(p, searchTerm.Length);
+            var after = chat.Message.Substring(p + searchTerm.Length);
+            return $"{before}{Constants.Inverser}{$"{during}".Color(ConsoleColor.Red)}{Constants.Inverser}{after}";
+            //int end = Math.Min(chat.Message.Length - 1, p + 10);
+            //int len = end - start + 1;
+            //string excerpt = chat.Message.Substring(start, len);
+            //return excerpt;
         }
 
     }

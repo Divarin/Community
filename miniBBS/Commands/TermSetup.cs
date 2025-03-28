@@ -45,7 +45,7 @@ namespace miniBBS.Commands
                 lastCols = session.Cols;
                 lastRows = session.Rows;
 
-                var emulation = detectedEmulation.HasValue ? detectedEmulation.Value : lastEmu;
+                var emulation = detectedEmulation.HasValue ? detectedEmulation.Value : TerminalEmulation.Ascii;
                 
                 if ((emulation == TerminalEmulation.Cbm && detectedEmulation != TerminalEmulation.Cbm) ||
                     (emulation == TerminalEmulation.Atascii && detectedEmulation != TerminalEmulation.Atascii))
@@ -55,8 +55,24 @@ namespace miniBBS.Commands
                     emulation = TerminalEmulation.Ascii;
                 }
 
-                var cols = lastCols;
-                var rows = lastRows;
+                int cols = lastCols;
+                int rows = lastRows;
+
+                switch (detectedEmulation)
+                {
+                    case TerminalEmulation.Cbm:
+                    case TerminalEmulation.Atascii:
+                        cols = 40;
+                        rows = 24;
+                        break;
+                    case TerminalEmulation.Ansi:
+                        cols = 80;
+                        break;
+                    default:
+                        cols = lastCols;
+                        rows = lastRows;
+                        break;
+                }
 
                 Action ApplySettings = () =>
                 {

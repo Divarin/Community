@@ -1,5 +1,6 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 
 namespace miniBBS.Basic.Executors
 {
@@ -13,7 +14,7 @@ namespace miniBBS.Basic.Executors
             
         }
 
-        public int Execute(string line, Variables variables, StatementPointer returnToPosition)
+        public int Execute(BbsSession session, string line, Variables variables, StatementPointer returnToPosition)
         {
             ReturnToPosition = returnToPosition;
 
@@ -22,7 +23,7 @@ namespace miniBBS.Basic.Executors
                 return gosubLineNum;
             else if (variables.Labels.ContainsKey(line))
                 return variables.Labels[line];
-            else if (int.TryParse(Evaluate.Execute(line, variables), out gosubLineNum))
+            else if (int.TryParse(Evaluate.Execute(session, line, variables), out gosubLineNum))
                 return gosubLineNum;
             else
                 throw new RuntimeException($"Unable to parse {line} as a line number on GOSUB statement.");            

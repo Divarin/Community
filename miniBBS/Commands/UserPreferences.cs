@@ -29,17 +29,29 @@ namespace miniBBS.Commands
                 var headerFormatMeta = GetMeta(session, metaRepo, MetadataType.ChatHeaderFormat);
                 if (!string.IsNullOrWhiteSpace(headerFormatMeta?.Data))
                     headerFormat = headerFormatMeta.Data;
+                var menuFiles = GetMeta(session, metaRepo, MetadataType.MenuFiles);
+                if (menuFiles == null)
+                    menuFiles = new Metadata
+                    {
+                        UserId = session.User.Id,
+                        Type = MetadataType.MenuFiles,
+                        DateAddedUtc = DateTime.UtcNow,
+                        Data = true.ToString(),
+                    };
+                var fansyMenus = "true".Equals(menuFiles.Data, StringComparison.CurrentCultureIgnoreCase);
+                session.Items[SessionItem.MenuFiles] = fansyMenus;
 
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
                 {
-                    session.Io.OutputLine($"{Constants.Inverser}1{Constants.Inverser}) Terminal Setup");
-                    session.Io.OutputLine($"{Constants.Inverser}2{Constants.Inverser}) Login Startup Mode: {mode.FriendlyName()}");
-                    session.Io.OutputLine($"{Constants.Inverser}3{Constants.Inverser}) Chat Header Format");
-                    session.Io.OutputLine($"{Constants.Inverser}4{Constants.Inverser}) Cross-Channel Notifications");
-                    session.Io.OutputLine($"{Constants.Inverser}5{Constants.Inverser}) Set Internet E-Mail Address");
-                    session.Io.OutputLine($"{Constants.Inverser}6{Constants.Inverser}) Change your password");
-                    session.Io.OutputLine($"{Constants.Inverser}7{Constants.Inverser}) Set your Time Zone");
-                    session.Io.OutputLine($"{Constants.Inverser}Q{Constants.Inverser}) Quit");
+                    session.Io.OutputLine($"{Constants.Inverser}{"1".Color(ConsoleColor.White)}{Constants.Inverser}) Terminal Setup");
+                    session.Io.OutputLine($"{Constants.Inverser}{"2".Color(ConsoleColor.White)}{Constants.Inverser}) Login Startup Mode: {mode.FriendlyName().Color(ConsoleColor.Yellow)}");
+                    session.Io.OutputLine($"{Constants.Inverser}{"3".Color(ConsoleColor.White)}{Constants.Inverser}) Fansy Menus?: {(fansyMenus ? "Yes".Color(ConsoleColor.Green) : "No".Color(ConsoleColor.Red))}");
+                    session.Io.OutputLine($"{Constants.Inverser}{"4".Color(ConsoleColor.White)}{Constants.Inverser}) Chat Header Format");
+                    session.Io.OutputLine($"{Constants.Inverser}{"5".Color(ConsoleColor.White)}{Constants.Inverser}) Cross-Channel Notifications");
+                    session.Io.OutputLine($"{Constants.Inverser}{"6".Color(ConsoleColor.White)}{Constants.Inverser}) Set Internet E-Mail Address");
+                    session.Io.OutputLine($"{Constants.Inverser}{"7".Color(ConsoleColor.White)}{Constants.Inverser}) Change your password");
+                    session.Io.OutputLine($"{Constants.Inverser}{"8".Color(ConsoleColor.White)}{Constants.Inverser}) Set your Time Zone");
+                    session.Io.OutputLine($"{Constants.Inverser}{"Q".Color(ConsoleColor.White)}{Constants.Inverser}) Quit");
                 }
 
                 session.Io.Output($"{Constants.Inverser}[PREFS] :{Constants.Inverser} ".Color(ConsoleColor.White));
@@ -56,6 +68,12 @@ namespace miniBBS.Commands
                         metaRepo.Update(lsmMeta);
                         break;
                     case '3':
+                        fansyMenus = !fansyMenus;
+                        session.Items[SessionItem.MenuFiles] = fansyMenus;
+                        menuFiles.Data = fansyMenus.ToString();
+                        metaRepo.InsertOrUpdate(menuFiles);
+                        break;
+                    case '4':
                         headerFormat = GetNewMessageHeaderFormat(session, headerFormat);
 
                         if (headerFormatMeta == null)
@@ -68,16 +86,16 @@ namespace miniBBS.Commands
                         metaRepo.InsertOrUpdate(headerFormatMeta);
                         session.Items[SessionItem.ChatHeaderFormat] = headerFormat;
                         break;
-                    case '4':
+                    case '5':
                         SetCrossChannelNotifications(session, metaRepo);
                         break;
-                    case '5':
+                    case '6':
                         SetInternetEmailAddress(session);
                         break;
-                    case '6':
+                    case '7':
                         UpdatePassword.Execute(session, true);
                         break;
-                    case '7':
+                    case '8':
                         TimeZone.Execute(session);
                         break;
                     default:

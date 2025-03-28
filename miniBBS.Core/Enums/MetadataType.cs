@@ -11,6 +11,8 @@
         ChatHeaderFormat,
         CrossChannelNotifications,
         ReadBulletins,
-        PasswordResetCode
+        PasswordResetCode,
+        Bookmark,
+        MenuFiles
     }
 }

@@ -2,6 +2,7 @@
 using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Models;
 using miniBBS.Core;
+using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace miniBBS.Basic.Executors
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
             "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
             "GUID$", "SECONDS", "LTRIM$", "RTRIM$", "TRIM$", "ROUND",
+            "ISOPEN", "FILEPOSITION"
         };
 
         private static readonly char[] _logicalOperators = new char[]
@@ -36,7 +38,7 @@ namespace miniBBS.Basic.Executors
         private static readonly char[] _charsInVariableNamesAfterFirst = new char[]
         { '$', '(', '\'', ',', '\t', ')', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-        public static string Execute(string statement, Variables variables)        
+        public static string Execute(BbsSession session, string statement, Variables variables)        
         {
             if (string.IsNullOrWhiteSpace(statement))
                 return statement;
@@ -45,7 +47,8 @@ namespace miniBBS.Basic.Executors
             {
                 OriginalStatement = statement,
                 StringValues = new Dictionary<ulong, string>(),
-                Timer = Stopwatch.StartNew()
+                Timer = Stopwatch.StartNew(),
+                Session = session,
             };
 
             statement = Execute(statement, variables, pkg);
@@ -735,6 +738,27 @@ namespace miniBBS.Basic.Executors
                         case "getnextwordcontains":
                             value = '"' + Words.GetWordContains(value.Detokenize(pkg.StringValues), unique: true) + '"';
                             break;
+                        case "isopen":
+                            {
+                                value = Execute(value, variables, pkg);
+                                if (pkg.Session != null &&
+                                    int.TryParse(value, out var fileNum) &
+                                    Files.IsOpen(pkg.Session, fileNum))
+                                    value = "1";
+                                else
+                                    value = "0";
+                            }
+                            break;
+                        case "fileposition":
+                            {
+                                value = Execute(value, variables, pkg);
+                                if (pkg.Session != null &&
+                                    int.TryParse(value, out var fileNum))
+                                    value = $"{Files.FilePosition(pkg.Session, fileNum)}";
+                                else
+                                    value = "-1";
+                                break;
+                            }
                         default:
                             if (f.StartsWith("fn", StringComparison.CurrentCultureIgnoreCase))
                             {
@@ -742,7 +766,7 @@ namespace miniBBS.Basic.Executors
                                 Function function = variables.Functions?.FirstOrDefault(x => x.Name.Equals(f, StringComparison.CurrentCultureIgnoreCase));
                                 if (function != null)
                                 {
-                                    double d = function.Execute(value, variables);
+                                    double d = function.Execute(pkg.Session, value, variables);
                                     value = d.ToString();
                                 }
                             }
@@ -772,6 +796,7 @@ namespace miniBBS.Basic.Executors
             public IDictionary<ulong, string> StringValues { get; set; }
             public Stopwatch Timer { get; set; }
             public string OriginalStatement { get; set; }
+            public BbsSession Session { get; internal set; }
         }
     }
 }

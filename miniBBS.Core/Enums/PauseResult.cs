@@ -6,6 +6,8 @@
         Yes,
         Continuous,
         PageUp,
-        ExecuteKeywordSearch
+        ExecuteKeywordSearch,
+        Bookmark,
+        SetPercentage
     }
 }

@@ -5,6 +5,7 @@ using miniBBS.Core.Models.Control;
 using miniBBS.Exceptions;
 using miniBBS.Extensions;
 using miniBBS.Interfaces;
+using miniBBS.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -186,20 +187,35 @@ namespace miniBBS.UserIo
 
         private PauseResult Pause(BbsSession session, KeywordSearch keywordSearch, double? percentage = null)
         {
+            //             123456789012345678901234567890123456                       789|            1234567890123456789012345678901234567890
+            string options = 
+                $"{NewLine}(y)es, (n)o, (c)ontinuous, page (u)p{(session.Cols >= 80 ? ", " : NewLine)}(/) search, (s)ave for later, 1-9) x10%";
+
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkRed))
             {
-                //                                   1234567890123456789012345678901234567890
-                string more = NewLine + "[more? (y,n,c) or page (u)p]";
-                if (percentage.HasValue)
-                    more += $" {Math.Round(100 * percentage.Value, 0)}% ";
+                char? k = null;
 
-                if (session.Io.EmulationType == TerminalEmulation.Cbm)
-                    more = more.ToUpper();
+                do
+                {
+                    string more = NewLine + "[more? (?=more options)]";
+                    if (percentage.HasValue)
+                        more += $" {Math.Round(100 * percentage.Value, 0)}% ";
 
-                var r = GetBytes(more);
-                
-                session.Stream.Write(r, 0, r.Length);
-                var k = StreamInput(session);
+                    if (session.Io.EmulationType == TerminalEmulation.Cbm)
+                        more = more.ToUpper();
+
+                    var r = GetBytes(more);
+                    session.Stream.Write(r, 0, r.Length);
+                    k = StreamInput(session);
+                    if (k == '?')
+                    {
+                        r = GetBytes(options);
+                        session.Stream.Write(r, 0, r.Length);
+                        continue;
+                    }
+                    break;
+                } while (true);
+
                 if (k != '/')
                 {
                     var nl = GetBytes(NewLine);
@@ -220,6 +236,16 @@ namespace miniBBS.UserIo
                         keywordSearch.Keyword = search;
                     keywordSearch.From = SearchFrom.AfterPreviousMatch_WithoutWraparound;
                     return PauseResult.ExecuteKeywordSearch;
+                }
+                else if (k == 's' || k == 'S')
+                {
+                    return PauseResult.Bookmark;
+                }
+                else if (int.TryParse($"{k}", out var n))
+                {
+                    double pcent = n / 10.0;
+                    session.Items[SessionItem.BookmarkPercentage] = pcent;
+                    return PauseResult.SetPercentage;
                 }
             }
             return PauseResult.Yes;
@@ -258,105 +284,152 @@ namespace miniBBS.UserIo
         {
             bool continuousOutput = flags.HasFlag(OutputHandlingFlag.Nonstop);
             text = ReplaceInlineColors(text, out int actualTextLength);
+            double? advPcent =
+                session.Items.ContainsKey(SessionItem.BookmarkPercentage)
+                ? session.Items[SessionItem.BookmarkPercentage] as double?
+                : null;
 
-            if (session.Stream.CanWrite)
+            if (!session.Stream.CanWrite)
+                return;
+
+            if (actualTextLength <= session.Cols)
             {
-                if (actualTextLength > session.Cols)
+                text = text.Replace(Constants.Spaceholder, ' ');
+                var r = GetBytes(text);
+                session.Stream.Write(r, 0, r.Length);
+                return;
+            }
+
+            // handle wordwrap and pause
+
+            List<string> lines = flags.HasFlag(OutputHandlingFlag.NoWordWrap) ? 
+                new List<string>() { text } :
+                text.SplitAndWrap(session, flags).ToList();
+
+            // if the last line is just a newline and the line before that also ends with a newline then omit the last line
+            // this is because splitAndWrap added an extra newline as a side-effect
+            if (lines.Count >= 2 && lines.Last().Equals(NewLine) && lines[lines.Count - 2].EndsWith(NewLine))
+                lines = lines.Take(lines.Count - 1).ToList();
+            if (flags.HasFlag(OutputHandlingFlag.PauseAtEnd))
+                lines.Add(TransformText(" --- End of Document ---"));
+            int totalLines = lines.Count;
+            int row = 0;
+            var keywordSearch = new KeywordSearch();
+
+            var pageMarkers = new Stack<int>();
+            pageMarkers.Push(0);
+
+            Func<int, int> DoPageUp = (_l) =>
+            {
+                if (pageMarkers.Count > 1)
                 {
-                    // handle wordwrap and pause
-
-                    List<string> lines = flags.HasFlag(OutputHandlingFlag.NoWordWrap) ? 
-                        new List<string>() { text } :
-                        text.SplitAndWrap(session, flags).ToList();
-
-                    // if the last line is just a newline and the line before that also ends with a newline then omit the last line
-                    // this is because splitAndWrap added an extra newline as a side-effect
-                    if (lines.Count >= 2 && lines.Last().Equals(NewLine) && lines[lines.Count - 2].EndsWith(NewLine))
-                        lines = lines.Take(lines.Count - 1).ToList();
-                    if (flags.HasFlag(OutputHandlingFlag.PauseAtEnd))
-                        lines.Add(TransformText(" --- End of Document ---"));
-                    int totalLines = lines.Count;
-                    int row = 0;
-                    var keywordSearch = new KeywordSearch();
-
-                    var pageMarkers = new Stack<int>();
-                    pageMarkers.Push(0);
-
-                    Func<int, int> DoPageUp = (_l) =>
-                    {
-                        if (pageMarkers.Count > 1)
-                        {
-                            pageMarkers.Pop(); // top of current page
-                            _l = pageMarkers.Pop(); // top of previous page
-                            if (_l > 0)
-                                _l--;
-                            row = 0;
-                            return _l;
-                        }
-                        else
-                        {
-                            // restart top of document
-                            _l = row = 0;
-                            pageMarkers.Clear();
-                            pageMarkers.Push(0);
-                            return _l;
-                        }
-                    };
-
-                    for (int l = 0; l <= lines.Count; l++)
-                    {
-                        row++;
-                        var line = l < lines.Count ? lines[l] : null;
-
-                        if (!continuousOutput && (row >= session.Rows-3) || (l >= lines.Count && flags.HasFlag(OutputHandlingFlag.PauseAtEnd)))
-                        {
-                            var pcent = (double)l / totalLines;
-                            var pauseResult = Pause(session, keywordSearch, pcent);
-                            if (pauseResult == PauseResult.No)
-                                break;
-                            else if (pauseResult == PauseResult.Continuous)
-                                continuousOutput = true;
-                            else if (pauseResult == PauseResult.PageUp)
-                            {
-                                l = DoPageUp(l);
-                                continue;
-                            }
-                            else if (pauseResult == PauseResult.ExecuteKeywordSearch && !string.IsNullOrWhiteSpace(keywordSearch.Keyword))
-                            {
-                                int f = lines
-                                    .Skip(l) // so that we only search lines we haven't read yet
-                                    .IndexOf(x => x.ToLower().Contains(keywordSearch.Keyword.ToLower()))
-                                    + l; // because we did Skip(l) 
-                                if (f > l)
-                                {
-                                    if (f > 1) f -= 2; // back up a couple lines to provide context
-                                    l = f - 1; // set line number to line where we found the match (-1 because of the l++ coming up)
-                                }
-                                else
-                                {
-                                    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-                                    {
-                                        StreamOutputLine(session, TransformText($"No more occurances of '{keywordSearch.Keyword}' found."));
-                                    }
-                                    l = DoPageUp(l);
-                                    continue;
-                                }
-                            }
-                            pageMarkers.Push(l);
-                            row = 0;
-                        }
-
-                        if (line != null)
-                        {
-                            var r = GetBytes(line);
-                            session.Stream.Write(r, 0, r.Length);
-                        }
-                    }
+                    pageMarkers.Pop(); // top of current page
+                    _l = pageMarkers.Pop(); // top of previous page
+                    if (_l > 0)
+                        _l--;
+                    row = 0;
+                    return _l;
                 }
                 else
                 {
-                    text = text.Replace(Constants.Spaceholder, ' ');
-                    var r = GetBytes(text);
+                    // restart top of document
+                    _l = row = 0;
+                    pageMarkers.Clear();
+                    pageMarkers.Push(0);
+                    return _l;
+                }
+            };
+                        
+            for (int l = 0; l <= lines.Count; l++)
+            {
+                row++;
+                var line = l < lines.Count ? lines[l] : null;
+                var pcent = (double)l / totalLines;
+
+                // start pause
+                if (!continuousOutput && (row >= session.Rows-3) || (l >= lines.Count && flags.HasFlag(OutputHandlingFlag.PauseAtEnd)))
+                {
+                    PauseResult pauseResult;
+                    do
+                    {
+                        pauseResult = 
+                            flags.HasFlag(OutputHandlingFlag.AdvanceToPercentage)
+                            ? PauseResult.Yes
+                            : Pause(session, keywordSearch, pcent);
+
+                        if (pauseResult == PauseResult.Bookmark)
+                        {
+                            BookmarkManager.SaveBookmark(session, text, pcent, flags);
+                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                            {
+                                StreamOutputLine(session, TransformText($"Bookmarked, use /bookmark from chat in the future to recall."));
+                            }
+                        }
+                    } while (pauseResult == PauseResult.Bookmark);
+
+                    if (pauseResult == PauseResult.No)
+                        break;
+                    else if (pauseResult == PauseResult.Continuous)
+                        continuousOutput = true;
+                    else if (pauseResult == PauseResult.PageUp)
+                    {
+                        l = DoPageUp(l);
+                        continue;
+                    }
+                    else if (pauseResult == PauseResult.SetPercentage)
+                    {
+                        row = 0;
+                        l = 0;
+                        advPcent =
+                            session.Items.ContainsKey(SessionItem.BookmarkPercentage)
+                            ? session.Items[SessionItem.BookmarkPercentage] as double?
+                            : 0;
+
+                        if (advPcent > 0)
+                            flags |= OutputHandlingFlag.AdvanceToPercentage;
+                        
+                        continue;
+                    }
+                    else if (pauseResult == PauseResult.ExecuteKeywordSearch && !string.IsNullOrWhiteSpace(keywordSearch.Keyword))
+                    {
+                        int f = lines
+                            .Skip(l) // so that we only search lines we haven't read yet
+                            .IndexOf(x => x.ToLower().Contains(keywordSearch.Keyword.ToLower()))
+                            + l; // because we did Skip(l) 
+                        if (f > l)
+                        {
+                            if (f > 1) f -= 2; // back up a couple lines to provide context
+                            l = f - 1; // set line number to line where we found the match (-1 because of the l++ coming up)
+                        }
+                        else
+                        {
+                            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+                            {
+                                StreamOutputLine(session, TransformText($"No more occurances of '{keywordSearch.Keyword}' found."));
+                            }
+                            l = DoPageUp(l);
+                            continue;
+                        }
+                    }
+                    pageMarkers.Push(l);
+                    row = 0;
+                }
+                // end pause
+
+                if (flags.HasFlag(OutputHandlingFlag.AdvanceToPercentage))
+                {
+                    if (pcent >= advPcent)
+                    {
+                        flags &= ~OutputHandlingFlag.AdvanceToPercentage;
+                        session.Items.Remove(SessionItem.BookmarkPercentage);
+                        l = DoPageUp(l);
+                    }
+                    continue;
+                }
+                
+                if (line != null)
+                {
+                    var r = GetBytes(line);
                     session.Stream.Write(r, 0, r.Length);
                 }
             }
@@ -411,12 +484,14 @@ namespace miniBBS.UserIo
         {
             if (_pollingOn)
             {
-                while (_polledTicks < _ticksWhenPolledKeyAppendedToGetLine)
-                {
-                    Thread.Sleep(25);
-                }
-                _ticksWhenPolledKeyAppendedToGetLine = _polledTicks;
-                return _polledKey;
+                _ = TryGetKeyFromPoll(out var c);
+                return c;
+                //while (_ticksWhenPolledKeyAppendedToGetLine == 0 || _polledTicks < _ticksWhenPolledKeyAppendedToGetLine)
+                //{
+                //    Thread.Sleep(25);
+                //}
+                //_ticksWhenPolledKeyAppendedToGetLine = _polledTicks;
+                //return _polledKey;
             }
 
             var bytes = new byte[256];

@@ -6,7 +6,7 @@ namespace miniBBS.Core
     public static class Constants
     {
         public const string BbsName = "Community";
-        public const string Version = "5.19 - 2025.03.10";
+        public const string Version = "5.21b - 2025.03.27";
         public const string SysopName = "Divarin";
         public const string BbsLocation = "Cleveland";
 
@@ -37,6 +37,8 @@ namespace miniBBS.Core
                 return IsLocal ? local_TextFileRootDirectory : @"c:\textfiles\";
             }
         }
+
+        public const string MenusDirectory = "menus";
 
         public static string Hostname
         {

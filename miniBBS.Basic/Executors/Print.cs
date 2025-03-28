@@ -20,19 +20,16 @@ namespace miniBBS.Basic.Executors
                 newlineAfter = false;
                 line = line.Substring(0, line.Length - 1);
             }
-            line = Evaluate.Execute(line, variables);
+            line = Evaluate.Execute(session, line, variables);
 
             if (newlineAfter)
                 line += session.Io.NewLine;
 
-            line = session.Io.TransformText(line);
+            if (session.Io.EmulationType != Core.Enums.TerminalEmulation.Atascii)
+                line = session.Io.TransformText(line);
+
             var bytes = session.Io.GetBytes(line);
             session.Io.OutputRaw(bytes);
-
-            //if (newlineAfter)
-            //    session.Io.OutputLine(line);
-            //else
-            //    session.Io.Output(line);
         }
 
         public static void BroadcastToChannel(BbsSession session, string line, Variables variables)
@@ -54,7 +51,7 @@ namespace miniBBS.Basic.Executors
                 .Replace(".BOT", "BOT")
                 .Replace("\"", "");
             
-            line = Evaluate.Execute(line, variables);
+            line = Evaluate.Execute(session, line, variables);
 
             line = $"<{botname}> {line}";
 

@@ -20,9 +20,10 @@ namespace miniBBS.Core.Models.Control
         private static readonly string _on = $"{Constants.InlineColorizer}{(int)ConsoleColor.Red}{Constants.InlineColorizer}On{Constants.InlineColorizer}-1{Constants.InlineColorizer}";        
         private static readonly string _off = $"{Constants.InlineColorizer}{(int)ConsoleColor.Green}{Constants.InlineColorizer}Off{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
 
-        public BbsSession(ISessionsList sessionsList, Stream stream)
+        public BbsSession(ISessionsList sessionsList, Stream stream, TcpClient client)
         {
             _stream = stream;
+            _client = client;
 
             SessionStartUtc = DateTime.UtcNow;
             Rows = 24;
@@ -38,6 +39,24 @@ namespace miniBBS.Core.Models.Control
             thread.Start();
         }
 
+        public void Disconnect()
+        {
+            try
+            {
+                Thread.Sleep(250);
+                this._stream?.Close();
+                this._client?.Close();
+            }
+            catch
+            {
+
+            }
+            finally
+            {
+                this.Dispose();
+            }
+        }
+
         public string PreviousFilesDirectory { get; set; }
 
         ~BbsSession()
@@ -49,6 +68,8 @@ namespace miniBBS.Core.Models.Control
         public Guid Id { get; set; }
 
         private Stream _stream;
+        private readonly TcpClient _client;
+
         public Stream Stream => _stream;
         public bool IsDisposed => _disposed;
 

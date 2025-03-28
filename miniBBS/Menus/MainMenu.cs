@@ -23,6 +23,7 @@ namespace miniBBS.Menus
             $"{Constants.Inverser}--- {_clr("More Help Menus", ConsoleColor.Yellow)} ---{Constants.Inverser}",
                 $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} channels", ConsoleColor.Green)}, " + 
                 $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} msgs", ConsoleColor.Green)}, " +
+                $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} more", ConsoleColor.Green)}, " +
                 $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} users", ConsoleColor.Green)}, " + 
                 $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} bells", ConsoleColor.Green)}, " + 
                 $"{_clr($"{Constants.Inverser}/?{Constants.Inverser} emotes", ConsoleColor.Green)}, " + 

@@ -1,5 +1,6 @@
 ﻿using miniBBS.Basic.Exceptions;
 using miniBBS.Basic.Models;
+using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,7 +70,7 @@ namespace miniBBS.Basic.Executors
         private string _expression;
         public string Name { get; private set; }
 
-        public double Execute(string line, Variables variables)
+        public double Execute(BbsSession session, string line, Variables variables)
         {
             // split line into variable values, each should be a number
             if (string.IsNullOrWhiteSpace(line) && _variableNames.Count > 0)
@@ -84,7 +85,7 @@ namespace miniBBS.Basic.Executors
                 .Split(new char[] { ',', '\t' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(x =>
                 {
-                    x = Evaluate.Execute(x, variables);
+                    x = Evaluate.Execute(session, x, variables);
                     double d;
                     if (!double.TryParse(x, out d))
                         throw new RuntimeException($"type mismatch calling function {Name}, value {x} is not a number");
@@ -118,7 +119,7 @@ namespace miniBBS.Basic.Executors
 
             // evaluate expression and return result
             var expression = builder.ToString();
-            var value = Evaluate.Execute(expression, variables);
+            var value = Evaluate.Execute(session, expression, variables);
             double result;
             if (double.TryParse(value, out result))
                 return result;

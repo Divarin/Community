@@ -66,10 +66,12 @@
     <Compile Include="Persistence\SqliteRepository.cs" />
     <Compile Include="Persistence\StructuredQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\BookmarkManager.cs" />
     <Compile Include="Services\Compressor.cs" />
     <Compile Include="Services\LineEditor.cs" />
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Services\MaintDowntimeAnnouncer.cs" />
+    <Compile Include="Services\MenuFileLoader.cs" />
     <Compile Include="Services\Messager.cs" />
     <Compile Include="Services\NotificationHandler.cs" />
     <Compile Include="Services\SessionsList.cs" />

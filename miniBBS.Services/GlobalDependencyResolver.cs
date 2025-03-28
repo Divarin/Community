@@ -35,6 +35,7 @@ namespace miniBBS.Services
             {typeof(ILogger), () => GetOrSetSingleton(() => new Logger())},
             {typeof(IChatCache), () => GetOrSetSingleton(() => new ChatCache())},
             {typeof(INotificationHandler), () => GetOrSetSingleton(() => new NotificationHandler())},
+            {typeof(IMenuFileLoader), () => GetOrSetSingleton(() => new MenuFileLoader())},
         };
 
         public IRepository<T> GetRepository<T>()

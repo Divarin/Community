@@ -11,5 +11,10 @@ namespace miniBBS.Core.Enums
         PauseAtEnd = 4,
         NoWordWrap = 8,
         SplitOnNewlineOnly = 16,
+
+        /// <summary>
+        /// For reading a saved bookmark, advances to the line where the bookmark was created
+        /// </summary>
+        AdvanceToPercentage = 32,
     }
 }

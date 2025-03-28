@@ -80,7 +80,7 @@
     <Compile Include="Executors\Rnd.cs" />
     <Compile Include="Executors\Scoped.cs" />
     <Compile Include="Executors\Share.cs" />
-    <Compile Include="Executors\ShowFile.cs" />
+    <Compile Include="Executors\Files.cs" />
     <Compile Include="Executors\Sql.cs" />
     <Compile Include="Executors\Sqr.cs" />
     <Compile Include="Executors\Words.cs" />

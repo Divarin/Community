@@ -113,7 +113,5 @@ namespace miniBBS.Extensions
         {
             return session?.Usernames?.GetOrDefault(userId, "Unknown") ?? "Unknown";
         }
-
-        
     }
 }

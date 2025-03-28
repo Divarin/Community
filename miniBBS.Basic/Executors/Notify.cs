@@ -20,7 +20,7 @@ namespace miniBBS.Basic.Executors
                 throw new RuntimeException("Syntax error for notify, requires username and message");
             var username = args.Substring(0, pos).Trim();
             var message = args.Substring(pos).Trim();
-            message = Evaluate.Execute(message, variables);
+            message = Evaluate.Execute(session, message, variables);
             var userId = session.Usernames.FirstOrDefault(x => x.Value.Equals(username, StringComparison.CurrentCultureIgnoreCase)).Key;
             if (userId == default)
                 throw new RuntimeException($"Notify error, user '{username}' not found");

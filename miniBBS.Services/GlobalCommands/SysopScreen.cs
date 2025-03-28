@@ -13,7 +13,18 @@ namespace miniBBS.Services.GlobalCommands
     public static class SysopScreen
     {
         private static ISessionsList _sessionsList;
+        /// <summary>
+        /// [IP address] = count of connections from that IP (not including gopher server)
+        /// </summary>
         private static readonly ConcurrentDictionary<string, int> _ips = new ConcurrentDictionary<string, int>();
+        /// <summary>
+        /// [IP address] = count of connections (to the Gopher Server) from that IP
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, int> _gopherIps = new ConcurrentDictionary<string, int>();
+        /// <summary>
+        /// [Gopher Selector] = count of requests for the given gopher document
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, int> _gopherSelectors = new ConcurrentDictionary<string, int>();
         const int _numSessionsToList = 16;
         private static readonly string _blankLine = ' '.Repeat(80);
         private enum Col
@@ -120,6 +131,19 @@ namespace miniBBS.Services.GlobalCommands
                 _ips[ip]++;
         }
 
+        public static void RegisterGopherServerRequest(string ip, string selector)
+        {
+            if (!_gopherIps.ContainsKey(ip))
+                _gopherIps[ip] = 1;
+            else
+                _gopherIps[ip]++;
+
+            if (!_gopherSelectors.ContainsKey(selector))
+                _gopherSelectors[selector] = 1;
+            else
+                _gopherSelectors[selector]++;
+        }
+
         private static void DrawLoop()
         {
             while (true)
@@ -175,7 +199,7 @@ namespace miniBBS.Services.GlobalCommands
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             
-            Console.Write($" (I)ssues: {_logMessages.Count} | (C)lear Issues | (L)ogins: {_logins.Count} ({_logins.Select(l => l.Username).Distinct().Count()} users) | I(P)s ");
+            Console.Write($" (I)ssues: {_logMessages.Count} | (C)lear Issues | (L)ogins: {_logins.Count} ({_logins.Select(l => l.Username).Distinct().Count()} users) | I(P)s | (G)opher Stats ");
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true);
@@ -194,6 +218,10 @@ namespace miniBBS.Services.GlobalCommands
                         break;
                     case ConsoleKey.P:
                         ShowTopIpConnections();
+                        RedrawFromStart();
+                        break;
+                    case ConsoleKey.G:
+                        ShowGopherStats();
                         RedrawFromStart();
                         break;
                 }
@@ -217,6 +245,36 @@ namespace miniBBS.Services.GlobalCommands
 
             foreach (var ip in ips)
                 Console.WriteLine(ip);
+
+            Console.WriteLine("press any key");
+            Console.ReadKey();
+        }
+
+        private static void ShowGopherStats()
+        {
+            var uniqueVisitors = _gopherIps.Keys.Count();
+            var totalHits = _gopherIps.Sum(x => x.Value);
+            var top5Ips = _gopherIps
+                .OrderByDescending(x => x.Value)
+                .Take(5)
+                .ToArray();
+            var top5Selectors = _gopherSelectors
+                .OrderByDescending(x => x.Value)
+                .Take(5)
+                .ToArray();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.Clear();
+
+            Console.WriteLine($"Total hits: {totalHits}");
+            Console.WriteLine($"Unique IPs: {uniqueVisitors}");
+            Console.WriteLine("Top 5 IPs:");
+            foreach (var s in top5Ips)
+                Console.WriteLine($"{s.Value} : {s.Key}");
+            Console.WriteLine("Top 5 selectors:");
+            foreach (var s in top5Selectors)
+                Console.WriteLine($"{s.Value} : {s.Key}");
 
             Console.WriteLine("press any key");
             Console.ReadKey();
