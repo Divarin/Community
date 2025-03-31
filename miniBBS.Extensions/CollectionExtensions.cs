@@ -5,6 +5,8 @@ namespace miniBBS.Extensions
 {
     public static class CollectionExtensions
     {
+        private static readonly Random _random = new Random((int)DateTime.Now.Ticks);
+
         public static int? ItemNumber<T>(this SortedList<int, T> list, int? key)
         {
             if (!key.HasValue)
@@ -45,6 +47,22 @@ namespace miniBBS.Extensions
             if (true == dict?.ContainsKey(key))
                 return dict[key];
             return defaultValue;
+        }
+
+        public static T[] Shuffle<T>(this T[] arr)
+        {
+            var orderedList = new List<T>(arr);
+            var shuffledList = new List<T>(arr.Length);
+
+            while (orderedList.Count > 0)
+            {
+                var n = _random.Next(0, orderedList.Count);
+                T item = orderedList[n];
+                orderedList.RemoveAt(n);
+                shuffledList.Add(item);
+            }
+
+            return shuffledList.ToArray();
         }
     }
 }

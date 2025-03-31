@@ -36,6 +36,7 @@ namespace miniBBS.Persistence
                 CreateGopherBookmarksTable(db);
                 CreatePollTables(db);
                 CreateMetadataTable(db);
+                CreateBbsListTable(db);
 
                 db.Close();
             }
@@ -160,6 +161,12 @@ namespace miniBBS.Persistence
         private void CreateMetadataTable(SQLiteConnection db)
         {
             string sql = "CREATE TABLE Metadata (Id integer primary key autoincrement, Type TEXT not null, UserId integer null, ChannelId integer null, Data TEXT not null, DateAddedUtc TEXT null)";
+            Exec(db, sql);
+        }
+
+        private void CreateBbsListTable(SQLiteConnection db)
+        {
+            string sql = "CREATE TABLE BbsList (Id integer primary key autoincrement, AddedByUserId integer not null, Name TEXT not null, Address TEXT not null, Port TEXT null, Sysop TEXT null, Software TEXT null, Emulations TEXT null, Description TEXT null, DateAddedUtc TEXT null)";
             Exec(db, sql);
         }
     }

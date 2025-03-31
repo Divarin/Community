@@ -6,7 +6,7 @@ namespace miniBBS.Core
     public static class Constants
     {
         public const string BbsName = "Community";
-        public const string Version = "5.21b - 2025.03.27";
+        public const string Version = "5.22 - 2025.03.31";
         public const string SysopName = "Divarin";
         public const string BbsLocation = "Cleveland";
 

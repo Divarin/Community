@@ -975,7 +975,10 @@ namespace miniBBS.Basic
                         Files.ShowFile(_session, _rootDirectory, args, variables);
                         break;
                     case "open#":
-                        Files.Open(_session, _rootDirectory, string.Join(" ", args), variables);
+                        Files.Open(_session, _rootDirectory, string.Join(" ", args), variables, false);
+                        break;
+                    case "openu#":
+                        Files.Open(_session, _rootDirectory, string.Join(" ", args), variables, true);
                         break;
                     case "print#":
                         Files.Print(_session,  string.Join(" ", args), variables);
@@ -1016,6 +1019,24 @@ namespace miniBBS.Basic
                 throw;
             }
             return nextSp;
+        }
+
+        public static IEnumerable<string> CheckPermissions(string body)
+        {
+            SortedList<int, string> progLines = ProgramData.Deserialize(body);
+            HashSet<string> permissions = new HashSet<string>();
+
+            foreach (var line in progLines.Values)
+            {
+                var statements = GetStatements(line);
+                foreach (var statement in statements)
+                {
+                    if (statement.Trim().StartsWith("openu#", StringComparison.OrdinalIgnoreCase))
+                        permissions.Add("Open files for reading and/or writing in YOUR user directory.");
+                }
+            }
+
+            return permissions;
         }
 
         public static string Decompress(string body)

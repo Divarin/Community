@@ -311,6 +311,7 @@ namespace miniBBS
 
             var metaRepo = DI.GetRepository<Metadata>();
             var startupMode = session.User.GetStartupMode(metaRepo);
+            session.Items[SessionItem.StartupMode] = startupMode;
             OneTimeQuestions.Execute(session);
             startupMode = session.User.GetStartupMode(metaRepo);
             session.LoadChatHeaderFormat(metaRepo);
@@ -1169,6 +1170,10 @@ namespace miniBBS
                     if (!BookmarkManager.CheckBookmarkedRead(session))
                         session.Io.Error("You have no saved bookmarks.");
                     return;
+                case "/bbs":
+                case "/bbslist":
+                    BbsList.Execute(session);
+                    return;
                 case "/m":
                     using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                     {
@@ -1210,10 +1215,7 @@ namespace miniBBS
                 case "/quit":
                 case "/q":
                     if (Logout.Execute(session, parts[0], string.Join(" ", parts.Skip(1))))
-                    {
-                        session.Io.OutputLine("Goodbye!");
-                        session.Disconnect();
-                    }
+                        CompleteLogout(session);
                     return;
                 case "/seen":
                     Seen.Execute(session, parts.Skip(1).ToArray());
@@ -1237,11 +1239,7 @@ namespace miniBBS
                 case "/fakemain":
                 case "/fakemenu":
                     if (!Commands.MainMenu.Execute(session))
-                    {
-                        // logoff
-                        session.Io.OutputLine("Goodbye!");
-                        session.Disconnect();
-                    }
+                        CompleteLogout(session);
                     return;
                 case "/ignore":
                     Ignore.Execute(session, parts.Skip(1).ToArray());
@@ -1271,6 +1269,12 @@ namespace miniBBS
                         return;
                     }
                     break;
+                case "/not":
+                case "/nots":
+                case "/notifications":
+                case "/notification":
+                    ShowLoginNotifications(session, (LoginStartupMode)session.Items[SessionItem.StartupMode]);
+                    return;
                 case "/help":
                 case "/?":
                 case "?":
@@ -1849,6 +1853,25 @@ namespace miniBBS
 
                 session.Io.OutputLine(line, OutputHandlingFlag.Nonstop);
             }
+        }
+
+        private static void CompleteLogout(BbsSession session)
+        {
+            var randomBbss = BbsList.GetRandom(5, session.Io.EmulationType);
+            if (true == randomBbss?.Any())
+            {
+                session.Io.OutputLine($"{Constants.Inverser}{"Call these other fine boards!".Color(ConsoleColor.Yellow)}{Constants.Inverser}");
+                foreach (var bbs in randomBbss)
+                {
+                    var port = "";
+                    if (!string.IsNullOrWhiteSpace(bbs.Port))
+                        port = $":{bbs.Port}";
+                    session.Io.OutputLine($"{bbs.Name} {bbs.Address.Color(ConsoleColor.Green)}{port}");
+                }
+            }
+
+            session.Io.OutputLine("Goodbye!");
+            session.Disconnect();
         }
     }
 }

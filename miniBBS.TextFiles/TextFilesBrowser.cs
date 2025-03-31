@@ -549,6 +549,13 @@ namespace miniBBS.TextFiles
         {
             if (link.ActualFilename.EndsWith(".bas", StringComparison.CurrentCultureIgnoreCase))
             {
+                var permissions = CheckPermissions(link);
+                if (permissions?.Any() == true)
+                {
+                    _session.Io.OutputLine("This program wants to:");
+                    foreach (var permission in permissions)
+                        _session.Io.OutputLine(permission);
+                }
                 var inp = _session.Io.Ask("Run Basic Program?");
                 if (inp == 'Y')
                     RunBasicProgram(link);
@@ -778,6 +785,12 @@ namespace miniBBS.TextFiles
             _session.Io.OutputLine($"Receiving {filename} via X-Modem protocol, begin sending now.");
 
             FileWriter.WriteUploadedData(_session, _currentLocation, filename, getData);
+        }
+
+        private IEnumerable<string> CheckPermissions(Link link)
+        {
+            string body = FileReader.LoadFileContents(_currentLocation, link);
+            return MutantBasic.CheckPermissions(body);
         }
 
         private void RunBasicProgram(Link link, string scriptInput = null, bool debugging = false)

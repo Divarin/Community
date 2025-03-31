@@ -28,6 +28,7 @@
         /// </summary>
         ShowChatArchive,
         BookmarkPercentage,
-        MenuFiles
+        MenuFiles,
+        StartupMode
     }
 }

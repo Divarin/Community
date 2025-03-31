@@ -9,7 +9,7 @@ namespace miniBBS.Menus
     {
         private static readonly string[] _lines = new[]
         {
-            $"{Constants.Inverser}*** Emotes ***{Constants.Inverser}",
+            $"{Constants.Inverser}*** {"Emotes".Color(ConsoleColor.Yellow)} ***{Constants.Inverser}",
             $"{Constants.Spaceholder}",
             "Emotes are a way you can get the attention of another user or anyone in the channel without actually posting a message.",
             "Emotes, unlike messages, are not added to the chat history so they cannot be seen by users that log in later, they can " +

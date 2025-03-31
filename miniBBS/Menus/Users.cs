@@ -9,7 +9,7 @@ namespace miniBBS.Menus
     {
         private static readonly string[] _lines = new[]
         {
-            $"{Constants.Inverser}*** Users Help ***{Constants.Inverser}",
+            $"{Constants.Inverser}*** {"Users Help".Color(ConsoleColor.Yellow)} ***{Constants.Inverser}",
             $"{Constants.Spaceholder}",
             $"{Constants.Inverser}/who{Constants.Inverser}".Color(ConsoleColor.Green) + " : List of users currently logged on.",
             $"{Constants.Inverser}/users{Constants.Inverser}".Color(ConsoleColor.Green) + " : List of all users whether currently logged on or not.",

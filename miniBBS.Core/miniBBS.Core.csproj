@@ -119,6 +119,7 @@
     <Compile Include="Models\Control\UserPreference.cs" />
     <Compile Include="Models\Control\VoiceRequestQueue.cs" />
     <Compile Include="Models\Count.cs" />
+    <Compile Include="Models\Data\Bbs.cs" />
     <Compile Include="Models\Data\Blurb.cs" />
     <Compile Include="Models\Data\Bulletin.cs" />
     <Compile Include="Models\Data\BulletinBoard.cs" />

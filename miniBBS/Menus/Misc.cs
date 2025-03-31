@@ -12,10 +12,13 @@ namespace miniBBS.Menus
         private static readonly string[] _lines = new[]
         {
             $"{Constants.Inverser}*** {_clr($"{Constants.BbsName} Misc Menu", ConsoleColor.Yellow)} ***{Constants.Inverser}",
+            $"{Constants.Spaceholder}",
             $"{_clr($"{Constants.Inverser}/main{Constants.Inverser}", ConsoleColor.Green)} : Shows the BBS's Main Menu",
             $"{_clr($"{Constants.Inverser}/newuser{Constants.Inverser}", ConsoleColor.Green)} : Read new user docs",
             $"{_clr($"{Constants.Inverser}/doors{Constants.Inverser}", ConsoleColor.Green)} : Finds all user-made BASIC programs and quick-launch them.",
+            $"{_clr($"{Constants.Inverser}/bbslist{Constants.Inverser}", ConsoleColor.Green)} : BBS List.",
             $"{_clr($"{Constants.Inverser}/term{Constants.Inverser}", ConsoleColor.Green)} : Config Terminal",
+            $"{_clr($"{Constants.Inverser}/notifications{Constants.Inverser}", ConsoleColor.Green)} : Re-display the notifications that were shown on login.",
             $"{_clr($"{Constants.Inverser}/dnd{Constants.Inverser}", ConsoleColor.Green)} : Toggle Do Not Disturb",
             $"{_clr($"{Constants.Inverser}/afk{Constants.Inverser}", ConsoleColor.Green)} : Toggle Away from Keyboard",
             $"{_clr($"{Constants.Inverser}/password{Constants.Inverser}", ConsoleColor.Green)} : Change your password",

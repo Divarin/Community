@@ -24,6 +24,7 @@ namespace miniBBS.Commands
             $"{_clr($"{Constants.Inverser}G{Constants.Inverser}", ConsoleColor.Green)}) Gopher",
             $"{_clr($"{Constants.Inverser}V{Constants.Inverser}", ConsoleColor.Green)}) Voting Booth",
             $"{_clr($"{Constants.Inverser}D{Constants.Inverser}", ConsoleColor.Green)}) Door Games",
+            $"{_clr($"{Constants.Inverser}B{Constants.Inverser}", ConsoleColor.Green)}) BBS List",
             $"{_clr($"{Constants.Inverser}W{Constants.Inverser}", ConsoleColor.Green)}) Who is on",
             $"{_clr($"{Constants.Inverser}U{Constants.Inverser}", ConsoleColor.Green)}) User List",
             $"{_clr($"{Constants.Inverser}P{Constants.Inverser}", ConsoleColor.Green)}) Preferences",
@@ -67,12 +68,12 @@ namespace miniBBS.Commands
                         switch (char.ToUpper(key.Value))
                         {
                             case 'M':
-                            case 'B':
-                                //EnterMessageBaseOrBulletins(session);
                                 Bulletins.Execute(session);
                                 break;
+                            case 'B':
+                                BbsList.Execute(session);
+                                break;
                             case 'C':
-                                //Tutor.Execute(session, "If you prefer a more traditional message base format type '/msg', you'll be reading the same messages either way.");
                                 session.Io.Error("Use '/main' to return to main menu.");
                                 originalLocation = Module.Chat;
                                 return true;
@@ -121,8 +122,6 @@ namespace miniBBS.Commands
                                 }
                                 break;
                             case 'L':
-                                //session.Io.OutputLine(_learn);
-                                //Pause();
                                 Calendar.Execute(session);
                                 break;
                             case 'W':

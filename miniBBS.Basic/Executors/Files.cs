@@ -1,4 +1,5 @@
 ﻿using miniBBS.Basic.Models;
+using miniBBS.Core;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
@@ -16,7 +17,7 @@ namespace miniBBS.Basic.Executors
         public static void ShowFile(BbsSession session, string rootDir, string filename, Variables variables)
         {
             var shortFilename = filename;
-            filename = GetFilename(session, rootDir, filename, variables);
+            filename = GetFilename(session, rootDir, filename, variables, false);
             if (string.IsNullOrWhiteSpace(filename))
             {
                 session.Io.Error($"Unable to find file '{shortFilename}.");
@@ -31,7 +32,7 @@ namespace miniBBS.Basic.Executors
             }
         }
 
-        public static void Open(BbsSession session, string rootDir, string args, Variables variables)
+        public static void Open(BbsSession session, string rootDir, string args, Variables variables, bool userDir)
         {
             var argParts = args?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             if (argParts == null || argParts.Length != 3)
@@ -64,7 +65,8 @@ namespace miniBBS.Basic.Executors
 
             bool append = false;
             var filename = argParts[1];
-            filename = GetFilename(session, rootDir, filename, variables);
+
+            filename = GetFilename(session, rootDir, filename, variables, userDir);
             if (string.IsNullOrWhiteSpace(filename))
                 return;
 
@@ -364,9 +366,15 @@ namespace miniBBS.Basic.Executors
             return result;
         }
 
-        private static string GetFilename(BbsSession session, string rootDir, string filename, Variables variables)
+        private static string GetFilename(BbsSession session, string rootDir, string filename, Variables variables, bool userDir)
         {
             filename = Evaluate.Execute(session, filename, variables);
+
+            if (userDir)
+            {
+                rootDir = $"{Constants.TextFileRootDirectory}users\\{session.User.Name}\\";
+            }
+
             filename = new string(filename.Where(c =>
                 char.IsLetterOrDigit(c)
                 || c == '.'
