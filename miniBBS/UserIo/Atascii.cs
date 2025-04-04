@@ -95,7 +95,7 @@ namespace miniBBS.UserIo
         }
 
         public override void ClearLine() { Output(string.Empty); }
-        public override void ClearScreen() { Output(Clear); }
+        public override void ClearScreen() { this.OutputRaw(Clear.Select(c => (byte)c).ToArray()); }
 
         protected override string GetBackgroundString(ConsoleColor color)
         {

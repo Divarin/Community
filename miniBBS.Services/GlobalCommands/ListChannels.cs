@@ -7,6 +7,7 @@ using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 //using System.Threading;
@@ -115,15 +116,18 @@ namespace miniBBS.Services.GlobalCommands
                 .ToArray();
         }
 
-        private static Count GetChannelCount(List<int> readIds, IRepository<Chat> chatRepo, int channelId)
+        private static Count GetChannelCount(SortedSet<int> readIds, IRepository<Chat> chatRepo, int channelId)
         {
             var di = GlobalDependencyResolver.Default;
             var chats = chatRepo.Get(c => c.ChannelId, channelId);
 
+            var total = chats?.Count() ?? 0;
+            var subset = chats?.Count(c => !readIds.Contains(c.Id)) ?? 0;
+
             return new Count
             {
-                TotalCount = chats?.Count() ?? 0,
-                SubsetCount = chats?.Count(c => !readIds.Contains(c.Id)) ?? 0
+                TotalCount = total,
+                SubsetCount = subset
             };
         }
     }

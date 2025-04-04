@@ -11,13 +11,13 @@ namespace miniBBS.Extensions
 {
     public static class ReadMessageTracker
     {
-        public static List<int> ReadChatIds(this BbsSession session, IDependencyResolver di)
+        public static SortedSet<int> ReadChatIds(this BbsSession session, IDependencyResolver di)
         {
             if (session == null || di == null)
-                return new List<int>();
+                return new SortedSet<int>();
 
             var set = GetReads(session, di);
-            return set.ToList(); // copy so that the collection can't be manipulated outside of these extension methods.
+            return new SortedSet<int>(set); // copy so that the collection can't be manipulated outside of these extension methods.
         }
 
         public static bool HasRead(this BbsSession session, int chatId, IDependencyResolver di)

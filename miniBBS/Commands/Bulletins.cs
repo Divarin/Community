@@ -121,7 +121,7 @@ namespace miniBBS.Commands
             {
                 do
                 {
-                    session.Io.Output($"{Constants.Inverser}[Bulletins:{currentBoard.Name.Color(ConsoleColor.Yellow)}] {"(?=Help)".Color(ConsoleColor.DarkGray)} >{Constants.Inverser} ".Color(ConsoleColor.White));
+                    session.Io.Output($"{Constants.Inverser}[(B)ulletins:{currentBoard.Name.Color(ConsoleColor.Yellow)}]{Constants.Inverser}: ".Color(ConsoleColor.White));
                     var key = session.Io.InputKey();
 
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
@@ -132,7 +132,7 @@ namespace miniBBS.Commands
                             key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'n' : '+';
                     }
 
-                    session.Io.Output(key.Value);
+                    //session.Io.Output(key.Value);
                     key = char.ToUpper(key.Value);
 
                     int jumpToMessageNumber = -1;
@@ -718,23 +718,23 @@ namespace miniBBS.Commands
             }
             builder.AppendLine(string.Join("", new[]
                 {
-                    "Msg #: ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}Msg #{Constants.Inverser}: ".Color(ConsoleColor.Cyan),
                     bulletinNumber.ToString().PadRight(12).Color(ConsoleColor.White),
-                    "Re   : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}Re   {Constants.Inverser}: ".Color(ConsoleColor.Cyan),
                     reNum.Color(ConsoleColor.DarkGray),
                     Environment.NewLine,
-                    "From : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}From {Constants.Inverser}: ".Color(ConsoleColor.Cyan),
                     fromUsername.PadRight(12).Color(ConsoleColor.Yellow),
-                    "To   : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}To   {Constants.Inverser}: ".Color(ConsoleColor.Cyan),
                     toUsername.Color(ConsoleColor.Yellow),
                     Environment.NewLine,
-                    "Date : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}Date {Constants.Inverser}: ".Color(ConsoleColor.Cyan),
                     $"{bulletin.DateUtc.AddHours(session.TimeZone):yy-MM-dd HH:mm}".Color(ConsoleColor.Blue),
                     Environment.NewLine,
-                    "Subj : ".Color(ConsoleColor.Cyan),
+                    $"{Constants.Inverser}Subj {Constants.Inverser}: ".Color(ConsoleColor.Cyan),
                     bulletin.Subject.Color(ConsoleColor.Yellow),
                     Environment.NewLine,
-                    $"{Constants.Spaceholder}---------- ".Color(ConsoleColor.Green)
+                    $"{Constants.Spaceholder}{"-".Repeat(session.Cols-5)} ".Color(ConsoleColor.DarkGray)
                 }));
 
             // account for messages that contain the old colorizer character

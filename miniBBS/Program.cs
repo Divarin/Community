@@ -302,11 +302,11 @@ namespace miniBBS
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
             {
                 session.StartPingPong(Constants.DefaultPingPongDelayMin);
-                session.Io.OutputLine("Type '/?' for help.");
+                //session.Io.OutputLine("Type '/?' for help.");
                 Blurbs.Execute(session);
-                session.Io.OutputLine(" ------------------- ");
-                session.Io.SetForeground(ConsoleColor.Green);
-                Thread.Sleep(1000);
+                //session.Io.OutputLine(" ------------------- ");
+                //session.Io.SetForeground(ConsoleColor.Green);
+                Thread.Sleep(500);
             }
 
             var metaRepo = DI.GetRepository<Metadata>();
@@ -316,12 +316,12 @@ namespace miniBBS
             startupMode = session.User.GetStartupMode(metaRepo);
             session.LoadChatHeaderFormat(metaRepo);
 
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
             {
-                if (session.User.Timezone == 0)
-                    session.Io.OutputLine("All times are in Universal Coordinated Time (UTC), AKA Greenwich mean time (GMT), AKA Zulu time.  Use command /tz to change this.");
-                else
-                    session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz (from chat) to change this.");
+                //if (session.User.Timezone == 0)
+                //    session.Io.OutputLine("All times are in Universal Coordinated Time (UTC), AKA Greenwich mean time (GMT), AKA Zulu time.  Use command /tz to change this.");
+                //else
+                //    session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz (from chat) to change this.");
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
 
@@ -1280,9 +1280,9 @@ namespace miniBBS
                 case "?":
                     ExecuteMenu(session, parts.Length >= 2 ? parts[1] : null);
                     return;
-                case "/??":
-                    CommandList.Execute(session);
-                    return;
+                //case "/??":
+                //    CommandList.Execute(session);
+                //    return;
                 case "/about":
                 case "/a":
                     About.Show(session);

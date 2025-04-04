@@ -1,5 +1,6 @@
 ﻿using miniBBS.Core;
 using miniBBS.Core.Models.Control;
+using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,42 +43,17 @@ namespace miniBBS.TextFiles
         private static void ShowCommands(BbsSession session)
         {
             var builder = new StringBuilder();
-            builder.AppendLine(" ** Text Files Commands Listing **");
+            builder.AppendLine($"{Constants.Inverser}** {"File System Commands Listing".Color(ConsoleColor.Yellow)} **{Constants.Inverser}");
             foreach (var cmd in _commands.Keys)
                 builder.AppendLine(cmd);
             
-            builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Yellow}{Constants.InlineColorizer}");
-            builder.AppendLine("For detailed help on a command or subject type 'help (command)'.  For example for help on the 'dir' command type 'help dir'.");
+            builder.AppendLine($"{session.Io.NewLine}For detailed help on a command or subject type '{"help (command)".Color(ConsoleColor.Green)}'.  For example for help on the 'dir' command type 'help dir'.");
 
             using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Cyan))
             {
                 session.Io.OutputLine(builder.ToString());
             }
         }
-
-        private static readonly IDictionary<string, string> _commands = new Dictionary<string, string>
-        {
-            {"?, help", _help},
-            {"#", _directEntry},
-            {"dir, ls, grep", _dir},
-            {"cd, chdir", _cd},
-            {"read, type, cat, more, less, nonstop, ns", _read},
-            {"run, exec", _run},
-            {"searching", _searching},
-            {"quit, exit, /o", _exit},
-            {"dnd", _dnd},
-            {"chat", _chat},
-            {"link", _link},
-            {"users", _users},
-            {"md, mkdir", _mkdir},
-            {"edit, nano", _edit},
-            {"rename, ren, rn", _rename},
-            {"del, rm", _del},
-            {"deltree, rd, rmdir", _rd},
-            {"publish, pub, unpublish, unpub", _pub},
-            {"contrib, uncontrib, editor, uneditor", _contrib},
-            {"backups, backup, bkups, bkup", _backups}
-        };
 
         private const string _help =
             "The '?' or 'help' command brings up this help system.  'help' (or '?') by itself will show the list of commands.  " +
@@ -214,26 +190,26 @@ namespace miniBBS.TextFiles
             "To do this hit slash (/) and then type the keyword you want to find.  If a match is found after your current page then the text will move to a few lines before the match.  \r\n"+
             "To search for the next occurance of the keyword you can type a slash (/) and hit enter without typing the word.  If you do this the search is repeated with the same keyword you searched for previously.";
 
-        private const string _contrib =
+        private static readonly string _contrib =
             "Contributors / Editors: \r\n" +
             "You can allow other users to edit a text file in your area by using the 'contrib' or 'editor' commands.  You can also use the \r\n" +
             "'uncontrib' or 'uneditor' commands to remove such access.  The file must be in a published state.  This is how it works: \r\n" +
-            "¿contrib ourstory.txt jimbob\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}{"contrib ourstory.txt jimbob".Color(ConsoleColor.Green)}\r\n" +
             "This allows the user 'jimbob' to edit the file 'ourstory.txt'.\r\n" +
-            "¿uncontrib ourstory.txt jimbob\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}{"uncontrib ourstory.txt jimbob".Color(ConsoleColor.Green)}\r\n" +
             "This removes jimbob's access to edit the file.\r\n" +
-            "¿contrib ourstory.txt *\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}{"contrib ourstory.txt *".Color(ConsoleColor.Green)}\r\n" +
             "This allows all users to edit the file.\r\n" +
             "If an 'uncontrib' command is on a file which allows anyone to edit, then that user will be blacklisted, for example:\r\n" +
-            "¿contrib ourstory.txt *\r\n" +
-            "¿uncontrib ourstory.txt jimbob\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}{"contrib ourstory.txt *".Color(ConsoleColor.Green)}\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}{"uncontrib ourstory.txt jimbob".Color(ConsoleColor.Green)}\r\n" +
             "These commands will make it so that the file 'ourstory.txt' can be edited by anyone *except* for jimbob.\r\n" +
-            "¿uncontrib ourstory.txt *\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}{"uncontrib ourstory.txt *".Color(ConsoleColor.Green)}\r\n" +
             "This command will remove all access to edit the file to any user except yourself.\r\n" +
             "\r\n" +
             "When viewing the description of the file the list of editors is shown.  Any blacklisted users are shown with a minus (-) in front of their name.\r\n" +
-            "¿Example: 'Editors: *, -jimbob'  -- meaning, everyone except jimbob\r\n" +
-            "¿Example: 'Editors: Albert, Betty, Charlie  -- meaning, only the users Albert, Betty, and Charlie (and of course you since you're the owner).";
+            $"{Constants.Spaceholder.Repeat(5)}Example: '{"Editors: *, -jimbob".Color(ConsoleColor.Magenta)}'  -- meaning, everyone except jimbob\r\n" +
+            $"{Constants.Spaceholder.Repeat(5)}Example: '{"Editors: Albert, Betty, Charlie".Color(ConsoleColor.Magenta)}'  -- meaning, only the users Albert, Betty, and Charlie (and of course you since you're the owner).";
 
         private const string _backups =
             "Toggles whether or not backup files are shown on directory lists.  Backup files are automatically created " +
@@ -241,5 +217,29 @@ namespace miniBBS.TextFiles
 
         private const string _run =
             "The 'run' and 'exec' commands can be used to execute basic programs, that is programs with .bas extensions.";
+
+        private static readonly IDictionary<string, string> _commands = new Dictionary<string, string>
+        {
+            {"?, help", _help},
+            {"#", _directEntry},
+            {"dir, ls, grep", _dir},
+            {"cd, chdir", _cd},
+            {"read, type, cat, more, less, nonstop, ns", _read},
+            {"run, exec", _run},
+            {"searching", _searching},
+            {"quit, exit, /o", _exit},
+            {"dnd", _dnd},
+            {"chat", _chat},
+            {"link", _link},
+            {"users", _users},
+            {"md, mkdir", _mkdir},
+            {"edit, nano", _edit},
+            {"rename, ren, rn", _rename},
+            {"del, rm", _del},
+            {"deltree, rd, rmdir", _rd},
+            {"publish, pub, unpublish, unpub", _pub},
+            {"contrib, uncontrib, editor, uneditor", _contrib},
+            {"backups, backup, bkups, bkup", _backups}
+        };
     }
 }

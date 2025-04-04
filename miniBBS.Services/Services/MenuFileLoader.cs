@@ -41,6 +41,7 @@ namespace miniBBS.Services.Services
             if (string.IsNullOrWhiteSpace(menuText))
                 return false;
             session.Io.OutputRaw(menuText.Select(x => (byte)x).ToArray());
+            session.Io.OutputLine();
             return true;
         }
 

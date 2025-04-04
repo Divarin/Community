@@ -9,7 +9,7 @@ namespace miniBBS.Commands
     {
         public static void Execute(BbsSession session, string adjust = null)
         {
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
             {
                 if (string.IsNullOrWhiteSpace(adjust) || !int.TryParse(adjust, out var tz) || Math.Abs(tz) > 23)
                     adjust = AskForAdjustment(session);
@@ -19,7 +19,7 @@ namespace miniBBS.Commands
                     return;
                 }
                 session.TimeZone = tz;
-                session.Io.OutputLine($"Times will now be offset from UTC by {tz} hours.  Use '/tz 0' to undo this and go back to showing times in UTC.");
+                session.Io.OutputLine($"Time Zone Adjustment: UTC {tz} hours.{(session.Cols >= 80 ? " " : session.Io.NewLine)}Can be changed in preferences.");
                 if (session.User.Timezone != tz)
                 {
                     session.User.Timezone = tz;

@@ -139,8 +139,17 @@ namespace miniBBS.TextFiles
             if (string.IsNullOrWhiteSpace(selector) || selector.Trim() == "/")
                 return GetRootResponse();
 
+            string input = null;
             selector = selector.Replace("\r", "").Replace("\n", "");
-
+            if (selector.Contains('\t'))
+            {
+                var p = selector.Split(new[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (p.Length == 2)
+                {
+                    selector = p[0];
+                    input = p[1];
+                }
+            }
             var parts = selector.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (parts.Length == 1 && !"index.html".Equals(parts[0], StringComparison.CurrentCultureIgnoreCase))
@@ -149,6 +158,7 @@ namespace miniBBS.TextFiles
                 var filename = $"{Constants.TextFileRootDirectory}users/{parts[0]}";
                 if (!File.Exists(filename))
                     return Info("File not found");
+
                 return ReadFile(filename);
             }
 

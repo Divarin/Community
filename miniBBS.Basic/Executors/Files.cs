@@ -368,6 +368,13 @@ namespace miniBBS.Basic.Executors
 
         private static string GetFilename(BbsSession session, string rootDir, string filename, Variables variables, bool userDir)
         {
+            if (string.IsNullOrWhiteSpace(filename))
+                return null;
+
+            // disallow: 
+            // ../ (cannot start with . & cannot contain '..')
+            // / (cannot start with slash)
+            // c:autoexec.bat (: is filtered out)
             filename = Evaluate.Execute(session, filename, variables);
 
             if (userDir)
@@ -375,13 +382,15 @@ namespace miniBBS.Basic.Executors
                 rootDir = $"{Constants.TextFileRootDirectory}users\\{session.User.Name}\\";
             }
 
+            filename = filename.Replace("/", "\\");
             filename = new string(filename.Where(c =>
                 char.IsLetterOrDigit(c)
                 || c == '.'
                 || c == '_'
-                || c == '-').ToArray());
+                || c == '-'
+                || c == '\\').ToArray());
 
-            if (filename.Contains(".."))
+            if (filename.Contains("..") || filename.StartsWith("/") || filename.StartsWith("\\") || filename.StartsWith("."))
                 return null; // don't allow up-dir'ing
 
             filename = rootDir + filename;
