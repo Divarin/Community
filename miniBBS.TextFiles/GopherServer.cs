@@ -22,7 +22,6 @@ namespace miniBBS.TextFiles
         const int _requestWaitSec = 30;
         private GopherServerOptions _options;
         private ILogger _logger;
-        private const string _localhost = "127.0.0.1";
         
         private static readonly Dictionary<string, char> _gopherEntryTypeDict = new Dictionary<string, char>()
         {
@@ -162,7 +161,13 @@ namespace miniBBS.TextFiles
                 return ReadFile(filename);
             }
 
-            if (parts.Length < 3 || !"pub".Equals(parts[2], StringComparison.CurrentCultureIgnoreCase))
+            var isDevNotes =
+                parts.Length >= 3 &&
+                "users".Equals(parts[0], StringComparison.CurrentCultureIgnoreCase) &&
+                "Divarin".Equals(parts[1], StringComparison.CurrentCultureIgnoreCase) &&
+                "DevNotes".Equals(parts[2], StringComparison.CurrentCultureIgnoreCase);
+
+            if (!isDevNotes && (parts.Length < 3 || !"pub".Equals(parts[2], StringComparison.CurrentCultureIgnoreCase)))
             {
                 // trying to access dir or file outside of a pub directory.
                 return Info("File not found");
@@ -233,9 +238,27 @@ namespace miniBBS.TextFiles
             }
 
             // rearrange links so that non-directories show up first, then directories
+            var devNotesLink = new Models.Link
+            {
+                ActualFilename = "DevNotes/index.html",
+                Description = "Mutiny Community Development Notes",
+                DisplayedFilename = "BBS DevNotes",
+                Parent = new Models.Link
+                {
+                    ActualFilename = "Divarin/index.html",
+                    DisplayedFilename = "Divarin",
+                    Parent = new Models.Link
+                    {
+                        ActualFilename = "users/index.html"
+                    }
+                }
+            };
             var files = links.Where(x => !x.IsDirectory).ToList();
             var dirs = links.Where(x => x.IsDirectory).ToList();
-            links = files.Union(dirs).ToList();
+            links.Clear();
+            links.Add(devNotesLink);
+            links.AddRange(files);
+            links.AddRange(dirs);
 
             // now that we have the links we want to show, put together a response string.
             var builder = new StringBuilder();

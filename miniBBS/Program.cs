@@ -259,14 +259,6 @@ namespace miniBBS
 
         private static void RunSession(BbsSession session)
         {
-            //else if (session.User.TotalLogons < 10)
-            //{
-            //    using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.DarkGray))
-            //    {
-            //        session.Io.OutputLine("Since this is not your first call the faux-main menu is skipped.  Use /main if you want to see it again.");
-            //    }
-            //}
-
             session.CurrentLocation = Module.Chat;
 
             bool notifiedAboutHowToDeleteOwnMessages = false;
@@ -299,15 +291,9 @@ namespace miniBBS
             session.UserMessageSubscriber.OnMessageReceived = m => NotifyUserMessage(session, m);
             session.EmoteSubscriber.OnMessageReceived = m => NotifyEmote(session, m);
 
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Green))
-            {
-                session.StartPingPong(Constants.DefaultPingPongDelayMin);
-                //session.Io.OutputLine("Type '/?' for help.");
-                Blurbs.Execute(session);
-                //session.Io.OutputLine(" ------------------- ");
-                //session.Io.SetForeground(ConsoleColor.Green);
-                Thread.Sleep(500);
-            }
+            session.StartPingPong(Constants.DefaultPingPongDelayMin);
+            Blurbs.Execute(session);
+            Thread.Sleep(500);
 
             var metaRepo = DI.GetRepository<Metadata>();
             var startupMode = session.User.GetStartupMode(metaRepo);
@@ -316,20 +302,8 @@ namespace miniBBS
             startupMode = session.User.GetStartupMode(metaRepo);
             session.LoadChatHeaderFormat(metaRepo);
 
-            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
-            {
-                //if (session.User.Timezone == 0)
-                //    session.Io.OutputLine("All times are in Universal Coordinated Time (UTC), AKA Greenwich mean time (GMT), AKA Zulu time.  Use command /tz to change this.");
-                //else
-                //    session.Io.OutputLine($"All times are shown in UTC offset by {session.User.Timezone} hours.  Use /tz (from chat) to change this.");
-
-                session.Io.SetForeground(ConsoleColor.Magenta);
-
-                if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
-                {
-                    throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
-                }
-            }
+            if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
+                throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
 
             ShowLoginNotifications(session, startupMode);
             BookmarkManager.CheckBookmarkedRead(session);
@@ -348,8 +322,7 @@ namespace miniBBS
             }
 
             session.CurrentLocation = Module.Chat;
-
-            session.Io.OutputLine("Press Enter/Return to read next message.");
+            session.Io.OutputLine($"{Constants.Inverser}Press Enter/Return to read next message.{Constants.Inverser}".Color(ConsoleColor.Red));
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
             {
@@ -519,7 +492,7 @@ namespace miniBBS
             if (chat == null || session.IsIgnoring(chat.FromUserId))
                 return;
 
-            if (chat.ChannelId != session.Channel.Id )
+            if (chat.ChannelId != session.Channel.Id)
             {
                 if (ShouldNotifyCrossChannelPost(chat, session))
                 {
@@ -807,7 +780,7 @@ namespace miniBBS
 
             if (DI.Get<ISessionsList>().Sessions.Count() >= Constants.MaxSessions)
             {
-                session.Io.OutputLine("Sorry, too many people are online right now!  Try again later.");
+                session.Io.OutputLine("sorry, too many people are online right now!  try again later.");
                 _logger.Log(session, $"{session.IpAddress} tried to log on but there are too many people online right now.");
                 return;
             }
@@ -834,9 +807,7 @@ namespace miniBBS
             }
             else
             {
-                if ('Y' == emuTest ||
-                    'y' == emuTest ||
-                    ANSI.TryAutoDetect(session))
+                if ('Y' == emuTest || 'y' == emuTest || ANSI.TryAutoDetect(session))
                 {
                     session.Io = new ANSI(session);
                     session.Cols = 80;
@@ -908,6 +879,12 @@ namespace miniBBS
             if ("Guest".Equals(username, StringComparison.CurrentCultureIgnoreCase))
             {
                 session.Io.Error("Guest logins not allowed.  All you need to register is to specify a username and a password, I'm not going to ask for your phone number, address, email address, who referred you, you social security number, your favorite flavor of ice cream, etc... We just need to make an account for you to log in with and don't really care about anything personal.");
+                goto retryLogin;
+            }
+            else if ("Root".Equals(username, StringComparison.CurrentCultureIgnoreCase))
+            {
+                session.Io.Error("Hahahahaha ... ha");
+                retries = 0;
                 goto retryLogin;
             }
 
