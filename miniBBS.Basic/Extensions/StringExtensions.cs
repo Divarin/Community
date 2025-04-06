@@ -45,13 +45,13 @@ namespace miniBBS.Basic.Extensions
             return results.ToArray();
         }
 
-        public static string Detokenize(this string str, IDictionary<ulong, string> stringValues)
+        public static string Detokenize(this string str, IDictionary<string, string> stringValues)
         {
             if (str.StartsWith("¿[") || str.EndsWith("]¿"))
             {
                 str = str.Substring(2);
-                str = str.Substring(0, str.Length - 2);
-                ulong token = ulong.Parse(str);
+                var token = str.Substring(0, str.Length - 2);
+                //ulong token = ulong.Parse(str);
                 str = stringValues[token];
                 return str;
             }

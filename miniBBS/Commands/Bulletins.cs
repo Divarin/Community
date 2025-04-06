@@ -132,12 +132,12 @@ namespace miniBBS.Commands
                             key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'n' : '+';
                     }
 
-                    //session.Io.Output(key.Value);
                     key = char.ToUpper(key.Value);
 
                     int jumpToMessageNumber = -1;
                     if (key.HasValue && char.IsDigit(key.Value))
                     {
+                        session.Io.Output(key.Value);
                         var restOfTheNumber = session.Io.InputLine();
                         if (string.IsNullOrWhiteSpace(restOfTheNumber))
                         {

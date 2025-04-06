@@ -290,6 +290,14 @@ namespace miniBBS.Basic.Models
         {
             return _globals.GetEnumerator();
         }
+
+        public bool IsDefined(string variableName, IEqualityComparer<string> comparer = null)
+        {
+            return
+                _globals.Keys.Contains(variableName, comparer) ||
+                _environmentVariableValues.Keys.Contains(variableName, comparer) ||
+                _scopedStack.Any(x => x.LocalVariables.Keys.Contains(variableName, comparer));
+        }
         #endregion
     }
 }

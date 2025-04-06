@@ -46,7 +46,7 @@ namespace miniBBS.Basic.Executors
             var pkg = new ExecutionPackage
             {
                 OriginalStatement = statement,
-                StringValues = new Dictionary<ulong, string>(),
+                StringValues = new Dictionary<string, string>(),
                 Timer = Stopwatch.StartNew(),
                 Session = session,
             };
@@ -54,7 +54,7 @@ namespace miniBBS.Basic.Executors
             statement = Execute(statement, variables, pkg);
             
             // re-insert string values in place of tokens
-            foreach (ulong i in pkg.StringValues.Keys)
+            foreach (var i in pkg.StringValues.Keys)
             {
                 string key = $"¿[{i}]¿";
                 string value = pkg.StringValues[i];
@@ -252,7 +252,7 @@ namespace miniBBS.Basic.Executors
             return new string(chars, 0, chars.Length);
         }
 
-        private static string TokenizeStrings(string statement, IDictionary<ulong, string> tokenDict)
+        private static string TokenizeStrings(string statement, IDictionary<string, string> tokenDict)
         {
             bool str = false;
             StringBuilder strBuilder = new StringBuilder();
@@ -267,7 +267,7 @@ namespace miniBBS.Basic.Executors
                         // now leaving string
                         // take string value add to list
                         string strValue = strBuilder.ToString();
-                        ulong token = GetStringValue(strValue);
+                        var token = CreateStringToken(strValue);
                         if (!tokenDict.ContainsKey(token))
                             tokenDict[token] = strValue;
 
@@ -288,24 +288,15 @@ namespace miniBBS.Basic.Executors
             return statement;
         }
 
-        private static ulong GetStringValue(string strValue)
+        private static string CreateStringToken(string strValue)
         {
             if (strValue == null)
-                return 0;
+                return "0";
 
-            ulong v = 0;
-            ulong multiplier = 1;
+            var bytes = strValue.Select(x => (byte)x).ToArray();
+            var result = string.Join("", bytes.Select(b => $"{b:000}"));
 
-            for (var i=0; i < strValue.Length; i++)
-            {
-                char c = strValue[i];
-                ulong cv = c;
-                cv *= multiplier;
-                v += cv;
-                multiplier *= 2;
-            }
-
-            return v;
+            return result;
         }
 
         private static string Substitute(Variables variables, string exp, ExecutionPackage pkg)
@@ -759,6 +750,13 @@ namespace miniBBS.Basic.Executors
                                     value = "-1";
                                 break;
                             }
+                        case "defined":
+                            value = value.Detokenize(pkg.StringValues);
+                            if (variables.IsDefined(value, StringComparer.OrdinalIgnoreCase))
+                                value = "1";
+                            else
+                                value = "0";
+                            break;
                         default:
                             if (f.StartsWith("fn", StringComparison.CurrentCultureIgnoreCase))
                             {
@@ -793,7 +791,10 @@ namespace miniBBS.Basic.Executors
 
         private class ExecutionPackage
         {
-            public IDictionary<ulong, string> StringValues { get; set; }
+            /// <summary>
+            /// [Token] = string value
+            /// </summary>
+            public IDictionary<string, string> StringValues { get; set; }
             public Stopwatch Timer { get; set; }
             public string OriginalStatement { get; set; }
             public BbsSession Session { get; internal set; }
