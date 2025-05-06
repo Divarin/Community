@@ -193,7 +193,7 @@ namespace miniBBS.Extensions
         public static LoginStartupMode GetStartupMode(this User user, IRepository<Metadata> metaRepo)
         {
             if (user == null || metaRepo == null)
-                return LoginStartupMode.MainMenu;
+                return Constants.DefaultStartupMode;
 
             var meta = metaRepo.Get(new Dictionary<string, object>
             {
@@ -201,7 +201,7 @@ namespace miniBBS.Extensions
                 {nameof(Metadata.Type), MetadataType.LoginStartupMode}
             })?.FirstOrDefault();
 
-            LoginStartupMode mode = LoginStartupMode.MainMenu;
+            LoginStartupMode mode = Constants.DefaultStartupMode;
             if (!string.IsNullOrWhiteSpace(meta?.Data) && Enum.TryParse(meta.Data, out LoginStartupMode lsm))
                 mode = lsm;
 

@@ -60,7 +60,7 @@ namespace miniBBS.Commands
                     if (!DI.Get<IMenuFileLoader>().TryShow(session, MenuFileType.Main))
                         session.Io.OutputLine(string.Join(Environment.NewLine, _menu));
 
-                    session.Io.Output($"{Constants.Inverser}[Main Menu] >{Constants.Inverser} ");
+                    ShowPrompt(session);
                     var key = session.Io.InputKey();
                     session.Io.OutputLine();
                     if (key.HasValue)
@@ -146,6 +146,11 @@ namespace miniBBS.Commands
                 session.CurrentLocation = originalLocation;
                 session.DoNotDisturb = originalDnd;
             }
+        }
+
+        public static void ShowPrompt(BbsSession session)
+        {
+            session.Io.Output($"{Constants.Inverser}[Main Menu] >{Constants.Inverser} ");
         }
 
         private static void EnterMessageBaseOrBulletins(BbsSession session)

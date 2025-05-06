@@ -12,6 +12,7 @@ namespace miniBBS.Core.Interfaces
         T Get(int id);
         IEnumerable<T> Get(IDictionary<string, object> filter);
         IEnumerable<T> Get(int[] ids);
+        IEnumerable<TProp> GetDistinct<TProp>(Expression<Func<T, TProp>> propFunc);
         int GetCount();
         int GetCount<TProp>(Expression<Func<T, TProp>> propFunc, object value);
         int GetCount(IDictionary<string, object> filter);

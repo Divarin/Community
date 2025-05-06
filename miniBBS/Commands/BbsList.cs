@@ -394,7 +394,51 @@ namespace miniBBS.Commands
             });
         }
 
-        public static IEnumerable<Bbs> GetRandom(int count, TerminalEmulation emulation)
+        public static void ShowRandom(BbsSession session, int count)
+        {
+            var randomBbss = GetRandom(count, session.Io.EmulationType);
+
+            if (true != randomBbss?.Any())
+                return;
+            {
+                session.Io.OutputLine($"{Constants.Inverser}{"Call these other fine boards!".Color(ConsoleColor.Yellow)}{Constants.Inverser}");
+                foreach (var bbs in randomBbss)
+                {
+                    var port = "";
+                    if (!string.IsNullOrWhiteSpace(bbs.Port))
+                        port = $":{bbs.Port}";
+                    var name = bbs.Name;
+                    var tab = " ";
+                    var addr = bbs.Address;
+
+                    if (session.Cols >= 80)
+                    {
+                        var maxLen = session.Cols - 1;
+                        var line = $"{name}{tab}{addr}{port}";
+                        while (line.Length > maxLen && name.Length > 3)
+                        {
+                            name = name.Substring(0, name.Length - 1);
+                            line = $"{name}{tab}{addr}{port}";
+                        };
+                        while (line.Length < maxLen)
+                        {
+                            tab += ".";
+                            line = $"{name}{tab}{addr}{port}";
+                        }
+                        tab = $"{tab.Substring(0, tab.Length-1)} ".Color(ConsoleColor.DarkGray);
+                        line = $"{name}{tab}{addr.Color(ConsoleColor.Green)}{port}";
+                        session.Io.OutputLine(line, OutputHandlingFlag.NoWordWrap);
+                    }
+                    else
+                    {
+                        session.Io.OutputLine(name.MaxLength(session.Cols), OutputHandlingFlag.NoWordWrap);
+                        session.Io.OutputLine(Constants.Spaceholder.Repeat(3) + $"{addr.Color(ConsoleColor.Green)}{port}", OutputHandlingFlag.NoWordWrap);
+                    }
+                }
+            }
+        }
+
+        private static IEnumerable<Bbs> GetRandom(int count, TerminalEmulation emulation)
         {
             var all = DI.GetRepository<Bbs>().Get().ToArray();
             var matchingEmu = all.Where(x =>

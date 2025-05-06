@@ -28,6 +28,7 @@ namespace miniBBS.UserIo
         private Stack<string> _nextLineStack = new Stack<string>();
 
         public virtual string NewLine => Environment.NewLine;
+        public abstract string Backspace { get; }
 
         public UserIoBase(BbsSession session)
         {
@@ -75,7 +76,7 @@ namespace miniBBS.UserIo
 
         public virtual void OutputBackspace()
         {
-            Output("\b");
+            Output(Backspace);
         }
 
         public virtual char? InputKey()
@@ -93,6 +94,37 @@ namespace miniBBS.UserIo
             return StreamInputLine(_session, autoComplete, handlingFlag);
         }
 
+        public virtual string InputKeyOrLine()
+        {
+            var line = new List<char>();
+            do
+            {
+                var k = InputKey();
+                if (!k.HasValue)
+                    return string.Empty;
+                if (k == Backspace[0])
+                {
+                    if (line.Count > 0)
+                    {
+                        line.RemoveAt(line.Count - 1);
+                        OutputBackspace();
+                        Output(' ');
+                        OutputBackspace();
+                    }
+                    continue;
+                }
+                if (k == NewLine[0])
+                    return new string(line.ToArray());
+                if (char.IsDigit(k.Value))
+                {
+                    line.Add(k.Value);
+                    Output(k.Value);
+                }
+                else
+                    return $"{k.Value}";
+            } while (true);
+        }
+
         public abstract void ClearLine();
         public abstract void ClearScreen();
         public virtual void ResetColor()
@@ -105,12 +137,12 @@ namespace miniBBS.UserIo
 
         public virtual void SetForeground(ConsoleColor color)
         {
-            if (_currentForeground != color)
-            {
-                string ansi = GetForegroundString(color);
-                _currentForeground = color;
-                OutputRaw(Encoding.ASCII.GetBytes(ansi));
-            }
+            if (_currentForeground == color)
+                return;
+
+            string ansi = GetForegroundString(color);
+            _currentForeground = color;
+            OutputRaw(Encoding.ASCII.GetBytes(ansi));
         }
 
         public virtual void SetBackground(ConsoleColor color)
@@ -266,7 +298,11 @@ namespace miniBBS.UserIo
             for (int i=0; i < bytes.Length; i++)
             {
                 byte b = bytes[i];
-                if (b == 13 || b == 10 || b == 8)
+                var isTab =
+                    (EmulationType == TerminalEmulation.Atascii && b == 127) ||
+                    (EmulationType != TerminalEmulation.Atascii && b == 9);
+
+                if (b == 13 || b == 10 || b == 8 || isTab)
                     continue;
                 if (b == 27 && i < bytes.Length - 3)
                 {

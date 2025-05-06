@@ -61,6 +61,8 @@ namespace miniBBS.UserIo
         const byte _toUpper = 142;
         const byte _toLower = 14;
 
+        public override string Backspace => $"{(char)20}";
+
         private static readonly IDictionary<byte, byte[]> _asciiToCbm = new Dictionary<byte, byte[]>
         {
             // 142 to uppercase, // 14 to lowercase
@@ -163,29 +165,29 @@ namespace miniBBS.UserIo
 
         public override void SetForeground(ConsoleColor color)
         {
-            if (_currentForeground != color)
+            if (_currentForeground == color)
+                return;
+
+            _currentForeground = color;
+            byte b = 0;
+            switch (color)
             {
-                _currentForeground = color;
-                byte b = 0;
-                switch (color)
-                {
-                    case ConsoleColor.Black: b = 144; break;
-                    case ConsoleColor.White: b = 5; break;
-                    case ConsoleColor.Red: b = 150; break;
-                    case ConsoleColor.Cyan: b = 159; break;
-                    case ConsoleColor.Magenta: b = 156; break;
-                    case ConsoleColor.Green: b = 153; break;
-                    case ConsoleColor.Blue: b = 154; break;
-                    case ConsoleColor.Yellow: b = 158; break;
-                    case ConsoleColor.DarkYellow: b = 149; break;
-                    case ConsoleColor.DarkRed: b = 28; break;
-                    case ConsoleColor.DarkGray: b = 151; break;
-                    case ConsoleColor.Gray: b = 152; break;
-                    case ConsoleColor.DarkGreen: b = 30; break;
-                    case ConsoleColor.DarkBlue: b = 31; break;
-                }
-                OutputRaw(new[] { b });
+                case ConsoleColor.Black: b = 144; break;
+                case ConsoleColor.White: b = 5; break;
+                case ConsoleColor.Red: b = 150; break;
+                case ConsoleColor.Cyan: b = 159; break;
+                case ConsoleColor.Magenta: b = 156; break;
+                case ConsoleColor.Green: b = 153; break;
+                case ConsoleColor.Blue: b = 154; break;
+                case ConsoleColor.Yellow: b = 158; break;
+                case ConsoleColor.DarkYellow: b = 149; break;
+                case ConsoleColor.DarkRed: b = 28; break;
+                case ConsoleColor.DarkGray: b = 151; break;
+                case ConsoleColor.Gray: b = 152; break;
+                case ConsoleColor.DarkGreen: b = 30; break;
+                case ConsoleColor.DarkBlue: b = 31; break;
             }
+            OutputRaw(new[] { b });
         }
 
         private readonly byte[] _colorBytes = new byte[]
@@ -211,18 +213,8 @@ namespace miniBBS.UserIo
 
         public override void OutputBackspace()
         {
-            base.Output((char)8);
+            base.Output(Backspace[0]);
         }
-
-        //public override char? GetPolledKey()
-        //{
-        //    var c = base.GetPolledKey();
-        //    if (c.HasValue && c >= 'A' - 1 && c <= 'Z' - 1)
-        //        c = (char)(c+2);
-        //    //if (c.HasValue)
-        //    //    c = char.IsUpper(c.Value) ? char.ToLower(c.Value) : char.ToUpper(c.Value);
-        //    return c;
-        //}
 
         protected override string GetString(byte[] bytes) =>
             new string(bytes.Select(c => (char)c).ToArray());
@@ -271,6 +263,8 @@ namespace miniBBS.UserIo
                     chrs.Add((char)20); // backspace
                 else if (char.IsUpper(c))
                     chrs.Add(char.ToLower(c));
+                else if (c == Constants.Spaceholder)
+                    chrs.Add(c);
                 else
                     chrs.Add(char.ToUpper(c));
             }

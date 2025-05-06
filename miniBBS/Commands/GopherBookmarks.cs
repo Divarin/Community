@@ -112,10 +112,10 @@ namespace miniBBS.Commands
                 currentLocation.Url());
             session.Io.OutputLine(
                 $"{Constants.Inverser}1{Constants.Inverser}) ".Color(ConsoleColor.DarkMagenta) +
-                " Make it Public");
+                "Make it Public");
             session.Io.OutputLine(
                 $"{Constants.Inverser}2{Constants.Inverser}) ".Color(ConsoleColor.DarkMagenta) +
-                " Make it Private");
+                "Make it Private");
             session.Io.OutputLine(
                 $"{Constants.Inverser}Q{Constants.Inverser})".Color(ConsoleColor.DarkMagenta) +
                 "uit Menu");

@@ -6,7 +6,7 @@ namespace miniBBS.Core
     public static class Constants
     {
         public const string BbsName = "Community";
-        public const string Version = "5.22c - 2025.04.06";
+        public const string Version = "5.23c - 2025.04.26";
         public const string SysopName = "Divarin";
         public const string BbsLocation = "Cleveland";
 
@@ -171,6 +171,8 @@ namespace miniBBS.Core
             InputHandlingFlag.AllowCtrlEnterToAddNewLine |
             InputHandlingFlag.MaxLengthIfEmote;
 
+        public static readonly LoginStartupMode DefaultStartupMode = LoginStartupMode.ChatRooms;
+
         public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 5;
 
@@ -183,6 +185,12 @@ namespace miniBBS.Core
 
         public const string MaintTime = "0200"; // 2 AM local time
         public const int MaintDurationMin = 60; // 1 hour
+
+        public static class Sql
+        {
+            public static readonly char[] IllegalCharacters = { (char)0, (char)140 };
+            public const char IllegalCharacterSubstitute = '_';
+        }
 
         public static class Files
         {

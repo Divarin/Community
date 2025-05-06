@@ -1,15 +1,17 @@
-﻿using miniBBS.Core.Models.Control;
+﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using miniBBS.Helpers;
+using miniBBS.Services.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace miniBBS.Tests.ExtensionsTests
 {
+    [TestClass]
     public class StringExtensionsTests
     {
         private const string _longText = 
@@ -28,14 +30,14 @@ namespace miniBBS.Tests.ExtensionsTests
         [InlineData(10)]
         public void SplitAndWrap_LongText(int cols)
         {
-            var session = new BbsSession(new SessionsList(), null)
+            var session = new BbsSession(new SessionsList(), null, null)
             {
                 Cols = cols
             };
 
             List<string> lines = new List<string>();
 
-            foreach (var line in StringExtensions.SplitAndWrap(_longText, session))
+            foreach (var line in StringExtensions.SplitAndWrap(_longText, session, OutputHandlingFlag.None))
             {
                 lines.Add(line);
                 Assert.False(line.Length > cols+2); // allow 2 over for Environment.NewLine
@@ -54,14 +56,14 @@ namespace miniBBS.Tests.ExtensionsTests
         [InlineData(10)]
         public void SplitAndWrap_ShortText(int cols)
         {
-            var session = new BbsSession(new SessionsList(), null)
+            var session = new BbsSession(new SessionsList(), null, null)
             {
                 Cols = cols
             };
 
             List<string> lines = new List<string>();
 
-            foreach (var line in StringExtensions.SplitAndWrap(_shortText, session))
+            foreach (var line in StringExtensions.SplitAndWrap(_shortText, session, OutputHandlingFlag.None))
             {
                 lines.Add(line);
                 Assert.False(line.Length > cols+2); // allow 2 over for Environment.NewLine

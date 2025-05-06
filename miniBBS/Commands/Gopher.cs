@@ -242,6 +242,9 @@ namespace miniBBS.Commands
                                     }
                                 }
                                 break;
+                            case '#':
+                                session.Io.Error("By '#', I meant, type the number of the entry you want to go to.");
+                                break;
                             case 'Q':
                                 exitGopher = true;
                                 break;
@@ -441,7 +444,7 @@ namespace miniBBS.Commands
                     builder.Append($"{Constants.Inverser}[SRCH]{Constants.Inverser}: ".Color(ConsoleColor.Blue));
                     break;
                 case GopherEntryType.Information:
-                    nameColor = ConsoleColor.DarkGreen;
+                    nameColor = ConsoleColor.Green;
                     break;
                 case GopherEntryType.Error:
                     builder.Append($"{Constants.Inverser}[ERR!]{Constants.Inverser}: ".Color(ConsoleColor.Red));

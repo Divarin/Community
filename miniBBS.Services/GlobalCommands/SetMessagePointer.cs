@@ -27,7 +27,7 @@ namespace miniBBS.Services.GlobalCommands
                     session.Chats.Keys.LastOrDefault(k => k <= msgPointer)  : 
                     session.Chats.Keys.FirstOrDefault(k => k >= msgPointer);
 
-                if (msgPointer == default)
+                if (msgPointer == default || msgPointer < 0)
                     msgPointer = reverse ?
                         session.Chats.Keys.First() : 
                         session.Chats.Keys.Max();

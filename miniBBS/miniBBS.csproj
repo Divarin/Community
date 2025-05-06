@@ -155,6 +155,7 @@
     <Compile Include="Subscribers\ChannelPostSubscriber.cs" />
     <Compile Include="Subscribers\EmoteSubscriber.cs" />
     <Compile Include="Subscribers\GlobalMessageSubscriber.cs" />
+    <Compile Include="Subscribers\NewUserRegisteredSubscriber.cs" />
     <Compile Include="Subscribers\NullSpaceSubscriber.cs" />
     <Compile Include="Subscribers\UserLoginOrOutSubscriber.cs" />
     <Compile Include="Subscribers\UserMessageSuibscriber.cs" />

@@ -46,7 +46,7 @@ namespace miniBBS.Basic.Executors
             var pkg = new ExecutionPackage
             {
                 OriginalStatement = statement,
-                StringValues = new Dictionary<string, string>(),
+                StringValues = new Dictionary<ulong, string>(),
                 Timer = Stopwatch.StartNew(),
                 Session = session,
             };
@@ -54,7 +54,7 @@ namespace miniBBS.Basic.Executors
             statement = Execute(statement, variables, pkg);
             
             // re-insert string values in place of tokens
-            foreach (var i in pkg.StringValues.Keys)
+            foreach (ulong i in pkg.StringValues.Keys)
             {
                 string key = $"¿[{i}]¿";
                 string value = pkg.StringValues[i];
@@ -252,7 +252,7 @@ namespace miniBBS.Basic.Executors
             return new string(chars, 0, chars.Length);
         }
 
-        private static string TokenizeStrings(string statement, IDictionary<string, string> tokenDict)
+        private static string TokenizeStrings(string statement, IDictionary<ulong, string> tokenDict)
         {
             bool str = false;
             StringBuilder strBuilder = new StringBuilder();
@@ -267,7 +267,7 @@ namespace miniBBS.Basic.Executors
                         // now leaving string
                         // take string value add to list
                         string strValue = strBuilder.ToString();
-                        var token = CreateStringToken(strValue);
+                        ulong token = ComputeToken(strValue);
                         if (!tokenDict.ContainsKey(token))
                             tokenDict[token] = strValue;
 
@@ -288,15 +288,25 @@ namespace miniBBS.Basic.Executors
             return statement;
         }
 
-        private static string CreateStringToken(string strValue)
+        public static ulong ComputeToken(string strValue)
         {
             if (strValue == null)
-                return "0";
+                return 0;
 
-            var bytes = strValue.Select(x => (byte)x).ToArray();
-            var result = string.Join("", bytes.Select(b => $"{b:000}"));
+            decimal token = 0;
+            decimal multiplier = 1;
 
-            return result;
+            for (var i=0; i < strValue.Length; i++)
+            {
+                char c = strValue[i];
+                decimal cv = c;
+                cv *= multiplier;
+                token += cv;
+                multiplier += 0.001m;
+            }
+
+            token = Math.Ceiling(token);
+            return (ulong)token;
         }
 
         private static string Substitute(Variables variables, string exp, ExecutionPackage pkg)
@@ -791,10 +801,7 @@ namespace miniBBS.Basic.Executors
 
         private class ExecutionPackage
         {
-            /// <summary>
-            /// [Token] = string value
-            /// </summary>
-            public IDictionary<string, string> StringValues { get; set; }
+            public IDictionary<ulong, string> StringValues { get; set; }
             public Stopwatch Timer { get; set; }
             public string OriginalStatement { get; set; }
             public BbsSession Session { get; internal set; }

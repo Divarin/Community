@@ -143,6 +143,7 @@
     <Compile Include="Models\Messages\ChannelPostMessage.cs" />
     <Compile Include="Models\Messages\EmoteMessage.cs" />
     <Compile Include="Models\Messages\GlobalMessage.cs" />
+    <Compile Include="Models\Messages\NewUserRegisteredMessage.cs" />
     <Compile Include="Models\Messages\NullSpaceMessage.cs" />
     <Compile Include="Models\Messages\UserLoginOrOutMessage.cs" />
     <Compile Include="Models\Messages\UserMessage.cs" />

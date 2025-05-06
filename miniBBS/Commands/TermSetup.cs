@@ -19,7 +19,7 @@ namespace miniBBS.Commands
         private const int _defaultRows = 24;
         private const int _defaultCols = 80;
 
-        public static void Execute(BbsSession session, TerminalEmulation? detectedEmulation = null)
+        public static void Execute(BbsSession session, bool fromLogin, TerminalEmulation? detectedEmulation = null)
         {
             var originalLocation = session.CurrentLocation;
             session.CurrentLocation = Module.ConfigureEmulation;
@@ -58,20 +58,23 @@ namespace miniBBS.Commands
                 int cols = lastCols;
                 int rows = lastRows;
 
-                switch (detectedEmulation)
+                if (fromLogin)
                 {
-                    case TerminalEmulation.Cbm:
-                    case TerminalEmulation.Atascii:
-                        cols = 40;
-                        rows = 24;
-                        break;
-                    case TerminalEmulation.Ansi:
-                        cols = 80;
-                        break;
-                    default:
-                        cols = lastCols;
-                        rows = lastRows;
-                        break;
+                    switch (detectedEmulation)
+                    {
+                        case TerminalEmulation.Cbm:
+                        case TerminalEmulation.Atascii:
+                            cols = 40;
+                            rows = 24;
+                            break;
+                        case TerminalEmulation.Ansi:
+                            cols = 80;
+                            break;
+                        default:
+                            cols = lastCols;
+                            rows = lastRows;
+                            break;
+                    }
                 }
 
                 Action ApplySettings = () =>

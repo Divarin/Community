@@ -3,7 +3,6 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace miniBBS.UserIo
 {
@@ -16,6 +15,7 @@ namespace miniBBS.UserIo
         }
 
         public override TerminalEmulation EmulationType => TerminalEmulation.Ascii;
+        public override string Backspace => "\b";
 
         public override void ClearLine() { Output(string.Empty); }
         public override void ClearScreen() { Output(Clear); }

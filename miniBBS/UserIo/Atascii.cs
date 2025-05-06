@@ -62,6 +62,7 @@ namespace miniBBS.UserIo
         };
 
         public override string NewLine => $"{(char)155}";
+        public override string Backspace => $"{(char)126}";
 
         public Atascii(BbsSession session)
             : base(session)
@@ -227,7 +228,7 @@ namespace miniBBS.UserIo
 
         public override void OutputBackspace()
         {
-            base.Output((char)126);
+            base.Output(Backspace[0]);
         }
 
         public override string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None)

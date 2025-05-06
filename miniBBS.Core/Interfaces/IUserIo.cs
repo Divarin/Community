@@ -6,6 +6,7 @@ namespace miniBBS.Interfaces
     public interface IUserIo
     {
         string NewLine { get; }
+        string Backspace { get; }
         void OutputRaw(params byte[] bytes);
         void Output(char c);
         void Output(string s, OutputHandlingFlag flags = OutputHandlingFlag.None);
@@ -16,6 +17,7 @@ namespace miniBBS.Interfaces
         char? InputKey();
         string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None);
         string InputLine(Func<string, string> autoComplete, InputHandlingFlag handlingFlag = InputHandlingFlag.None);
+        string InputKeyOrLine();
 
         void ClearLine();
         void ClearScreen();

@@ -48,6 +48,7 @@ namespace miniBBS.TextFiles
             {"mp3", (char) GopherEntryType.SoundFile},
             {"doc", (char) GopherEntryType.Doc},
             {"rtf", (char) GopherEntryType.RichText},
+            {"map", (char) GopherEntryType.Directory},
         };
 
         public void StartServer(GopherServerOptions options)
@@ -310,11 +311,17 @@ namespace miniBBS.TextFiles
             return $"{c}{displayedFilename}\t/{path}\t{Constants.Hostname}\t{_options.GopherServerPort}";
         }
 
-        private static string ReadFile(string filename)
+        private string ReadFile(string filename)
         {
+            string response = string.Empty;
             using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             using (var reader = new StreamReader(fs))
-                return reader.ReadToEnd();
+                response = reader.ReadToEnd();
+
+            if (filename.EndsWith(".map", StringComparison.OrdinalIgnoreCase))
+                response = ParseGopherMap(response);
+
+            return response;
         }
 
         private static string Info(string message) =>
@@ -327,6 +334,43 @@ namespace miniBBS.TextFiles
             yield return "";
             yield return $"{Constants.BbsName} BBS can be accessed at TELNET: {Constants.Hostname}:{_options.BbsPort}";
             yield return "";
+        }
+
+        private string ParseGopherMap(string map)
+        {
+            var builder = new StringBuilder();
+            var lines = map.Split(new[] { (char)13 })
+                .Select(x =>
+                {
+                    if (!string.IsNullOrWhiteSpace(x) && x[0] == 10)
+                        return x.Substring(1);
+                    return x;
+                }).ToArray();
+
+            var exitLoop = false;
+            for (var i = 0; i < lines.Length && !exitLoop; i++)
+            {
+                var line = lines[i];
+                var c = line.Trim().First();
+                switch (c)
+                {
+                    case '#': continue;
+                    case '.': exitLoop = true; break;
+                    default:
+                        if (Enum.IsDefined(typeof(GopherEntryType), (GopherEntryType)c))
+                        {
+                            var parts = line.Split(new[] { '\t' });
+                            var selector = parts.Length >= 2 ? parts[1] : parts[0].Substring(1);
+                            var host = parts.Length >= 3 ? parts[2] : Constants.Hostname;
+                            var port = parts.Length >= 4 && int.TryParse(parts[3], out var p) ? p : this._options.GopherServerPort;
+                            builder.AppendLine($"{c}{parts[0].Substring(1)}\t/{selector}\t{host}\t{port}");
+                        }
+                        break;
+                }
+            }
+
+            var result = builder.ToString();
+            return result;
         }
     }
 }

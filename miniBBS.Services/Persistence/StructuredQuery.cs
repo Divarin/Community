@@ -1,4 +1,5 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core;
+using miniBBS.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Data.Linq.Mapping;
@@ -11,7 +12,7 @@ namespace miniBBS.Services.Persistence
     {
         protected StringBuilder _builder = new StringBuilder();
         protected bool _firstUpdateSet = false; // used when multiple calls to the Set() method are used
-
+        
         public StructuredQuery()
         { }
 
@@ -253,10 +254,26 @@ namespace miniBBS.Services.Persistence
                 return null;
 
             string strDirty = dirty.ToString();
-            if (!strDirty.Contains("'"))
+
+            var containsQuote = strDirty.Contains("'");
+            var containsUnprintable = strDirty.Any(x => Constants.Sql.IllegalCharacters.Contains(x));
+
+            if (!containsQuote && !containsUnprintable)
                 return strDirty;
 
-            return String.Join("''", strDirty.Split(new char[] { '\'' }, StringSplitOptions.RemoveEmptyEntries));
+            // put quotes in quotes
+            var clean = string.Join("''", strDirty.Split(new char[] { '\'' }, StringSplitOptions.RemoveEmptyEntries));
+
+            // replace unprintables
+            var chars = clean.Select(c => c).ToArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                if (Constants.Sql.IllegalCharacters.Contains(chars[i]))
+                    chars[i] = Constants.Sql.IllegalCharacterSubstitute;
+            }
+            clean = new string(chars, 0, chars.Length);
+
+            return clean;
         }
     }
 

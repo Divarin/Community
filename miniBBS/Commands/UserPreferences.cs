@@ -60,7 +60,7 @@ namespace miniBBS.Commands
                 switch (inp)
                 {
                     case '1':
-                        TermSetup.Execute(session);
+                        TermSetup.Execute(session, false, session.Io.EmulationType);
                         break;
                     case '2':
                         mode = mode == LoginStartupMode.ChatRooms ? LoginStartupMode.MainMenu : LoginStartupMode.ChatRooms;

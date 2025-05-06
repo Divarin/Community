@@ -31,7 +31,6 @@ namespace miniBBS
         private static ILogger _logger;
         private static List<string> _ipBans;
         public static SystemControlFlag SysControl = SystemControlFlag.Normal;
-
         static void Main(string[] args)
         {
             if (args?.Length < 1 || !int.TryParse(args[0], out int port))
@@ -179,7 +178,7 @@ namespace miniBBS
                                 detectedEmulation = session.Io.EmulationType;
                             }
 
-                            TermSetup.Execute(session, detectedEmulation);
+                            TermSetup.Execute(session, true, detectedEmulation);
                             
                             if (!DI.Get<IMenuFileLoader>().TryShow(session, MenuFileType.Login))
                                 Banners.Show(session);
@@ -277,7 +276,8 @@ namespace miniBBS
             session.Messager.Subscribe(session.EmoteSubscriber);
             session.GlobalMessageSubscriber = new GlobalMessageSubscriber(session.Id);
             session.Messager.Subscribe(session.GlobalMessageSubscriber);
-
+            session.NewUserRegisteredSubscriber = new NewUserRegisteredSubscriber(session);
+            session.Messager.Subscribe(session.NewUserRegisteredSubscriber);
             session.Usernames = session.UserRepo.Get().ToDictionary(k => k.Id, v => v.Name);
             var channelRepo = DI.GetRepository<Channel>();
             var chatRepo = DI.GetRepository<Chat>();
@@ -290,6 +290,7 @@ namespace miniBBS
             session.GlobalMessageSubscriber.OnMessageReceived = m => NotifyGlobalMessage(session, m);
             session.UserMessageSubscriber.OnMessageReceived = m => NotifyUserMessage(session, m);
             session.EmoteSubscriber.OnMessageReceived = m => NotifyEmote(session, m);
+            session.NewUserRegisteredSubscriber.OnMessageReceived = m => NotifyNewUserRegistered(session, m);
 
             session.StartPingPong(Constants.DefaultPingPongDelayMin);
             Blurbs.Execute(session);
@@ -298,8 +299,8 @@ namespace miniBBS
             var metaRepo = DI.GetRepository<Metadata>();
             var startupMode = session.User.GetStartupMode(metaRepo);
             session.Items[SessionItem.StartupMode] = startupMode;
-            OneTimeQuestions.Execute(session);
-            startupMode = session.User.GetStartupMode(metaRepo);
+            //OneTimeQuestions.Execute(session);
+            //startupMode = session.User.GetStartupMode(metaRepo);
             session.LoadChatHeaderFormat(metaRepo);
 
             if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
@@ -322,7 +323,8 @@ namespace miniBBS
             }
 
             session.CurrentLocation = Module.Chat;
-            session.Io.OutputLine($"{Constants.Inverser}Press Enter/Return to read next message.{Constants.Inverser}".Color(ConsoleColor.Red));
+            session.Io.OutputLine($"Type {Constants.Inverser}{"/main".Color(ConsoleColor.Green)}{Constants.Inverser} for the {"Main Menu".Color(ConsoleColor.Green)}".Color(ConsoleColor.White), OutputHandlingFlag.NoWordWrap);
+            session.Io.OutputLine($"Press {Constants.Inverser}Enter/Return{Constants.Inverser} to read next message.".Color(ConsoleColor.Red));
 
             while (!session.ForceLogout && session.Stream.CanRead && session.Stream.CanWrite)
             {
@@ -462,7 +464,11 @@ namespace miniBBS
             if (session.LastMsgPointer.HasValue && session.Chats?.Any() == true && session.LastMsgPointer.Value < session.Chats.Keys.FirstOrDefault())
                 session.LastMsgPointer = session.Chats.Keys.First();
 
-            var lastRead = session.Chats.ItemNumber(session.LastMsgPointer) ?? -1;
+            var lastRead =
+                session.Chats.ItemNumber(session.LastMsgPointer) ?? 
+                session.Chats.ItemNumber(session.MsgPointer) ??
+                -1;
+
             var count = session.Chats?.Count-1 ?? 0;
             var chanList = ListChannels.GetChannelList(session);
             
@@ -633,7 +639,7 @@ namespace miniBBS
             {
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 {
-                    session.Io.OutputLine($"{Environment.NewLine}{message.Message}");
+                    session.Io.OutputLine($"{session.Io.NewLine}{message.Message}");
                     message.OnReceive?.Invoke(session);
                 }
             };
@@ -671,6 +677,30 @@ namespace miniBBS
             {
                 action();
                 session.ShowPrompt();
+            }
+        }
+
+        private static void NotifyNewUserRegistered(BbsSession session, NewUserRegisteredMessage message)
+        {
+            Action action = () =>
+            {
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
+                {
+                    session.Io.OutputLine($"{session.Io.NewLine}New User '{message.Username.Color(ConsoleColor.Green)}' registered!");
+                }
+            };
+
+            if (session.DoNotDisturb && session.CurrentLocation != Module.MainMenu)
+                session.DndMessages.Enqueue(action);
+            else if (session.Io.IsInputting)
+                session.Io.DelayNotification(action);
+            else
+            {
+                action();
+                if (session.CurrentLocation == Module.MainMenu)
+                    Commands.MainMenu.ShowPrompt(session);
+                else
+                    session.ShowPrompt();
             }
         }
 
@@ -732,14 +762,17 @@ namespace miniBBS
                 }
             };
 
-            if (session.DoNotDisturb)
+            if (session.DoNotDisturb && session.CurrentLocation != Module.MainMenu)
                 session.DndMessages.Enqueue(action);
             else if (session.Io.IsInputting)
                 session.Io.DelayNotification(action);
             else
             {
                 action();
-                session.ShowPrompt();
+                if (session.CurrentLocation == Module.MainMenu)
+                    Commands.MainMenu.ShowPrompt(session);
+                else
+                    session.ShowPrompt();
             }
         }
 
@@ -908,6 +941,7 @@ namespace miniBBS
                 session.CurrentLocation = Module.Login;
                 if (user == null)
                     return;
+
                 var k = session.Io.Ask("Do you want to read the new user documentation now?");
                 if (k == 'Y')
                     ReadFile.Execute(session, Constants.Files.NewUser);
@@ -915,6 +949,8 @@ namespace miniBBS
                     session.Io.OutputLine("Once you get logged in, type '/newuser' to read the new user documentation.  It can be very helpful for new users as this system works differently than most.");
 
                 session.User = user;
+
+                session.Messager.Publish(session, new NewUserRegisteredMessage(session));
             }
             else
             {
@@ -1092,7 +1128,7 @@ namespace miniBBS
                 DateAddedUtc = now,
                 LastLogonUtc = now,
                 TotalLogons = 1,
-                Access = AccessFlag.MayLogon
+                Access = AccessFlag.MayLogon,
             };
 
             session.Io.OutputLine(
@@ -1224,7 +1260,7 @@ namespace miniBBS
                 case "/term":
                 case "/setup":
                 case "/emu":
-                    TermSetup.Execute(session, session.Io.EmulationType);
+                    TermSetup.Execute(session, false, session.Io.EmulationType);
                     return;
                 case "/pref":
                     UserPreferences.Execute(session);
@@ -1834,21 +1870,43 @@ namespace miniBBS
 
         private static void CompleteLogout(BbsSession session)
         {
-            var randomBbss = BbsList.GetRandom(5, session.Io.EmulationType);
-            if (true == randomBbss?.Any())
-            {
-                session.Io.OutputLine($"{Constants.Inverser}{"Call these other fine boards!".Color(ConsoleColor.Yellow)}{Constants.Inverser}");
-                foreach (var bbs in randomBbss)
-                {
-                    var port = "";
-                    if (!string.IsNullOrWhiteSpace(bbs.Port))
-                        port = $":{bbs.Port}";
-                    session.Io.OutputLine($"{bbs.Name} {bbs.Address.Color(ConsoleColor.Green)}{port}");
-                }
-            }
-
+            BbsList.ShowRandom(session, 5);
             session.Io.OutputLine("Goodbye!");
             session.Disconnect();
         }
+
+        //static void Test()
+        //{
+        //    var counts = new Dictionary<byte, int>();
+        //    var hasher = new Hasher();
+
+        //    for (var i=0; i < 1000; i++)
+        //    {
+        //        var input = Guid.NewGuid().ToString();
+        //        var hash = hasher.Hash(input);
+        //        foreach (var c in hash)
+        //        {
+        //            var b = (byte)c;
+        //            if (counts.ContainsKey(b))
+        //                counts[b]++;
+        //            else
+        //                counts[b] = 1;
+        //        }
+        //    }
+
+        //    var all = new int[256];
+        //    for (var i = 0; i < 256; i++)
+        //    {
+        //        var b = (byte)i;
+        //        all[b] = counts.ContainsKey(b) ? counts[b] : 0;
+        //    }
+
+        //    for (var i=0; i < 256; i++)
+        //    {
+        //        if (all[i] > 1)
+        //            continue;
+        //        Console.Write($"{i}, ");
+        //    }
+        //}
     }
 }

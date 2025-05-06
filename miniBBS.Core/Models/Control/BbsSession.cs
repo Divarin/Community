@@ -87,7 +87,8 @@ namespace miniBBS.Core.Models.Control
         public ISubscriber<GlobalMessage> GlobalMessageSubscriber { get; set; }
         public ISubscriber<UserMessage> UserMessageSubscriber { get; set; }
         public ISubscriber<EmoteMessage> EmoteSubscriber { get; set; }
-        
+        public ISubscriber<NewUserRegisteredMessage> NewUserRegisteredSubscriber { get; set; }
+
         public Module CurrentLocation { get; set; }
         
         public Action OnDispose { get; set; }

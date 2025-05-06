@@ -57,9 +57,9 @@ namespace miniBBS.Services.Services
                 while (!cmdResult.HasFlag(CommandResult.ExitEditor))
                 {
                     var line = session.Io.InputLine();
-                    if (String.IsNullOrWhiteSpace(line))
+                    if (string.IsNullOrWhiteSpace(line))
                         lines.Add(string.Empty);
-                    else if (line.StartsWith("/"))
+                    else if (line.StartsWith("/") && !line.StartsWith("//"))
                     {
                         cmdResult = ProcessCommand(session, lines, line.Substring(1)
                             .Split(' ')
@@ -80,6 +80,9 @@ namespace miniBBS.Services.Services
                     }
                     else
                     {
+                        if (line.StartsWith("//"))
+                            line = line.Substring(1);
+                        line = line.Replace(@"\t", "\t");
                         lines.Add(line);
                     }
                 };

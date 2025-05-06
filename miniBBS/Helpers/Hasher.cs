@@ -1,4 +1,6 @@
-﻿using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core;
+using miniBBS.Core.Interfaces;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -16,7 +18,15 @@ namespace miniBBS.Helpers
         {
             byte[] unhashedBytes = Encoding.UTF8.GetBytes(unhashed);
             byte[] hashedBytes = _sha.ComputeHash(unhashedBytes);
+
+            for (var i=0; i < hashedBytes.Length; i++)
+            {
+                if (Constants.Sql.IllegalCharacters.Contains((char)hashedBytes[i]))
+                    hashedBytes[i] = (byte)Constants.Sql.IllegalCharacterSubstitute;
+            }
+
             string result = Encoding.UTF8.GetString(hashedBytes);
+
             return result;
         }
 

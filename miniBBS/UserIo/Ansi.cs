@@ -18,6 +18,7 @@ namespace miniBBS.UserIo
         }
 
         public override TerminalEmulation EmulationType => TerminalEmulation.Ansi;
+        public override string Backspace => "\b";
 
         private const string _deviceStatusRequest = "\u001b[6n";
 

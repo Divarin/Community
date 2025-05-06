@@ -18,11 +18,6 @@ namespace miniBBS.Commands
     {
         private const string END_QUOTE = " --- End Quote ---";
         
-        //private const string NO_MORE_UNREAD = 
-        //    "No more unread messages in the current board use ']' to advance to the next.   " + 
-        //    "Also try going to the chat rooms and    " + 
-        //    "reading the backlog there!";
-        //   1234567890123456789012345678901234567890
         public static void Execute(BbsSession session)
         {
             var previousLocation = session.CurrentLocation;
@@ -121,33 +116,20 @@ namespace miniBBS.Commands
             {
                 do
                 {
-                    session.Io.Output($"{Constants.Inverser}[(B)ulletins:{currentBoard.Name.Color(ConsoleColor.Yellow)}]{Constants.Inverser}: ".Color(ConsoleColor.White));
-                    var key = session.Io.InputKey();
+                    session.Io.Output($"{Constants.Inverser}[Bulletins:{currentBoard.Name.Color(ConsoleColor.Yellow)}]{Constants.Inverser}: ".Color(ConsoleColor.White));
+
+                    var line = session.Io.InputKeyOrLine();
+                    char? key = string.IsNullOrWhiteSpace(line) ? (char?)null : char.ToUpper(line[0]);
 
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
                     {
                         if (lastRead.HasValue)
                             key = '+';
                         else
-                            key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'n' : '+';
+                            key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'N' : '+';
                     }
 
-                    key = char.ToUpper(key.Value);
-
-                    int jumpToMessageNumber = -1;
-                    if (key.HasValue && char.IsDigit(key.Value))
-                    {
-                        session.Io.Output(key.Value);
-                        var restOfTheNumber = session.Io.InputLine();
-                        if (string.IsNullOrWhiteSpace(restOfTheNumber))
-                        {
-                            jumpToMessageNumber = int.Parse($"{key.Value}");
-                        }
-                        else if (int.TryParse(restOfTheNumber, out int n1))
-                        {
-                            jumpToMessageNumber = int.Parse($"{key.Value}{restOfTheNumber}");
-                        }
-                    }
+                    var jumpToMessage = int.TryParse(line, out var jumpToMessageNumber);
 
                     session.Io.OutputLine();
                     switch (key)
@@ -360,7 +342,7 @@ namespace miniBBS.Commands
                             ShowMenu(session, includeArchived, numArchived);
                             break;
                         default:
-                            if (jumpToMessageNumber >= 0)
+                            if (jumpToMessage && jumpToMessageNumber >= 0)
                             {
                                 // jump to message by number
                                 Notice(session, $"Jumping to message # {jumpToMessageNumber}");

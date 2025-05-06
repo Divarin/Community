@@ -112,6 +112,35 @@ namespace miniBBS.Services.Persistence
             }
         }
 
+        public IEnumerable<TProp> GetDistinct<TProp>(Expression<Func<T, TProp>> propFunc)
+        {
+            string propName = (propFunc.Body as MemberExpression).Member.Name;
+
+            var sql = new StructuredQuery()
+                .Select($"distinct {propName} ")
+                .From<T>()
+                .GroupBy(propName)
+                .Query;
+
+            IEnumerable<TProp> result = null;
+
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                using (var adapter = new SQLiteDataAdapter(sql, connection))
+                {
+                    DataSet set = new DataSet();
+                    adapter.Fill(set);
+                    var results = from DataRow row in set.Tables[0].Rows
+                                  select $"'{row[0]}'";
+                    result = results.Select(x => JsonConvert.DeserializeObject<TProp>(x)).ToList();
+                }
+                connection.Close();
+            }
+
+            return result;
+        }
+
         public IDictionary<TProp, int> GetAggregate<TProp>(Expression<Func<T, TProp>> propFunc)
         {
             string propName = (propFunc.Body as MemberExpression).Member.Name;

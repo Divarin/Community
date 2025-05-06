@@ -17,6 +17,7 @@ namespace miniBBS.Menus
             $"{_clr($"{Constants.Inverser}ENTER{Constants.Inverser}", ConsoleColor.Green)} : Show the next message",
             "To post or respond to one, just type!",
             $"{_clr($"{Constants.Inverser}/a{Constants.Inverser}", ConsoleColor.Green)} : About this sytem",
+            $"{_clr($"{Constants.Inverser}/main{Constants.Inverser}", ConsoleColor.Green)} : Go to the Main Menu",
             $"{_clr($"{Constants.Inverser}/o{Constants.Inverser}", ConsoleColor.Green)} : Logoff",
             $"{_clr($"{Constants.Inverser}/who{Constants.Inverser}", ConsoleColor.Green)} : List of users currently logged on",
             $"{_clr($"{Constants.Inverser}/chl{Constants.Inverser}", ConsoleColor.Green)} : List chat channels",
