@@ -162,7 +162,7 @@ namespace miniBBS.Services.GlobalCommands
             return true;
         }
 
-        private static void SetSessionChats(BbsSession session)
+        public static void SetSessionChats(BbsSession session)
         {
             var chatCache = GlobalDependencyResolver.Default
                             .Get<IChatCache>()

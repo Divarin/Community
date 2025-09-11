@@ -17,6 +17,11 @@ namespace miniBBS.Services.Persistence
             _chatRepo = GlobalDependencyResolver.Default.GetRepository<Chat>();
         }
 
+        public void Clear()
+        {
+            _channelChats.Clear();
+        }
+
         public SortedList<int, Chat> GetChannelChats(int channelId)
         {
             if (!_channelChats.ContainsKey(channelId))

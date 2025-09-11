@@ -228,6 +228,18 @@ namespace miniBBS.Services.Services
                 case "import":
                     Import(lines, args.Skip(1)?.FirstOrDefault());
                     break;
+                case "copy":
+                    {
+                        var range = args.Length >= 2 ? args[1] : null;
+                        Copy(lines, range);
+                    }
+                    break;
+                case "paste":
+                    {
+                        var startLine = args.Length >= 2 ? args[1] : null;
+                        Paste(lines, startLine);
+                    }
+                    break;
                 case "help":
                 case "h":
                 case "?":
@@ -237,6 +249,53 @@ namespace miniBBS.Services.Services
             }
 
             return CommandResult.None;
+        }
+
+        private void Paste(List<string> lines, string args)
+        {
+            List<string> clipboard = null;
+            if (_session.Items.ContainsKey(SessionItem.Clipboard))
+                clipboard = _session.Items[SessionItem.Clipboard] as List<string>;
+            if (clipboard == null)
+            {
+                _session.Io.Error("Nothing in your clipboard, use '/copy'.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(args) || !int.TryParse(args, out int startLine))
+            {
+                lines.AddRange(clipboard);
+                _session.Io.OutputLine($"Appended {clipboard.Count} lines.".Color(ConsoleColor.Magenta));
+                return;
+            }
+
+            foreach (var line in clipboard)
+            {
+                lines.Insert(startLine, line);
+                startLine++;
+            }
+
+            _session.Io.OutputLine($"Inserted {clipboard.Count} lines.".Color(ConsoleColor.Magenta));
+        }
+
+        private void Copy(List<string> lines, string args)
+        {
+            var range = string.IsNullOrWhiteSpace(args) ?
+                new Tuple<int, int>(1, lines.Count + 1) :
+                ParseRange.Execute(args, lines.Count + 1);
+            
+            var copied = new List<string>();
+            for (var i=range.Item1-1; i <= range.Item2-1; i++)
+            {
+                if (i >= lines.Count)
+                    break;
+                copied.Add(lines[i]);
+            }
+
+
+            _session.Items[SessionItem.Clipboard] = copied;
+
+            _session.Io.OutputLine($"Copied {copied.Count} lines to clipboard.".Color(ConsoleColor.Magenta));
         }
 
         private void Import(List<string> lines, string filename)
@@ -312,6 +371,8 @@ namespace miniBBS.Services.Services
                     "/find, /f (search) : Lists all lines containing the (search)",
                     "/replace, /r (search) (replace) : Replaces all occurances of (search) with (replace) throughout the document (case sensitive).  Asks you for confirmation.",
                     "/import, /imp (filename) : Loads in the contents of a file uploaded to Mutiny BBS if it was uploaded to your text files upload area",
+                    "/copy [range] : Copies some or all lines of text to the clipboard",
+                    "/paste [insert at line #]: Pastes the lines of text which are in your clipboard",
                     "/help, /h, /? : This menu"
                 }));
             }
@@ -400,6 +461,12 @@ namespace miniBBS.Services.Services
             int lineNum = lines.Count - 1;
             if (true == args?.Length >= 1 && int.TryParse(args[0], out int ln) && ln > 0 && ln <= lines.Count)
                 lineNum = ln-1;
+
+            if (lines?.Any() != true || lineNum >= lines.Count || lineNum < 0)
+            {
+                _session.Io.Error("Invalid line number.");
+                return;
+            }
 
             string search, replace;
             search = replace = null;

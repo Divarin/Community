@@ -5,6 +5,7 @@ using miniBBS.Core.Models.Data;
 using miniBBS.Core.Models.Messages;
 using miniBBS.Extensions;
 using miniBBS.Services.GlobalCommands;
+using miniBBS.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,9 +85,21 @@ namespace miniBBS.Commands
 
             if (Confirm(session, chatsToMove, targetChannel.Name))
             {
+                session.Io.Output("Working, please wait...");
                 var chatRepo = DI.GetRepository<Chat>();
                 foreach (var chat in chatsToMove)
                     MoveMessage(session, chat, targetChannel, chatRepo);
+                session.Io.OutputLine(" Done!");
+                DI.Get<IChatCache>().Clear();
+                var msg = new GlobalMessage(session.Id, $"{session.User.Name} moved some messages, reloading chat-cache", true)
+                {
+                    OnReceive = sess =>
+                    {
+                        SwitchOrMakeChannel.SetSessionChats(sess);
+                        SetMessagePointer.Execute(sess, sess.MsgPointer);
+                    }
+                };
+                DI.Get<IMessager>().Publish(session, msg);                    
             }
         }
 

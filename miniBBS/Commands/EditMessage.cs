@@ -115,16 +115,30 @@ namespace miniBBS.Commands
             var builder = new StringBuilder();
             bool inQuotes = false;
             int argsReturned = 0;
+            bool escapeNext = false;
 
             foreach (char c in line)
             {
+                if (c == '\\')
+                {
+                    escapeNext = true;
+                    continue;
+                }
                 if (c == '"')
                     inQuotes = !inQuotes;
                 else if (c == ' ' && !inQuotes && argsReturned < 3)
                 {
-                    yield return builder.ToString();
-                    argsReturned++;
-                    builder.Clear();
+                    if (escapeNext)
+                    {
+                        escapeNext = false;
+                        builder.Append(c);
+                    }
+                    else
+                    {
+                        yield return builder.ToString();
+                        argsReturned++;
+                        builder.Clear();
+                    }
                 }
                 else
                     builder.Append(c);

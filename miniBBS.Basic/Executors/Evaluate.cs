@@ -22,7 +22,7 @@ namespace miniBBS.Basic.Executors
         { 
             "RND", "SIN", "COS", "TAN", "ATAN", "ASIN", "ACOS", "SQR", "VAL", "STR$", "INT", "POW", "MOD",
             "CHR$", "ASC", "LEFT$", "RIGHT$", "MID$", "REPLACE$", "INSTR", "LEN", "TAB", "ABS", "UC$", "LC$",
-            "COUNT", "NL$", "REPEAT$", "ISWORD",
+            "COUNT", "NL$", "REPEAT$", "ISWORD", "FLOOR", "CEILING", "LOG", "LN", "TOKEN",
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
             "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
             "GUID$", "SECONDS", "LTRIM$", "RTRIM$", "TRIM$", "ROUND",
@@ -46,7 +46,7 @@ namespace miniBBS.Basic.Executors
             var pkg = new ExecutionPackage
             {
                 OriginalStatement = statement,
-                StringValues = new Dictionary<ulong, string>(),
+                StringValues = new Dictionary<decimal, string>(),
                 Timer = Stopwatch.StartNew(),
                 Session = session,
             };
@@ -54,10 +54,10 @@ namespace miniBBS.Basic.Executors
             statement = Execute(statement, variables, pkg);
             
             // re-insert string values in place of tokens
-            foreach (ulong i in pkg.StringValues.Keys)
+            foreach (var token in pkg.StringValues.Keys)
             {
-                string key = $"¿[{i}]¿";
-                string value = pkg.StringValues[i];
+                string key = $"¿[{token}]¿";
+                string value = pkg.StringValues[token];
                 statement = statement.Replace(key, value);
             }
 
@@ -252,7 +252,7 @@ namespace miniBBS.Basic.Executors
             return new string(chars, 0, chars.Length);
         }
 
-        private static string TokenizeStrings(string statement, IDictionary<ulong, string> tokenDict)
+        private static string TokenizeStrings(string statement, IDictionary<decimal, string> tokenDict)
         {
             bool str = false;
             StringBuilder strBuilder = new StringBuilder();
@@ -267,7 +267,7 @@ namespace miniBBS.Basic.Executors
                         // now leaving string
                         // take string value add to list
                         string strValue = strBuilder.ToString();
-                        ulong token = ComputeToken(strValue);
+                        var token = ComputeToken(strValue);
                         if (!tokenDict.ContainsKey(token))
                             tokenDict[token] = strValue;
 
@@ -288,13 +288,16 @@ namespace miniBBS.Basic.Executors
             return statement;
         }
 
-        public static ulong ComputeToken(string strValue)
+        public static decimal ComputeToken(string strValue)
         {
-            if (strValue == null)
+            if (strValue == null || strValue.Length < 1)
                 return 0;
 
+            const decimal increment = 0.00001m;
             decimal token = 0;
-            decimal multiplier = 1;
+            // the first character should have the highest multipler
+            // the 2nd character the 2nd highest, etc...
+            decimal multiplier = 1 + (strValue.Length * increment);
 
             for (var i=0; i < strValue.Length; i++)
             {
@@ -302,11 +305,10 @@ namespace miniBBS.Basic.Executors
                 decimal cv = c;
                 cv *= multiplier;
                 token += cv;
-                multiplier += 0.001m;
+                multiplier -= increment;
             }
 
-            token = Math.Ceiling(token);
-            return (ulong)token;
+            return token;
         }
 
         private static string Substitute(Variables variables, string exp, ExecutionPackage pkg)
@@ -434,6 +436,36 @@ namespace miniBBS.Basic.Executors
                             }
                             break;
                         case "int": value = Int.Execute(value).ToString(); break;
+                        case "floor":
+                            value = Int.Execute(value).ToString();
+                            break;
+                        case "ceiling":
+                            {
+                                if (!double.TryParse(value, out double d))
+                                    throw new RuntimeException($"Unable to parse '{value}' as a numeric value.");
+                                value = $"{Math.Ceiling(d)}";
+                            }
+                            break;
+                        case "log":
+                            {
+                                if (!double.TryParse(value, out double d))
+                                    throw new RuntimeException($"Unable to parse '{value}' as a numeric value.");
+                                value = $"{Math.Log10(d)}";
+                            }
+                            break;
+                        case "ln":
+                            {
+                                if (!double.TryParse(value, out double d))
+                                    throw new RuntimeException($"Unable to parse '{value}' as a numeric value.");
+                                value = $"{Math.Log(d)}";
+                            }
+                            break;
+                        case "token":
+                            {
+                                var token = ComputeToken(value);
+                                value = $"{token}";
+                            }
+                            break;
                         case "chr$":
                             {
                                 if (string.IsNullOrWhiteSpace(value) || !byte.TryParse(value, out byte b))
@@ -801,7 +833,7 @@ namespace miniBBS.Basic.Executors
 
         private class ExecutionPackage
         {
-            public IDictionary<ulong, string> StringValues { get; set; }
+            public IDictionary<decimal, string> StringValues { get; set; }
             public Stopwatch Timer { get; set; }
             public string OriginalStatement { get; set; }
             public BbsSession Session { get; internal set; }

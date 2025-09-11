@@ -29,6 +29,7 @@
         ShowChatArchive,
         BookmarkPercentage,
         MenuFiles,
-        StartupMode
+        StartupMode,
+        Clipboard
     }
 }

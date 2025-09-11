@@ -7,17 +7,13 @@ using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-//using System.Threading;
 
 namespace miniBBS.Services.GlobalCommands
 {
     public static class ListChannels
     {
-       // private const int _totalUnreadToNotifiyAboutIndexes = 100;
-
         public static void Execute(BbsSession session, IRepository<Channel> channelRepo = null)
         {
             var originalColor = session.Io.GetForeground();
@@ -39,13 +35,21 @@ namespace miniBBS.Services.GlobalCommands
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
                 var header = $"{Constants.Inverser}#   : Channel Name {' '.Repeat(longestChannelName - "Channel Name".Length)}Unread{Constants.Inverser}";
+
+                var twoColumns = session.Cols >= 80 && header.Length < 38;
+
+                var col1Length = header.Length;
+                if (twoColumns)
+                    header = $"{header}  {header}";
+
                 session.Io.OutputLine(header, OutputHandlingFlag.NoWordWrap);
                 session.Io.SetForeground(ConsoleColor.DarkGray);
-                session.Io.OutputLine('-'.Repeat(header.Length-2));
+                session.Io.OutputLine('-'.Repeat(header.Length - 2));
 
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
                 {
-                    StringBuilder builder = new StringBuilder();
+                    var col1 = new List<string>();
+                    var col2 = new List<string>();
 
                     for (int i = 0; i < chans.Length; i++)
                     {
@@ -60,16 +64,45 @@ namespace miniBBS.Services.GlobalCommands
 
                         var unread = GetChannelCount(readIds, chatRepo, chan.Id).SubsetCount;
 
-                        builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{Constants.Inverser}{i + 1,-3}{Constants.Inverser}");
-                        builder.Append($" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}");
-                        builder.Append($"{chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}");
+                        var printableLine = $"{i + 1,-3} : {chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}{unread}";
+                        string line = $"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{Constants.Inverser}{i + 1,-3}{Constants.Inverser}";
+                        line += $" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}";
+                        line += $"{chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}";
                         if (unread > 0)
-                            builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Magenta}{Constants.InlineColorizer}");
+                            line += $"{Constants.InlineColorizer}{(int)ConsoleColor.Magenta}{Constants.InlineColorizer}";
                         else
-                            builder.Append($"{Constants.InlineColorizer}{(int)ConsoleColor.Gray}{Constants.InlineColorizer}");
-                        builder.AppendLine($"{unread}{Constants.InlineColorizer}-1{Constants.InlineColorizer}");
+                            line += $"{Constants.InlineColorizer}{(int)ConsoleColor.Gray}{Constants.InlineColorizer}";
+                        line += $"{unread}{Constants.InlineColorizer}-1{Constants.InlineColorizer}";
+
+                        if (!twoColumns || i < chans.Length / 2)
+                        {
+                            col1.Add(line);
+                        }
+                        else
+                        {
+                            var pad = col1Length - printableLine.Length;
+                            if (pad > 0)
+                                line = $"{' '.Repeat(pad)}{line}";
+                            col2.Add(line);
+                        }
                     }
-                    
+
+                    var builder = new StringBuilder();
+                    for (var i=0; i < col1.Count || i < col2.Count; i++)
+                    {
+                        string line;
+                        if (i < col1.Count)
+                        {
+                            line = col1[i];
+                            if (i < col2.Count)
+                                line += col2[i];
+                        }
+                        else
+                            line = col2[i];
+                        
+                        builder.AppendLine(line);
+                    }
+
                     session.Io.Output(builder.ToString());
                     session.Io.OutputLine(
                         $"Change channels with {Constants.Inverser}[{Constants.Inverser}, {Constants.Inverser}]{Constants.Inverser}, or {Constants.Inverser}/ch #{Constants.Inverser}"

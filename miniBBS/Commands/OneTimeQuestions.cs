@@ -69,6 +69,8 @@ namespace miniBBS.Commands
             {OneTimeQuestion.LoginStartupMode, new QuestionProc
             {
                 TheQuestion =
+                    "The Chat Rooms are the core of this BBS but some users may prefer to jump straight to the main menu on login." +
+                    Environment.NewLine +
                     "When you log in do you want to go to A) the Main Menu or B) the Chat Rooms.  " +
                     Environment.NewLine +
                     "What to do when you log in?".Color(ConsoleColor.Red),

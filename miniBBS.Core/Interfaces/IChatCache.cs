@@ -10,5 +10,7 @@ namespace miniBBS.Services.Persistence
         void UpdateChat(Chat chat);
 
         void DeleteChat(Chat chat);
+
+        void Clear();
     }
 }

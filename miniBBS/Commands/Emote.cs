@@ -20,7 +20,7 @@ namespace miniBBS.Commands
             else if ("/me".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
                 emote += " " + string.Join(" ", args.Skip(1));
             else
-                emote += " the channel";
+                emote += " everybody";
 
             var emoteMessage = new EmoteMessage(session.Id, session.User.Id, session.Channel.Id, targetUserId, emote);
 

@@ -111,6 +111,7 @@
     <Compile Include="Models\Control\BbsSession.cs" />
     <Compile Include="Models\Control\BookmarkedRead.cs" />
     <Compile Include="Models\Control\GopherServerOptions.cs" />
+    <Compile Include="Models\Control\GopherServerSessionFlag.cs" />
     <Compile Include="Models\Control\KeywordSearch.cs" />
     <Compile Include="Models\Control\LineEditorParameters.cs" />
     <Compile Include="Models\Control\LoginRecord.cs" />

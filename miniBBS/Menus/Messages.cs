@@ -18,6 +18,7 @@ namespace miniBBS.Menus
             $"{Constants.Spaceholder}",
             $"{Constants.Inverser}--- {_clr("Navigation", ConsoleColor.Yellow)} ---{Constants.Inverser}",
             $"{_clr($"{Constants.Inverser}ENTER{Constants.Inverser}", ConsoleColor.Green)} : Reads next message.",
+            $"{_clr($"{Constants.Inverser}/{Constants.Inverser}", ConsoleColor.Green)} : re-reads current message.",
             $"{_clr($"{Constants.Inverser}/ur{Constants.Inverser}", ConsoleColor.Green)} : Moves to the first unread message.",
             $"{_clr($"{Constants.Inverser}/re{Constants.Inverser}", ConsoleColor.Green)} : Reads previous message's 're:' message (see '{_clr("/? context", ConsoleColor.Green)}').",
             $"{_clr($"{Constants.Inverser}/123{Constants.Inverser}", ConsoleColor.Green)} : Jump to message # 123.  Example: '/10825' jumps to message 10825.",

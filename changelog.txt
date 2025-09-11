@@ -1,0 +1,75 @@
+5.13
+
+The "Seen" table is wider for users at 80 columns or above.  This helps show longer usernames.
+After successful ANSI auto-detection, ANSI is used to erase the line that says "Does your terminal support ANSI?"
+New command: "/since", sets message pointer to first chat message posted on or after ...
+"/since" your last call
+"/since fri" or "/since friday" last Friday
+"/since 1/1" January 1st of this year
+"/since 11/21/2024" November 21st, 2024
+If the target date is too old you may need to use "/archive" first to stop hiding archived messages, "/since" will warn you if that seems to be the case.
+
+5.14
+BASIC fixes:
+* "FOR" loops should work correctly even if you don't include whitespace in the "1to10" portion.
+* Environment variables are no longer case sensitive
+* Fixed crash if you try to use chr$(x) where x is undefined or if x is not a number.  It still won't do it but you'll get a runtime error instead of crashing :)
+* issuing a SQL statement that results in an error shows the error but doesn't crash.
+
+File Browser fixes:
+* the "md" (or "mkdir") command if *not* followed by a directory name will cause an error rather than crashing.
+
+
+5.16
+BASIC fixes:
+* using left$, right$, and mid$ with a value greater than the string length no longer causes an error
+
+Files:
+* can copy files to sub-directories, parent directory (with ..) and home directory (with ~)
+* a "communal" sub-directory now exists, #42 (/xfer).  Any user can copy any files to and from this directory.  This allows for sharing of files between users.  If user A wants to share a file with user B then A copies the file to xfer, and B copies it to their directory.
+example:
+user a:
+cd ~
+copy myfile.txt /xfer
+
+user b:
+cd /xfer
+copy myfile.txt ~
+
+Also, and more importantly, I set up a file transfer section on the Synchronet BBS (port 2332) where you can use that BBS (or it's FTP server) to upload files into this directory.  This allows for file transfers into this the communal directory using Mutiny.  As far as going the other way (to Mutiny) it's a little more complicated, you can access the files via FTP but to see them (and transfer them) on the BBS itself I'd need to disect the synchronet index file format as if the fils aren't uploaded via the BBS they won't show up on the BBS even if they exist in the directory.
+
+* expanded the usage of /since, you can give it a number and it will look for the first message on or after x days ago, so to recap the usages of /since:
+* '/since fri' - first chat on or after last friday (if it is currently friday then it goes with the friday before today
+* '/since 2025-01-12' - first chat on or after jan 12th of this year
+* '/since 7' - first chat on or after 7 days ago
+
+Other:
+* The term setup menu hides all except rows, cols, emuation by default.  You have to hit "P" to make those options show up.  You can still use the options if you know the key however, so if you're in the habit of hitting say "5" to load preset 5 it'll still work.  I'm just trying to make the login process look less confusing and eliminate walls-o-text.
+
+5.17:
+When in the line editor, when editing a line, (prepend, append, retype, or search & replace) you can split up long lines by using one of the following newline markers: \n, _n, |n, or [n.  The reason there's 4 variations is to allow for terminals that may not have one of those leading characters.
+
+Note: Commodore users can use the left-arrow (top/left corner of your keyboard where a PC keyboard would have an ESC key) to send an underscore.
+Example:
+    ...this is becoming a runon sentence, I should probably stop using comas, and start a new paragraph.
+/e (edit) -> (s) search & replace:
+Search: sentence, I
+Replace With: sentence.\n\nI
+Results in:
+   ...this is becoming a runon sentence.
+   
+   I should probably stop using comas, and start a new paragraph.
+
+BASIC:
+* added LOG(n) and LN(n) functions.
+* added CEILING(n) and FLOOR(n) functions, FLOOR is a synonym of INT
+
+--- 
+unreleased mini-changes
+---
+gopher server shows file sizes for radio recordings
+/oops is now a synonym for /edit, /typo
+when using /oops, /edit, /typo and not using the editor you can escape spaces in both the needle and the haystack using backslash (\)
+fixed a bug which was not showing that a user is still signed on with n sessions when that user logged off with one of their sessions
+minor tweak to Basic's string tokenization.
+after moving a message (or a thread) to another channel, clears chat cache for all active sessions.

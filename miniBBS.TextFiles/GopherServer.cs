@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
@@ -22,6 +23,8 @@ namespace miniBBS.TextFiles
         const int _requestWaitSec = 30;
         private GopherServerOptions _options;
         private ILogger _logger;
+        private ConditionalWeakTable<NetworkStream, GopherServerSessionFlag> _sessionFlags =
+            new ConditionalWeakTable<NetworkStream, GopherServerSessionFlag>();
         
         private static readonly Dictionary<string, char> _gopherEntryTypeDict = new Dictionary<string, char>()
         {
@@ -75,10 +78,26 @@ namespace miniBBS.TextFiles
                     thread.Start(client);
                     var sw = new Stopwatch();
                     sw.Start();
-                    while (client.Connected && thread.ThreadState == System.Threading.ThreadState.Running && sw.Elapsed.TotalSeconds < _requestWaitSec)
+                    
+                    var stream = client != null && client.Connected ? client.GetStream() : null;
+                    var keepWaiting = stream != null;
+
+                    while (keepWaiting)
                     {
+                        keepWaiting = client.Connected;
+                        keepWaiting &= thread.ThreadState == System.Threading.ThreadState.Running;
+                        if (stream == null || !stream.CanWrite)
+                        {
+                            keepWaiting = false;
+                        }
+                        else if (!this._sessionFlags.TryGetValue(stream, out var flag) ||
+                            !flag.IsDownloadingBinaryContent)
+                        {
+                            keepWaiting &= sw.Elapsed.TotalSeconds < _requestWaitSec;
+                        }
                         Thread.Sleep(25);
-                    }
+                    };
+
                     if (client.Connected && thread.ThreadState == System.Threading.ThreadState.Running)
                     {
                         client.Close();
@@ -116,9 +135,20 @@ namespace miniBBS.TextFiles
                     var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
                     SysopScreen.RegisterGopherServerRequest(ip, request.Replace("\r", "").Replace("\n", ""));
 
-                    var response = $"{GetResponse(request)}{Environment.NewLine}.{Environment.NewLine}";
-                    var responseBytes = Encoding.ASCII.GetBytes(response);
-                    stream.Write(responseBytes, 0, responseBytes.Length);
+                    var requestWithoutNewline = request.Replace("\r", "").Replace("\n", "");
+
+                    if (requestWithoutNewline.StartsWith("/Radio", StringComparison.CurrentCultureIgnoreCase) &&
+                        requestWithoutNewline.EndsWith(".mp3", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        WriteFileContents($"z:{requestWithoutNewline}", stream);
+                    }
+                    else
+                    {
+                        var response = $"{GetResponse(request)}{Environment.NewLine}.{Environment.NewLine}";
+                        var responseBytes = Encoding.ASCII.GetBytes(response);
+                        stream.Write(responseBytes, 0, responseBytes.Length);
+                    }
+
                     Thread.Sleep(250);
                     stream.Close();
                     client.Close();
@@ -151,6 +181,11 @@ namespace miniBBS.TextFiles
                 }
             }
             var parts = selector.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length >= 1 && "Radio".Equals(parts[0], StringComparison.CurrentCultureIgnoreCase))
+            {
+                return ReadRadioDirectory(parts.Skip(1).ToArray());
+            }
 
             if (parts.Length == 1 && !"index.html".Equals(parts[0], StringComparison.CurrentCultureIgnoreCase))
             {
@@ -195,6 +230,85 @@ namespace miniBBS.TextFiles
             }
 
             return Info("File not found");
+        }
+
+        private string ReadRadioDirectory(string[] pathParts)
+        {
+            var root = string.Join("\\", pathParts
+                .Where(x => x.All(c => c == ' ' || char.IsLetterOrDigit(c))));
+            string path = $"z:\\{root}";
+            var di = new DirectoryInfo(path);
+            var dirs = di.GetDirectories()
+                .Select(x => new Models.Link
+                {
+                    DisplayedFilename = x.Name,
+                    ActualFilename = x.Name + "/index.html",
+                    //Description = x.Name,
+                    Parent = new Models.Link
+                    {
+                        ActualFilename = "Radio/index.html",
+                    },
+                })
+                .OrderBy(x => x.DisplayedFilename)
+                .ToList();
+
+            var files = di
+                .GetFiles()
+                .Select(x => new Models.Link
+                {
+                    DisplayedFilename = x.Name,
+                    ActualFilename = x.Name,
+                    Description = $"{x.Length:###,###,###,###} bytes",
+                    Parent = new Models.Link
+                    {
+                        ActualFilename = $"Radio/{root}/index.html",
+                    },
+                })
+                .OrderByDescending(x => x.DisplayedFilename)
+                .ToList();
+
+            var dirsAndFiles = dirs.Union(files).ToList();
+
+            var response = string.Join(Environment.NewLine, dirsAndFiles.Select(f => BuildLine(f)));
+            var topLevelLine = $"{(char)GopherEntryType.Directory}{Constants.BbsName} Gopher Root\t/\t{Constants.Hostname}\t{_options.GopherServerPort}{Environment.NewLine}";
+            response = $"{topLevelLine}{response}";
+
+            return response;
+        }
+
+        private void WriteFileContents(string filepath, NetworkStream stream)
+        {
+            filepath = filepath
+                .Replace("/", "\\")
+                .Replace("\\Radio", "");
+            if (!File.Exists(filepath))
+                return;
+
+            try
+            {
+                this._sessionFlags.Add(stream, new GopherServerSessionFlag
+                {
+                    IsDownloadingBinaryContent = true
+                });
+
+                using (FileStream fs = new FileStream(filepath, FileMode.Open, FileAccess.Read))
+                using (BinaryReader reader = new BinaryReader(fs))
+                {
+                    do
+                    {
+                        var buffer = new byte[1024];
+                        var bytesRead = reader.Read(buffer, 0, 1024);
+                        if (bytesRead > 0)
+                            stream.Write(buffer, 0, bytesRead);
+                        if (bytesRead < 1024)
+                            break;
+                    } while (true);
+                }
+            }
+            finally
+            {
+                this._sessionFlags.Remove(stream);
+            }
         }
 
         private bool IsPublishedFile(string[] pathParts)
@@ -254,10 +368,19 @@ namespace miniBBS.TextFiles
                     }
                 }
             };
+            var radioLink = new Models.Link
+            {
+                ActualFilename = "Radio/index.html",
+                Description = "Radio Recordings",
+                DisplayedFilename = "Radio",
+                Parent = new Models.Link()
+            };
+
             var files = links.Where(x => !x.IsDirectory).ToList();
             var dirs = links.Where(x => x.IsDirectory).ToList();
             links.Clear();
             links.Add(devNotesLink);
+            links.Add(radioLink);
             links.AddRange(files);
             links.AddRange(dirs);
 

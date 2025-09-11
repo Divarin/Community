@@ -299,8 +299,8 @@ namespace miniBBS
             var metaRepo = DI.GetRepository<Metadata>();
             var startupMode = session.User.GetStartupMode(metaRepo);
             session.Items[SessionItem.StartupMode] = startupMode;
-            //OneTimeQuestions.Execute(session);
-            //startupMode = session.User.GetStartupMode(metaRepo);
+            OneTimeQuestions.Execute(session);
+            startupMode = session.User.GetStartupMode(metaRepo);
             session.LoadChatHeaderFormat(metaRepo);
 
             if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
@@ -744,18 +744,19 @@ namespace miniBBS
                 TryBell(session, message.User.Id);
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Blue))
                 {
-                    var sessionsForThisUser = DI.Get<ISessionsList>()?.Sessions
-                        ?.Where(s => message.User.Id == s.User?.Id)
+                    var otherSessionsForThisUser = DI.Get<ISessionsList>()?.Sessions
+                        ?.Where(s => message.User.Id == s.User?.Id && s.Id != message.SessionId)
                         ?.Count();
 
                     string msg = $"{Environment.NewLine}{message.User.Name} has {(message.IsLogin ? "logged in" : "logged out")} at {DateTime.UtcNow.AddHours(session.TimeZone):HH:mm}";
                     if (!string.IsNullOrWhiteSpace(message.LogoutMessage))
                         msg += $" saying \"{message.LogoutMessage}\"";
 
-                    if (sessionsForThisUser > 1)
+                    if (otherSessionsForThisUser >= 1)
                     {
-                        var s = message.IsLogin ? sessionsForThisUser : sessionsForThisUser - 1;
-                        msg += $"{Environment.NewLine}{Constants.Spaceholder.Repeat(3)}{message.User.Name} is logged in with {s} session(s).";
+                        var numSessions = message.IsLogin ? otherSessionsForThisUser + 1 : otherSessionsForThisUser;
+                        var s = numSessions == 1 ? "" : "s";
+                        msg += $"{Environment.NewLine}{Constants.Spaceholder.Repeat(3)}{message.User.Name} is now logged in with {numSessions} session{s}.";
                     }
 
                     session.Io.OutputLine(msg);
@@ -1170,6 +1171,13 @@ namespace miniBBS
 
             switch (command)
             {
+                case "/":
+                    {
+                        var ptr = session.LastReadMessageNumber ?? session.LastMsgPointer ?? session.MsgPointer;
+                        var currentMessage = session.Chats[ptr];
+                        currentMessage.Write(session, ChatWriteFlags.None, GlobalDependencyResolver.Default);
+                    }
+                    return;
                 case "/v":
                 case "/ver":
                 case "/version":
@@ -1308,6 +1316,7 @@ namespace miniBBS
                         DeleteMessage.Execute(session, arg);
                         return;
                     }
+                case "/oops":
                 case "/typo":
                 case "/edit":
                 case "/s":

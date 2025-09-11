@@ -797,15 +797,21 @@ namespace miniBBS.TextFiles
         {
             string body = FileReader.LoadFileContents(_currentLocation, link);
             var previousLocation = _session.CurrentLocation;
+
+            bool isScript =
+                link.ActualFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
+                link.ActualFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase);
+
             var previousDnd = _session.DoNotDisturb;
-            _session.CurrentLocation = Module.BasicInterpreter;
-            _session.DoNotDisturb = true;
+
+            if (!isScript)
+            {
+                _session.CurrentLocation = Module.BasicInterpreter;
+                _session.DoNotDisturb = true;
+            }
+
             try
             {
-                bool isScript = 
-                    link.ActualFilename.EndsWith(".mbs", StringComparison.CurrentCultureIgnoreCase) ||
-                    link.ActualFilename.EndsWith(".bot", StringComparison.CurrentCultureIgnoreCase);
-
                 var rootDir = StringExtensions.JoinPathParts(Constants.TextFileRootDirectory, link.Parent.Path) + "/";
 
                 ITextEditor basic = new MutantBasic(
