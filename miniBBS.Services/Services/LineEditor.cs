@@ -282,7 +282,7 @@ namespace miniBBS.Services.Services
         {
             var range = string.IsNullOrWhiteSpace(args) ?
                 new Tuple<int, int>(1, lines.Count + 1) :
-                ParseRange.Execute(args, lines.Count + 1);
+                ParseRange.Execute(args, lines.Count);
             
             var copied = new List<string>();
             for (var i=range.Item1-1; i <= range.Item2-1; i++)
@@ -587,7 +587,7 @@ namespace miniBBS.Services.Services
         {
             var range = string.IsNullOrWhiteSpace(args) ?
                 new Tuple<int, int>(lines.Count, lines.Count) :
-                ParseRange.Execute(args, lines.Count+1);
+                ParseRange.Execute(args, lines.Count);
 
             int lineCount = range.Item2 - range.Item1 + 1;
 
@@ -651,7 +651,7 @@ namespace miniBBS.Services.Services
                 return;
             }
 
-            var range = ParseRange.Execute(args[0], lines.Count + 1);
+            var range = ParseRange.Execute(args[0], lines.Count);
             
             if (insertPoint >= range.Item1 && insertPoint <= range.Item2)
             {
@@ -689,7 +689,7 @@ namespace miniBBS.Services.Services
         private void List(IList<string> lines, bool withLineNumbers, string range=null)
         {
             string body;
-            Tuple<int, int> rangeTuple = ParseRange.Execute(range, lines.Count+1);
+            Tuple<int, int> rangeTuple = ParseRange.Execute(range, lines.Count);
             var builder = new StringBuilder();
             for (int i=rangeTuple.Item1-1; i < lines.Count && i+1 <= rangeTuple.Item2; i++)
                 builder.AppendLine($"{(withLineNumbers ? $"{i + 1} : " : "")}{lines[i]}");

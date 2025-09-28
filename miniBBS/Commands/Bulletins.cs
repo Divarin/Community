@@ -243,8 +243,11 @@ namespace miniBBS.Commands
                                 if (idx.HasValue)
                                 {
                                     n = bulletins.ItemNumber(idx);
-                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
-                                    lastRead = idx;
+                                    if (n.HasValue)
+                                    {
+                                        ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                        lastRead = idx;
+                                    }
                                     break;
                                 }
                             }
