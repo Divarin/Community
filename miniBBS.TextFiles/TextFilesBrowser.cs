@@ -758,8 +758,7 @@ namespace miniBBS.TextFiles
             var str = FileReader.LoadFileContents(_currentLocation, link);
             var data = Encoding.ASCII.GetBytes(str);
             xfer.Data = data;
-            var options = FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
-            bool sentAllData = xfer.Send(_session, options);
+            bool sentAllData = xfer.Send(_session);
 
             _session.Io.OutputLine($"Sent {link.DisplayedFilename} {(sentAllData ? "successfully" : "unsuccessfully")}.");
         }
@@ -776,8 +775,7 @@ namespace miniBBS.TextFiles
             {
                 byte[] data = null;
                 var xfer = GlobalDependencyResolver.Default.Get<IFileTransferProtocol>();
-                var options = FileTransferProtocolOptions.None;// FileTransferProtocolOptions.XmodemCrc;// | FileTransferProtocolOptions.Xmodem1k;
-                if (xfer.Receive(_session, options))
+                if (xfer.Receive(_session))
                     data = xfer.Data;
                 return data;
             };

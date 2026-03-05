@@ -13,6 +13,7 @@ namespace miniBBS.Interfaces
         void OutputLine(string s = null, OutputHandlingFlag flags = OutputHandlingFlag.None);
         void OutputBackspace();
 
+        string GetRawInput();
         byte[] InputRaw();
         char? InputKey();
         string InputLine(InputHandlingFlag handlingFlag = InputHandlingFlag.None);
@@ -45,6 +46,9 @@ namespace miniBBS.Interfaces
         string Right { get; }
         string Home { get; }
         string Clear { get; }
+
+        byte[] LeftBytes { get; }
+        byte[] RightBytes { get; }
 
         void SetPosition(int x, int y);
 

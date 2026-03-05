@@ -87,7 +87,6 @@
     <Compile Include="Enums\TerminalEmulation.cs" />
     <Compile Include="Enums\TextFilesSessionFlags.cs" />
     <Compile Include="Enums\UCFlag.cs" />
-    <Compile Include="Enums\FileTransferProtocolOptions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Helpers\LambdaComparer.cs" />
     <Compile Include="Interfaces\IChatCache.cs" />

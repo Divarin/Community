@@ -15,7 +15,7 @@ namespace miniBBS.Commands
         private static readonly string[] _menu = new[]
         {
             $"{_clr("***", ConsoleColor.Yellow)} {_clr($"{Constants.Inverser}{Constants.BbsName} Main Menu{Constants.Inverser}", ConsoleColor.Magenta)} {_clr("***", ConsoleColor.Yellow)} ",
-            $"{_clr($"{Constants.Inverser}M{Constants.Inverser}", ConsoleColor.Green)}) Message Bases / Bulletin Boards",
+            //$"{_clr($"{Constants.Inverser}M{Constants.Inverser}", ConsoleColor.Green)}) Message Bases / Bulletin Boards",
             $"{_clr($"{Constants.Inverser}C{Constants.Inverser}", ConsoleColor.Green)}) Chat Rooms (with history)",
             $"{_clr($"{Constants.Inverser}N{Constants.Inverser}", ConsoleColor.Green)}) NullSpace Chat",
             $"{_clr($"{Constants.Inverser}L{Constants.Inverser}", ConsoleColor.Green)}) Live Chat Calendar",

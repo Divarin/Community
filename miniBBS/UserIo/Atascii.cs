@@ -90,6 +90,12 @@ namespace miniBBS.UserIo
 
         public override string Clear => $"{(char)125}";
 
+        private readonly byte[] _leftBytes = new byte[] { 30 };
+        public override byte[] LeftBytes => _leftBytes;
+
+        private readonly byte[] _rightBytes = new byte[] { 31 };
+        public override byte[] RightBytes => _rightBytes;
+
         public override void SetPosition(int x, int y)
         {
             Output(string.Empty);
@@ -181,6 +187,11 @@ namespace miniBBS.UserIo
             }
 
             base.StreamOutput(session, characters);
+        }
+
+        public override string GetRawInput()
+        {
+            return base.GetRawInput(NewLine.Last());
         }
 
         /// <summary>

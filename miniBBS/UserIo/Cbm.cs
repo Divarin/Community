@@ -121,6 +121,12 @@ namespace miniBBS.UserIo
 
         public override string Clear => $"{(char)147}";
 
+        private readonly byte[] _leftBytes = new byte[] { 157 };
+        public override byte[] LeftBytes => _leftBytes;
+
+        private readonly byte[] _rightBytes = new byte[] { 29 };
+        public override byte[] RightBytes => _rightBytes;
+
         public override void ClearLine()
         {
             
@@ -317,6 +323,11 @@ namespace miniBBS.UserIo
             }
 
             base.StreamOutput(session, characters);
+        }
+
+        public override string GetRawInput()
+        {
+            return base.GetRawInput((char)13);
         }
 
         protected override void RemoveInvalidInputCharacters(ref byte[] bytes)

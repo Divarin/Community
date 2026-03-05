@@ -46,7 +46,13 @@ namespace miniBBS.UserIo
         public override string Home => "\u001b[1;1H";
 
         public override string Clear => "\u001b[2J";
-                
+
+        private readonly byte[] _leftBytes = new byte[] { 27, 91, 68 };
+        public override byte[] LeftBytes => _leftBytes;
+
+        private readonly byte[] _rightBytes = new byte[] { 27, 91, 67 };
+        public override byte[] RightBytes => _rightBytes;
+
         public override void SetPosition(int x, int y)
         {
             Output($"\u001b[{y};{x}H");
@@ -158,6 +164,11 @@ namespace miniBBS.UserIo
             }
 
             return response[0] == 'y' || response[0] == 'Y';
+        }
+
+        public override string GetRawInput()
+        {
+            return base.GetRawInput(NewLine.Last());
         }
 
         //public override void Output(string s, OutputHandlingFlag flags = OutputHandlingFlag.None)

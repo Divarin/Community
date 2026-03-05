@@ -3,6 +3,7 @@ using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace miniBBS.UserIo
 {
@@ -38,6 +39,12 @@ namespace miniBBS.UserIo
         public override string Home => string.Empty;
 
         public override string Clear => string.Empty;
+
+        private readonly byte[] _leftBytes = new byte[] { 27, 91, 68 };
+        public override byte[] LeftBytes => _leftBytes;
+
+        private readonly byte[] _rightBytes = new byte[] { 27, 91, 67 };
+        public override byte[] RightBytes => _rightBytes;
 
         public override void SetPosition(int x, int y)
         {
@@ -75,6 +82,11 @@ namespace miniBBS.UserIo
             }
 
             return new string(chrs.ToArray());
+        }
+
+        public override string GetRawInput()
+        {
+            return base.GetRawInput(NewLine.Last());
         }
 
     }

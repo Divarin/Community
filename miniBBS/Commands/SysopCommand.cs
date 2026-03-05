@@ -47,6 +47,106 @@ namespace miniBBS.Commands
                     DI.Get<IMenuFileLoader>().ClearCache();
                     session.Io.Error("Menu cache cleared.");
                     break;
+                case "bulletins":
+                    ManageBulletinBoards(session);
+                    break;
+            }
+        }
+
+        private static void ManageBulletinBoards(BbsSession session)
+        {
+            var repo = DI.GetRepository<BulletinBoard>();
+            session.Io.OutputLine("C) Create new bulletin board");
+            session.Io.OutputLine("R) Rename bulletin board");
+            session.Io.OutputLine("D) Delete bulletin board");
+            session.Io.OutputLine("L) List boards");
+            session.Io.OutputLine("Q) Quit");
+            session.Io.Output("Bulletin Board Maint: ");
+            var k = session.Io.InputKey();
+            session.Io.OutputLine();
+            switch (k)
+            {
+                case 'c':
+                case 'C':
+                    {
+                        session.Io.Output("New Board Name: ");
+                        var newBoardName = session.Io.InputLine();
+                        session.Io.OutputLine();
+                        if (string.IsNullOrWhiteSpace(newBoardName))
+                            break;
+                        if (repo.Get().Any(x => newBoardName.Equals(x.Name, StringComparison.CurrentCultureIgnoreCase)))
+                            session.Io.Error("That board already exists.");
+                        else
+                        {
+                            var board = repo.Insert(new BulletinBoard { Name = newBoardName });
+                            session.Io.OutputLine($"Board '{board.Name}' ({board.Id}) added.");
+                        }
+                    }
+                    break;
+                case 'r':
+                case 'R':
+                    {
+                        session.Io.Output("Old Board Name: ");
+                        var oldBoardName = session.Io.InputLine();
+                        session.Io.OutputLine();
+                        if (string.IsNullOrWhiteSpace(oldBoardName))
+                            break;
+                        var board = repo.Get(x => x.Name, oldBoardName).FirstOrDefault();
+                        if (board == null)
+                            session.Io.Error("Board not found");
+                        else
+                        {
+                            session.Io.Output("New Board Name: ");
+                            var newBoardName = session.Io.InputLine();
+                            session.Io.OutputLine();
+                            if (string.IsNullOrWhiteSpace(newBoardName))
+                                break;
+                            board.Name = newBoardName;
+                            repo.Update(board);
+                            session.Io.OutputLine($"Board '{oldBoardName}' ({board.Id}) renamed to '{board.Name}'");
+                        }
+                    }
+                    break;
+                case 'd':
+                case 'D':
+                    {
+                        session.Io.Output("Board to delete?: ");
+                        var boardName = session.Io.InputLine();
+                        session.Io.OutputLine();
+                        if (string.IsNullOrWhiteSpace(boardName))
+                            break;
+                        if ("General".Equals(boardName, StringComparison.CurrentCultureIgnoreCase) ||
+                            "Market".Equals(boardName, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            session.Io.Error("Cannot delete default board.");
+                            break;
+                        }
+                        var board = repo.Get(x => x.Name, boardName).FirstOrDefault();
+                        if (board == null)
+                            session.Io.Error("Board not found");
+                        else
+                        {
+                            var postRepo = DI.GetRepository<Bulletin>();
+                            var posts = postRepo.Get(x => x.BoardId, board.Id);
+                            if (posts?.Any() == true)
+                            {
+                                if ('Y' != session.Io.Ask($"This will delete {posts.Count()} posts, are you sure?!"))
+                                    break;
+                                else
+                                    postRepo.DeleteRange(posts);
+                            }
+                            repo.Delete(board);
+                            session.Io.OutputLine($"Board '{boardName}' deleted.");
+                        }
+                    }
+                    break;
+                case 'l':
+                case 'L':
+                    {
+                        var boards = repo.Get();
+                        session.Io.OutputLine(string.Join(session.Io.NewLine, boards.Select(x => $"{x.Name} ({x.Id})")));
+                    }
+                    break;
             }
         }
 

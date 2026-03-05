@@ -193,6 +193,9 @@ namespace miniBBS.UserIo
         public abstract string Home { get; }
         public abstract string Clear { get; }
 
+        public abstract byte[] LeftBytes { get; }
+        public abstract byte[] RightBytes { get; }
+
         public abstract void SetPosition(int x, int y);
 
         protected abstract string GetBackgroundString(ConsoleColor color);
@@ -501,7 +504,88 @@ namespace miniBBS.UserIo
 
         protected virtual void StreamOutputLine(BbsSession session, string text, OutputHandlingFlag flags = OutputHandlingFlag.None)
         {
-            StreamOutput(session, text:$"{text}{NewLine}", flags);
+            if (text.ContainsIgnoreCase("<raw>"))
+                StreamOutputWithRawText(session, $"{text}{NewLine}", flags);
+            else
+                StreamOutput(session, text:$"{text}{NewLine}", flags);
+        }
+
+        private void StreamOutputWithRawText(BbsSession session, string text, OutputHandlingFlag flags = OutputHandlingFlag.None)
+        {
+            var startTagLength = "<raw>".Length;
+            var stopTagLength = "</raw>".Length;
+
+            int start, stop;
+            start = text.IndexOf("<raw>", StringComparison.CurrentCultureIgnoreCase);            
+            stop = text.IndexOf("</raw>", start, StringComparison.CurrentCultureIgnoreCase);
+            
+            if (start > 0)
+                StreamOutput(session, text.Substring(0, start), flags);
+
+            start += startTagLength;
+            var rawText = text.Substring(start, stop - start);
+            foreach (var c in rawText)
+            {
+                session.Stream.WriteByte((byte)c);
+            }
+
+            if (text.Length > stop + stopTagLength)
+            {
+                var textAfterRaw = text.Substring(stop + stopTagLength);
+                StreamOutputLine(session, textAfterRaw, flags);
+            }
+        }
+
+        public abstract string GetRawInput();
+
+        protected virtual string GetRawInput(char newlineChar)
+        {
+            var bytes = new List<byte>();
+            List<char> commandBytes = null;
+            bool newline = false;
+            do
+            {
+                var b = (byte) _session.Stream.ReadByte();
+
+                if (commandBytes != null)
+                {
+                    if (b == newlineChar)
+                    {
+                        // interpret command
+                        var commandText = new string(commandBytes.ToArray(), 0, commandBytes.Count);
+                        if (commandText.StartsWith("raw", StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            // end raw input
+                            return new string(bytes.Select(c => (char)c).ToArray(), 0, bytes.Count);
+                        }
+                        else
+                        {
+                            // add command text to bytes
+                            bytes.Add((byte)'/');
+                            foreach (var c in commandBytes)
+                                bytes.Add((byte)c);
+                            bytes.Add(b);
+                            commandBytes = null;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // add byte to command text
+                        commandBytes.Add((char)b);
+                        _session.Stream.WriteByte(b);
+                        continue;
+                    }
+                }
+                if (newline && b == '/')
+                {
+                    commandBytes = new List<char>();
+                }
+                else
+                    bytes.Add(b);
+                newline = b == newlineChar;
+                _session.Stream.WriteByte(b);
+            } while (true);
         }
 
         public virtual byte[] InputRaw()
@@ -570,7 +654,7 @@ namespace miniBBS.UserIo
                 var bytes = new byte[256];
                 int i = 0;
                 char? c = null;
-                StringBuilder lineBuilder = new StringBuilder();
+                var lineBuilder = new StringBuilder();
 
                 while (
                     session != null &&
@@ -641,6 +725,14 @@ namespace miniBBS.UserIo
                     isDownArrow |=
                         !string.IsNullOrWhiteSpace(session.Io.Down) &&
                         bytes.SequenceEqual(session.Io.Down.Select(b => (byte)b));
+
+                    var isLeftArrow =
+                        bytes.Length >= session.Io.LeftBytes.Length &&
+                        bytes.Take(session.Io.LeftBytes.Length).SequenceEqual(session.Io.LeftBytes);
+
+                    var isRightArrow =
+                        bytes.Length >= session.Io.RightBytes.Length &&
+                        bytes.Take(session.Io.RightBytes.Length).SequenceEqual(session.Io.RightBytes);
 
                     if (handlingFlag.HasFlag(InputHandlingFlag.UseLastLine))
                     {

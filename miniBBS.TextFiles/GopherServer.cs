@@ -217,6 +217,13 @@ namespace miniBBS.TextFiles
                 // get contents of user directory
                 var link = new Models.Link { ActualFilename = path + "/index.html" };
                 var links = LinkParser.GetLinksFromIndex(null, link);
+
+                var mapLink = links.FirstOrDefault(x => x.ActualFilename.Equals("index.map", StringComparison.CurrentCultureIgnoreCase));
+                if (mapLink != null)
+                {
+                    return ReadFile($"{pathWithRoot}/{mapLink.ActualFilename}");
+                }
+
                 var response = string.Join(Environment.NewLine, links.Select(l => BuildLine(l)));
                 var topLevelLine = $"{(char)GopherEntryType.Directory}{Constants.BbsName} Gopher Root\t/\t{Constants.Hostname}\t{_options.GopherServerPort}{Environment.NewLine}";
                 response = $"{topLevelLine}{response}";
@@ -474,7 +481,7 @@ namespace miniBBS.TextFiles
             for (var i = 0; i < lines.Length && !exitLoop; i++)
             {
                 var line = lines[i];
-                var c = line.Trim().First();
+                var c = line.First();
                 switch (c)
                 {
                     case '#': continue;

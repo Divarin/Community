@@ -1,21 +1,13 @@
-﻿using miniBBS.Core.Enums;
-using miniBBS.Core.Interfaces;
+﻿using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace miniBBS.Services.Services
 {
     public class Xmodem : IFileTransferProtocol
     {
-        private int _offset = 0;
-        private byte _packetNum = 0;
-        private const int _timeoutSec = 30;
-        private const int _maxErrors = 10;
-
         #region ByteCodes
         /// <summary>
         /// Start of Header
@@ -80,8 +72,10 @@ namespace miniBBS.Services.Services
         /// <summary>
         /// Data padding (^Z)
         /// </summary>
-        private const byte PAD = 0;// 0x1a;
+        private const byte PAD = 0;
         #endregion
+
+        const int MaxRetries = 25;
 
         private List<byte> _data = new List<byte>();
         /// <summary>
@@ -99,324 +93,222 @@ namespace miniBBS.Services.Services
             }
         }
 
-        private FileTransferProtocolOptions Options { get; set; }
-
         /// <summary>
         /// Sends the Data and returns true if all data was sent successfully.
         /// </summary>
-        public bool Send(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None)
+        public bool Send(BbsSession session)
         {
-            Options = options;
+            byte ch = 0;
+            byte packetNum = 1;
+            int retries = 0;
 
-            var sendStarted = false;
-            var waitToStartStopwatch = Stopwatch.StartNew();
-            var waitForNextRequestStopwatch = new Stopwatch();
-            var canceled = false;
-            byte[] lastPacket = null;
-            var errorCount = 0;
-            bool use16bitChecksum = false;
-            var data = Data;
-
-            while (!canceled && session.Stream.CanRead && session.Stream.CanWrite && (sendStarted || waitToStartStopwatch.Elapsed.TotalSeconds < _timeoutSec))
+            for (var t=0; t < MaxRetries; t++)
             {
-                var inputBuffer = new byte[128];
-                var readResult = session.Stream.BeginRead(inputBuffer, 0, inputBuffer.Length, null, null);
-                waitForNextRequestStopwatch.Start();
-                while (!readResult.IsCompleted)
+                // wait for NAK from remote
+                ch = session.Io.InputRaw().First();
+                if (ch == NAK)
+                    break;
+                Thread.Sleep(1000);
+            }
+
+            if (ch != NAK)
+            {
+                return false;
+            }
+
+            var success = true;
+            var sending = true;
+            var retry = false;
+            var dataOffset = 0;
+            byte checksum = 0;
+            byte[] packet = new byte[128];
+            
+            // Let's go!
+            while (sending)
+            {
+                session.Io.OutputRaw(SOH);
+                session.Io.OutputRaw(packetNum);
+                session.Io.OutputRaw((byte)(255 - packetNum));
+
+                if (!retry)
                 {
-                    Thread.Sleep(25);
-                    if (waitForNextRequestStopwatch.Elapsed.TotalSeconds > 10)
+                    checksum = 0;
+                    // create packet, pad with 0's if last packet, also compute checksum for packet.
+                    for (var i = 0; i < 128; i++)
                     {
-                        canceled = true;
+                        packet[i] = dataOffset < Data.Length ? Data[dataOffset++] : PAD;
+                        checksum += packet[i];
+                    }
+
+                }
+
+                // send packet and checksum
+                session.Io.OutputRaw(packet);
+                session.Io.OutputRaw(checksum);
+                retry = false;
+
+                ch = session.Io.InputRaw().FirstOrDefault();
+                if (ch == ACK)
+                {
+                    // packet received successfully
+                    packetNum++;
+                }
+                else if (ch == NAK)
+                {
+                    // packet not received successfully
+                    retry = true;
+                    retries++;
+                    Thread.Sleep(250);
+                    if (retries > MaxRetries)
+                    {
+                        session.Io.OutputRaw(CAN, CAN, CAN);
+                        sending = false;
+                        success = false;
                         break;
                     }
                 }
-                waitForNextRequestStopwatch.Stop();
-
-                foreach (var req in inputBuffer)
+                else if (ch == CAN)
                 {
-                    if (canceled) break;
-                    //if (req == '0') continue;
+                    sending = false;
+                    break;
+                }
 
-                    if (!sendStarted)
+                if (dataOffset >= Data.Length)
+                {
+                    // We are done!
+                    session.Io.OutputRaw(EOT);
+
+                    ch = session.Io.InputRaw().FirstOrDefault();
+                    if (ch == NAK)
                     {
-                        if (C.Equals(req) || NAK.Equals(req))
-                        {
-                            use16bitChecksum = Options.HasFlag(FileTransferProtocolOptions.XmodemCrc) || C.Equals(req);
-                            sendStarted = true;
-                            waitToStartStopwatch.Stop();
-                            lastPacket = GetNextPacketToSend(data, use16bitChecksum);
-                            session.Io.OutputRaw(lastPacket);
-                            session.Io.Flush();
-                        } 
-                        else if (req == CAN)
-                            canceled = true;
+                        // send EOT again?
+                        session.Io.OutputRaw(EOT);
+                        ch = session.Io.InputRaw().FirstOrDefault();
+                    }
+
+                    if (ch == ACK)
+                    {
+                        session.Io.OutputRaw(ACK);
+                        success = true;
                     }
                     else
                     {
-                        switch (req)
-                        {
-                            case ACK:
-                                lastPacket = GetNextPacketToSend(data, use16bitChecksum);
-                                session.Io.OutputRaw(lastPacket);
-                                session.Io.Flush();
-                                break;
-                            case NAK:
-                                if (++errorCount > _maxErrors)
-                                    canceled = true;
-                                else
-                                    session.Io.OutputRaw(lastPacket);
-                                session.Io.Flush();
-                                break;
-                            case CAN:
-                                canceled = true;
-                                break;
-                            case EOT:
-                                canceled = true;
-                                break;
-                        }
+                        session.Io.OutputRaw(CAN);
+                        success = false;
                     }
-                    Thread.Sleep(25);
-                }
-            }
 
-            return _offset >= Data.Length - 1;
+                    sending = false;
+                }
+            } // end while (sending);
+
+            return success;
         }
 
         /// <summary>
         /// Receives the Data and returns true if all data was received successfully.
         /// </summary>
-        public bool Receive(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None)
+        public bool Receive(BbsSession session)
         {
-            Options = options;
+            byte[] packet = new byte[131];
+            byte ch;
+            byte checksum;
+            var receiving = true;
+            var success = true;
+            var retries = 0;
+            bool retry;
+            var dataOffset = 0;
+            int badBytes;
+            byte packetNum = 1;
+            byte[] input;
 
-            _offset = 0;
-            _data = new List<byte>();
+            // send NAK to initiate transfer
+            session.Io.OutputRaw(NAK);
 
-            bool completed = false;
-            bool completedSuccesfully = false;
-            int errorCount = 0;
-            int lastPacketNum = 0;
-            int startRetries = 10;
-            int packetSize = 3; // SOH, Packet Num, ~Packet Num
-            packetSize += options.HasFlag(FileTransferProtocolOptions.Xmodem1k) ? 1024 : 128;
-            packetSize += options.HasFlag(FileTransferProtocolOptions.XmodemCrc) ? 2 : 1;
-
-            Stopwatch sw = new Stopwatch();
-            byte nextResponse = Options.HasFlag(FileTransferProtocolOptions.XmodemCrc) ? C : NAK;
-
-            do
+            while (receiving)
             {
-                byte[] inputBuffer = new byte[4096];
-
-                // keep sending 'C' until we get a packet
-                session.Io.OutputRaw(nextResponse);
-                var readResult = session.Stream.BeginRead(inputBuffer, 0, inputBuffer.Length, null, null);
-                sw.Reset();
-                sw.Start();
-                while (!readResult.IsCompleted)
+                // get control byte
+                input = session.Io.InputRaw();
+                ch = input.FirstOrDefault(x => x == SOH || x == EOT);
+                if (ch == SOH)
                 {
-                    Thread.Sleep(25);
-                    if (sw.Elapsed.TotalSeconds > 2)
+                    // Start of Header (SOH) received
+                    // get packet
+                    badBytes = 0;
+                    checksum = 0;
+                    retry = false;
+
+                    input = session.Io.InputRaw();
+                    var inputOffset = 0;
+                    for (var i=0; i < 131; i++)
                     {
-                        if (--startRetries <= 0)
+                        ch = inputOffset < input.Length ? input[inputOffset++] : PAD;
+                        packet[i] = ch;
+                        if (i > 1 && i < 130)
                         {
-                            completed = true;
-                            completedSuccesfully = false;
+                            checksum += ch;
                         }
-                        break;
                     }
-                }
-                sw.Stop();
 
-                if (!inputBuffer.Any(b => b != 0))
-                    continue;
+                    if (badBytes == 0)
+                    {
+                        var expectedPacketNum = packet[0];
+                        var expectedPacketNumCompliment = packet[1];
+                        var expectedChecksum = packet[130];
 
-                // while packet doesn't start with EOT or CAN ...
-                
-                var header = inputBuffer[0];
-                switch (header)
-                {
-                    case SOH:
-                    case STX:
-                        if (header == STX && !Options.HasFlag(FileTransferProtocolOptions.Xmodem1k))
-                            Options |= FileTransferProtocolOptions.Xmodem1k;
-                        else if (header == SOH && Options.HasFlag(FileTransferProtocolOptions.Xmodem1k))
-                            Options &= ~FileTransferProtocolOptions.Xmodem1k;
-
-                        if (ProcessIncomingPacket(inputBuffer, ref lastPacketNum))
-                            nextResponse = ACK;
-                        else if (++errorCount > _maxErrors)
+                        // validate packet
+                        if (expectedPacketNum == packetNum &&
+                            (255-expectedPacketNumCompliment) == expectedPacketNum &&
+                            checksum == expectedChecksum)
                         {
-                            completed = true;
-                            completedSuccesfully = false;
-                            session.Io.OutputRaw(CAN);
+                            // It's good, save it!
+                            for (var i = 2; i < 130; i++)
+                            {
+                                Data[dataOffset++] = packet[i];
+                            }
+                            packetNum++;
+                            session.Io.OutputRaw(ACK);
                         }
                         else
-                            nextResponse = NAK;
-                        break;
-                    case EOT:
-                    case ETB:
-                        completed = true;
-                        completedSuccesfully = true;
-                        break;
-                    case CAN:
-                        completed = true;
-                        completedSuccesfully = false;
-                        break;
-                    default:
-                        if (nextResponse == ACK)
-                            nextResponse = NAK;
-                        break;
+                        {
+                            badBytes = 1;
+                        }
+                    }
+
+                    if (badBytes > 0)
+                    {
+                        // bad packet!
+                        Thread.Sleep(250);
+                        session.Io.OutputRaw(NAK);
+                        retries++;
+                        retry = true;
+
+                        if (retries > MaxRetries)
+                        {
+                            session.Io.OutputRaw(CAN, CAN, CAN);
+                            receiving = false;
+                            success = false;
+                            break;
+                        }
+                    }
                 }
-
-            } while (!completed);
-
-            return completedSuccesfully;
-        }
-
-        private bool ProcessIncomingPacket(byte[] inputBuffer, ref int lastPacketNum)
-        {
-            // get packet number
-            int packetNumber = inputBuffer[1];
-
-            // verify packet number
-            int verifyPacketNumber = inputBuffer[2];
-            if ((verifyPacketNumber | packetNumber) != 255)
-                return false;
-
-            // verify packet number is lastPacketNum + 1
-            if (packetNumber != lastPacketNum + 1)
-                return false;
-
-            // extract payload
-            int payloadSize = Options.HasFlag(FileTransferProtocolOptions.Xmodem1k) ? 1024 : 128;
-            var payload = inputBuffer.Skip(3).Take(payloadSize).ToArray();
-
-            if (Options.HasFlag(FileTransferProtocolOptions.XmodemCrc))
-            {
-                // calculate checksum on the payload
-                var crc = GetCrc16(payload);
-
-                // verify that calculated checksum matches the checksum in the packet
-                if (crc[0] != inputBuffer[payloadSize + 3] ||
-                    crc[1] != inputBuffer[payloadSize + 4])
+                else if (ch == EOT)
                 {
-                    return false;
+                    // End of Transmission (EOT) received
+                    session.Io.OutputRaw(ACK);
+                    receiving = false;
+                    success = true;
                 }
-            }
-            else
-            {
-                var checksum = Get8bitChecksum(payload);
-                if (checksum != inputBuffer[payloadSize + 3])
-                    return false;
-            }
-
-            _data.AddRange(payload);
-
-            // increment lastPacketNum
-            lastPacketNum = packetNumber;
-
-            return true;
-        }
-
-        private byte[] GetNextPacketToSend(byte[] data, bool use16bitChecksum)
-        {
-            if (_offset >= data.Length)
-                return new[] { EOT };
-
-            int payloadSize = Options.HasFlag(FileTransferProtocolOptions.Xmodem1k) ? 1024 : 128;
-            int checksumSize = use16bitChecksum ? 2 : 1;
-            int packetSize = 3 + payloadSize + checksumSize;
-
-            var packet = new byte[packetSize];
-            packet[0] = Options.HasFlag(FileTransferProtocolOptions.Xmodem1k) ? STX : SOH;
-
-            // packet numbers start at 1 but wrap around to 0 so increment before using
-            _packetNum = (byte)((_packetNum + 1) % 256);
-            packet[1] = _packetNum;
-            packet[2] = (byte)~_packetNum;
-            var payload = new byte[payloadSize];
-            for (int i = 0; i < payloadSize; i++)
-            {
-                byte b = _offset >= data.Length ? PAD : data[_offset++];
-                payload[i] = b;
-                packet[3 + i] = b;
-            }
-
-            if (use16bitChecksum)
-            {
-                var crc = GetCrc16(payload);
-                packet[131] = crc[0];
-                packet[132] = crc[1];
-            }
-            else
-            {
-                packet[131] = Get8bitChecksum(payload);
-            }
-
-            return packet;
-        }
-
-        private static byte[] GetCrc16(byte[] data)
-        {
-            ushort c = CalculateCrc16(data);
-            byte low = (byte)c;
-            byte high = (byte)(c >> 8);
-            var crc = new byte[] { high, low };
-            return crc;
-        }
-
-        // Adapted from sample C code found at https://web.mit.edu/6.115/www/amulet/xmodem.htm
-        private static ushort CalculateCrc16(byte[] data)
-        {
-            const int poly = 0x1021;
-
-            //int crc = 0;
-            //int count = data.Length;
-            //int ptr = 0;
-            //int i;
-
-            //while (--count >= 0)
-            //{
-            //    crc ^= (data[ptr++] << 8);
-            //    i = 8;
-            //    do
-            //    {
-            //        if ((crc & 0x8000) == 0x8000)
-            //            crc <<= 1 ^ 0x1021;
-            //        else
-            //            crc <<= 1;
-            //    } while (--i > 0);
-            //}
-
-            //return crc;
-
-            //int i;
-
-            int crc = 0;
-            int c = 0;
-
-            for (int num = data.Length; num > 0; num--)
-            {
-                var addr = data[c++];
-                crc = crc ^ (addr << 8);
-                for (int i = 0; i < 8; i++)
+                else
                 {
-                    //crc2 = crc2 << 1;
-                    //if ((crc2 & 0x10000) != 0)
-                    //    crc2 = (crc2 ^ 0x1021) & 0xFFFF; 
-                    
-                    crc = ((crc & 0x8000) != 0) ? ((crc << 1) ^ poly) : crc << 1;
+                    // Cancel
+                    session.Io.OutputRaw(CAN, CAN, CAN);
+                    receiving = false;
+                    success = false;
+                    break;
                 }
-            }
+            } // end while (receiving)
 
-            return (ushort)(crc % 65536);
-        }
-
-        private static byte Get8bitChecksum(byte[] data)
-        {
-            return (byte)(data.Sum(b => b) % 256);
+            return success;
         }
     }
 }

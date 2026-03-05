@@ -297,10 +297,12 @@ namespace miniBBS
             Thread.Sleep(500);
 
             var metaRepo = DI.GetRepository<Metadata>();
+
             var startupMode = session.User.GetStartupMode(metaRepo);
             session.Items[SessionItem.StartupMode] = startupMode;
             OneTimeQuestions.Execute(session);
             startupMode = session.User.GetStartupMode(metaRepo);
+
             session.LoadChatHeaderFormat(metaRepo);
 
             if (!SwitchOrMakeChannel.Execute(session, Constants.DefaultChannelName, allowMakeNewChannel: false, fromMessageBase: startupMode == LoginStartupMode.MainMenu))
@@ -979,7 +981,7 @@ namespace miniBBS
                     return;
                 }
 
-                session.Io.OutputLine($"Your last logon was at {user.LastLogonUtc} (utc).");
+                session.Io.OutputLine($"Your last logon was at {user.LastLogonUtc.AddHours(user.Timezone)}{(user.Timezone == 0 ? " UTC" : "")}.");
                 user.LastLogonUtc = DateTime.UtcNow;
                 user.TotalLogons++;
                 user = userRepo.Update(user);

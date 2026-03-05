@@ -64,6 +64,18 @@ namespace miniBBS.Services.Services
                         cmdResult = ProcessCommand(session, lines, line.Substring(1)
                             .Split(' ')
                             .ToArray());
+
+                        if (cmdResult.HasFlag(CommandResult.ToggleRawInputMode))
+                        {
+                            session.Io.Error("Starting RAW input mode");
+                            session.Io.Error("Use '/raw' on a newline to end.");
+                            session.Io.Error("All other commands will be ignored.");
+                            line = "<raw>" + session.Io.GetRawInput() + "</raw>";
+                            lines.Add(line);
+                            session.Io.Error($"{session.Io.NewLine}Ended RAW input mode.");
+                            continue;
+                        }
+
                         if (cmdResult.HasFlag(CommandResult.Saved))
                             _savedText = String.Join(Environment.NewLine, lines);
                         if (cmdResult.HasFlag(CommandResult.RevertToOriginal))
@@ -246,6 +258,8 @@ namespace miniBBS.Services.Services
                     // help
                     Help();
                     break;
+                case "raw":
+                    return CommandResult.ToggleRawInputMode;
             }
 
             return CommandResult.None;
@@ -688,6 +702,12 @@ namespace miniBBS.Services.Services
 
         private void List(IList<string> lines, bool withLineNumbers, string range=null)
         {
+            if (lines?.Any() != true)
+            {
+                _session.Io.Error("No text!");
+                return;
+            }
+
             string body;
             Tuple<int, int> rangeTuple = ParseRange.Execute(range, lines.Count);
             var builder = new StringBuilder();
@@ -737,7 +757,12 @@ namespace miniBBS.Services.Services
             /// Indicates that a save was performed and therefore, while exiting, will not be asked if 
             /// they should save
             /// </summary>
-            Saved = 4
+            Saved = 4,
+
+            /// <summary>
+            /// Toggles "Raw" input mode.  In this mode any byte received is added to the text without translation.
+            /// </summary>
+            ToggleRawInputMode = 8
         }
     }
 }

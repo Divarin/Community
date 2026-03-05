@@ -13,11 +13,11 @@ namespace miniBBS.Core.Interfaces
         /// <summary>
         /// Sends the Data and returns true if all data was sent successfully.
         /// </summary>
-        bool Send(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None);
+        bool Send(BbsSession session);
 
         /// <summary>
         /// Receives the Data and returns true if all data was received successfully.
         /// </summary>
-        bool Receive(BbsSession session, FileTransferProtocolOptions options = FileTransferProtocolOptions.None);
+        bool Receive(BbsSession session);
     }
 }

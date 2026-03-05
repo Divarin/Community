@@ -28,6 +28,7 @@ namespace miniBBS.Commands
             var exitMenu = false;
             var includeArchived = false;
             var numArchived = 0;
+            var enterIsNextUnread = false;
 
             var boardRepo = DI.GetRepository<BulletinBoard>();
             var bulletinRepo = DI.GetRepository<Bulletin>();
@@ -89,13 +90,29 @@ namespace miniBBS.Commands
                     // try advance to next board
                     session.Io.OutputLine($"No more unread messages in '{currentBoard.Name.Color(ConsoleColor.Magenta)}'.");
                     var nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
-                    if (nextBoard != null)
+                    if (nextBoard == null)
+                        session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
+                    else
                     {
                         if ('Y' == session.Io.Ask($"Proceeed to next board, '{nextBoard.Name.Color(ConsoleColor.Magenta)}'"))
                         {
-                            currentBoard = nextBoard;
-                            ReloadBulletins();
-                            bulletinIndex = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                            do
+                            {
+                                currentBoard = nextBoard;
+                                ReloadBulletins();
+                                bulletinIndex = bulletins.Keys.FirstOrDefault(x => !readBulletins.Contains(x));
+                                if (bulletinIndex > 0)
+                                    break;
+
+                                nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
+                                if (nextBoard != null)
+                                    session.Io.Error($"Nothing new in '{currentBoard.Name}', going to '{nextBoard.Name}'...");
+                                else
+                                {
+                                    session.Io.Error("End of messages.");
+                                    break;
+                                }
+                            } while (true);
                         }
                     }
                     if (bulletinIndex > 0)
@@ -104,8 +121,6 @@ namespace miniBBS.Commands
                         ReadBulletin(session, n.Value, bulletins, readBulletins);
                         lastRead = bulletinIndex;
                     }
-                    else
-                        session.Io.Error("No more unread messages.  Try reading the backlog in the Chat rooms!");
                 }
             }
 
@@ -124,9 +139,12 @@ namespace miniBBS.Commands
                     if (!key.HasValue || key == '\r' || key == '\n' || $"{key}" == session.Io.NewLine)
                     {
                         if (lastRead.HasValue)
-                            key = '+';
+                            key = enterIsNextUnread ? 'N' : '+';
                         else
+                        {
                             key = session.Io.Ask(string.Format("{0}Where do you want to start?{0}First (N)ew message, or (F)irst message", session.Io.NewLine)) == 'N' ? 'N' : '+';
+                            enterIsNextUnread = key == 'N';
+                        }
                     }
 
                     var jumpToMessage = int.TryParse(line, out var jumpToMessageNumber);
@@ -138,6 +156,17 @@ namespace miniBBS.Commands
                             includeArchived = !includeArchived;
                             session.Io.OutputLine($"Archived posts are now {(includeArchived ? "Shown" : "Hidden")}.");
                             ReloadBulletins();
+                            break;
+                        case 'J':
+                            {
+                                var nextBoard = SelectBoardFromList(session, boardRepo, bulletinRepo, readBulletins);
+                                if (nextBoard != null && nextBoard.Name != currentBoard.Name)
+                                {
+                                    currentBoard = nextBoard;
+                                    ReloadBulletins();
+                                    session.Io.Error($"Now in '{currentBoard.Name}'");
+                                }
+                            }
                             break;
                         case '[':
                         case '{':
@@ -158,6 +187,7 @@ namespace miniBBS.Commands
                         case '_':
                         case '-':
                             // previous message (don't follow thread)
+                            enterIsNextUnread = false;
                             {
                                 bulletinIndex =
                                     lastRead.HasValue ?
@@ -174,20 +204,48 @@ namespace miniBBS.Commands
                         case '=':
                         case '+':
                             // next message (don't follow thread)
+                            enterIsNextUnread = false;
                             {
-                                bulletinIndex = lastRead.HasValue ?
-                                    bulletins.Keys.FirstOrDefault(x => x > lastRead.Value) :
-                                    bulletins.Keys.FirstOrDefault();
-                                n = bulletins.ItemNumber(bulletinIndex);
-                                if (n.HasValue)
+                                var keepSearching = true;
+                                while (keepSearching)
                                 {
-                                    ReadBulletin(session, n.Value, bulletins, readBulletins);
-                                    lastRead = bulletinIndex;
+                                    // search for next message in current board
+                                    bulletinIndex = lastRead.HasValue ?
+                                        bulletins.Keys.FirstOrDefault(x => x > lastRead.Value) :
+                                        bulletins.Keys.FirstOrDefault();
+                                    n = bulletins.ItemNumber(bulletinIndex);
+                                    if (n.HasValue)
+                                    {
+                                        // found message
+                                        keepSearching = false;
+                                        ReadBulletin(session, n.Value, bulletins, readBulletins);
+                                        lastRead = bulletinIndex;
+                                    }
+                                    else
+                                    {
+                                        // no more messages in current board, try go to next and restart search loop
+                                        var nextBoard = boards.FirstOrDefault(x => x.Id > currentBoard.Id);
+                                        if (nextBoard == null)
+                                        {
+                                            // no more boards
+                                            keepSearching = false;
+                                            session.Io.Error("No more messages");
+                                        }
+                                        else
+                                        {
+                                            // switches to next board, restart loop to search for a message
+                                            session.Io.Error($"Nothing new in '{currentBoard.Name}', going to '{nextBoard.Name}'...");
+                                            currentBoard = nextBoard;
+                                            lastRead = null;
+                                            ReloadBulletins();
+                                        }
+                                    }
                                 }
                             }
                             break;
                         case 'N':
                             // next unread
+                            enterIsNextUnread = true;
                             NextUnread();
                             break;
                         case '#':
@@ -196,6 +254,7 @@ namespace miniBBS.Commands
                         case '<':
                         case ',':
                             // previous bulletin
+                            enterIsNextUnread = false;
                             if (!bulletins.Any())
                             {
                                 session.Io.Error("No messages, try (P)osting one!");
@@ -227,6 +286,7 @@ namespace miniBBS.Commands
                         case '>':
                         case '.':
                             // next bulletin
+                            enterIsNextUnread = false;
                             if (lastRead.HasValue)
                             {
                                 Notice(session, "Finding next in thread");
@@ -276,6 +336,7 @@ namespace miniBBS.Commands
                             break;
                         case 'B':
                             // back one subject
+                            enterIsNextUnread = false;
                             {
                                 Notice(session, "Finding start of previous thread");
                                 var idx =
@@ -294,6 +355,7 @@ namespace miniBBS.Commands
                             break;
                         case 'F':
                             // forward one subject
+                            enterIsNextUnread = false;
                             {
                                 Notice(session, "Finding start of next thread");
                                 var idx =
@@ -373,6 +435,44 @@ namespace miniBBS.Commands
                 session.CurrentLocation = previousLocation; 
                 session.DoNotDisturb = wasDnd;
             }
+        }
+
+        private static BulletinBoard SelectBoardFromList(
+            BbsSession session,
+            IRepository<BulletinBoard> boardRepo,
+            IRepository<Bulletin> bulletinRepo,
+            List<int> readBulletins)
+        {
+            var boards = boardRepo.Get().OrderBy(x => x.Id).ToList();
+            var builder = new StringBuilder();
+            for (var i=0; i < boards.Count; i++)
+            {
+                var board = boards[i];
+                var unreadBulletins = bulletinRepo
+                    .Get(x => x.BoardId, board.Id)
+                    .Count(x => !readBulletins.Contains(x.Id));
+                builder.Append($"{i + 1}".Color(ConsoleColor.Green) + $" {board.Name} ");
+                if (unreadBulletins > 0)
+                    builder.AppendLine("(".Color(ConsoleColor.DarkGray) + $"{unreadBulletins}".Color(ConsoleColor.Green) + " unread)".Color(ConsoleColor.DarkGray));
+                else
+                    builder.AppendLine("(0 unread)".Color(ConsoleColor.DarkGray));
+            }
+            builder.AppendLine("Q".Color(ConsoleColor.Green) + " Quit");
+            using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Gray))
+            {
+                session.Io.OutputLine(builder.ToString());
+            }
+
+            var boardNum = session.Io.AskWithNumber("Which Board");
+            if (string.IsNullOrWhiteSpace(boardNum) ||
+                !int.TryParse(boardNum, out var bn) ||
+                bn < 1 ||
+                bn > boards.Count)
+            {
+                return null;
+            }
+
+            return boards[bn - 1];
         }
 
         /// <summary>
@@ -853,6 +953,8 @@ namespace miniBBS.Commands
                 session.Io.OutputLine(
                     $"{Constants.Inverser}[{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Prev Board         " +
                     $"{Constants.Inverser}]{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Next Board", OutputHandlingFlag.NoWordWrap);
+                session.Io.OutputLine(
+                    $"{Constants.Inverser}J{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Jump to / List Boards", OutputHandlingFlag.NoWordWrap);
                 session.Io.OutputLine(
                     $"{Constants.Inverser}N{Constants.Inverser}".Color(ConsoleColor.Green) + eq + $"{Constants.Inverser}Next Unread{Constants.Inverser}        " +
                     $"{Constants.Inverser}#{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Jump to #", OutputHandlingFlag.NoWordWrap);

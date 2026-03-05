@@ -32,6 +32,7 @@ namespace miniBBS.Services.GlobalCommands
 
                 int longestChannelName = chans.Max(c => c.Name.Length) + 1;
                 var readIds = session.ReadChatIds(GlobalDependencyResolver.Default);
+                const int col2Start = 32;
 
                 session.Io.SetForeground(ConsoleColor.Magenta);
                 var header = $"{Constants.Inverser}#   : Channel Name {' '.Repeat(longestChannelName - "Channel Name".Length)}Unread{Constants.Inverser}";
@@ -48,7 +49,7 @@ namespace miniBBS.Services.GlobalCommands
 
                 using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
                 {
-                    var col1 = new List<string>();
+                    var col1 = new List<Tuple<string, int>>();
                     var col2 = new List<string>();
 
                     for (int i = 0; i < chans.Length; i++)
@@ -64,7 +65,6 @@ namespace miniBBS.Services.GlobalCommands
 
                         var unread = GetChannelCount(readIds, chatRepo, chan.Id).SubsetCount;
 
-                        var printableLine = $"{i + 1,-3} : {chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}{unread}";
                         string line = $"{Constants.InlineColorizer}{(int)ConsoleColor.Cyan}{Constants.InlineColorizer}{Constants.Inverser}{i + 1,-3}{Constants.Inverser}";
                         line += $" : {Constants.InlineColorizer}-1{Constants.InlineColorizer}";
                         line += $"{chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}";
@@ -76,13 +76,13 @@ namespace miniBBS.Services.GlobalCommands
 
                         if (!twoColumns || i < chans.Length / 2)
                         {
-                            col1.Add(line);
+                            var printableLength = 
+                                $"{i + 1,-3} : {chan.Name} {' '.Repeat(longestChannelName - chan.Name.Length)}{unread}"
+                                .Length;
+                            col1.Add(new Tuple<string, int>(line, printableLength));
                         }
                         else
                         {
-                            var pad = col1Length - printableLine.Length;
-                            if (pad > 0)
-                                line = $"{' '.Repeat(pad)}{line}";
                             col2.Add(line);
                         }
                     }
@@ -93,9 +93,16 @@ namespace miniBBS.Services.GlobalCommands
                         string line;
                         if (i < col1.Count)
                         {
-                            line = col1[i];
+                            line = col1[i].Item1;
                             if (i < col2.Count)
+                            {
+                                var padLength =
+                                    col2Start -
+                                    col1[i].Item2;
+                                if (padLength > 0)
+                                    line += ' '.Repeat(padLength);
                                 line += col2[i];
+                            }
                         }
                         else
                             line = col2[i];
