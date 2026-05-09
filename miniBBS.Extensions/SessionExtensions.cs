@@ -87,7 +87,8 @@ namespace miniBBS.Extensions
                 SessionEndUtc = DateTime.UtcNow,
                 QuitMessage = session.Items.ContainsKey(SessionItem.LogoutMessage) ? 
                     session.Items[SessionItem.LogoutMessage] as string ?? string.Empty : 
-                    string.Empty
+                    string.Empty,
+                LastIp = session.IpAddress,
             };
 
             var meta = new Metadata

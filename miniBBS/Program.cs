@@ -634,6 +634,9 @@ namespace miniBBS
         /// </summary>
         private static void NotifyChannelMessage(BbsSession session, ChannelMessage message)
         {
+            if (message == null || session?.Channel == null)
+                return;
+
             if (message.ChannelId != session.Channel.Id)
                 return;
 

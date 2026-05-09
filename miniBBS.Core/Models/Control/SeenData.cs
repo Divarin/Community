@@ -7,5 +7,6 @@ namespace miniBBS.Core.Models.Control
         public DateTime SessionsStartUtc { get; set; }
         public DateTime SessionEndUtc { get; set; }
         public string QuitMessage { get; set; }
+        public string LastIp { get; set; }
     }
 }

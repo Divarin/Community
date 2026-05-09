@@ -124,12 +124,19 @@ namespace miniBBS.Commands
             if (session.Cols >= 80)
                 nameLengh += 20; // can afford to show more of the username
 
-            return
+            var response = 
                 $"{Constants.Inverser}{username.MaxLength(nameLengh).PadRight(nameLengh + 3)}{Constants.Inverser}".Color(ConsoleColor.Green) +
                 login.Color(ConsoleColor.Yellow) +
                 "-".Color(ConsoleColor.DarkGray) +
                 $"{seen.SessionEndUtc.AddHours(session.TimeZone):HH:mm} ".Color(ConsoleColor.White) +
                 seen.QuitMessage.Color(ConsoleColor.Blue);
+
+            if (session.User.Access.HasFlag(AccessFlag.Administrator) && !string.IsNullOrWhiteSpace(seen.LastIp))
+            {
+                response += $" [{seen.LastIp}]";
+            }
+
+            return response;
         }
     }
 }

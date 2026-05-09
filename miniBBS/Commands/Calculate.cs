@@ -34,7 +34,7 @@ namespace miniBBS.Commands
             }
 
             string hexResult = null;
-            if (int.TryParse(result, out var hr))
+            if (long.TryParse(result, out var hr))
                 hexResult = " (0x" + hr.ToString("X") + ")";
 
             var message = $"{session.User.Name} calculates {expression} = {result}{hexResult}";
