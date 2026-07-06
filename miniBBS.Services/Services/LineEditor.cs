@@ -346,7 +346,8 @@ namespace miniBBS.Services.Services
             using (StreamReader reader = new StreamReader(fs))
             {
                 var data = reader.ReadToEnd();
-                lines.AddRange(data.Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
+                data = data.Replace("\r\n", "\n");
+                lines.AddRange(data.Split(new string[] { "\n" }, StringSplitOptions.None)
                         .Select(l => l.TrimEnd()));
 
                 _session.Io.OutputLine("File contents imported, use '/l' to list.");

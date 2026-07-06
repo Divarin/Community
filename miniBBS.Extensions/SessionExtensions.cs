@@ -76,6 +76,48 @@ namespace miniBBS.Extensions
             return (CrossChannelNotificationMode)session.Items[SessionItem.CrossChannelNotificationMode];
         }
 
+        public static void RecordWasDoing(this BbsSession session, IRepository<Metadata> metaRepo)
+        {
+            if (session?.User == null)
+                return;
+
+            var wasDoing = session.Items.ContainsKey(SessionItem.Doing) ? $"{session.Items[SessionItem.Doing]}" : null;
+
+            var meta = metaRepo.Get(new Dictionary<string, object>
+            {
+                {nameof(Metadata.UserId), session.User.Id},
+                {nameof(Metadata.Type), MetadataType.WasDoing}
+            })?.PruneAllButMostRecent(metaRepo);
+
+            if (meta == null && string.IsNullOrWhiteSpace(wasDoing))
+            {
+                // do nothing
+                return;
+            }
+            else if (meta != null && string.IsNullOrWhiteSpace(wasDoing))
+            {
+                metaRepo.Delete(meta);
+                return;
+            }
+            else if (meta == null && !string.IsNullOrWhiteSpace(wasDoing))
+            {
+                meta = new Metadata
+                {
+                    Type = MetadataType.WasDoing,
+                    UserId = session.User.Id,
+                    DateAddedUtc = DateTime.UtcNow,
+                    Data = wasDoing,
+                };
+                metaRepo.Insert(meta);
+            }
+            else
+            {
+                meta.Data = wasDoing;
+                meta.DateAddedUtc = DateTime.UtcNow;
+                metaRepo.Update(meta);
+            }
+        }
+
         public static void RecordSeenData(this BbsSession session, IRepository<Metadata> metaRepo)
         {
             if (session?.User == null)

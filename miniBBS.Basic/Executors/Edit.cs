@@ -42,6 +42,9 @@ namespace miniBBS.Basic.Executors
                 session.Io.OutputLine();
             }
 
+            if (progLines?.ContainsKey(ln) != true)
+                throw new RuntimeException($"Cannot find line number {ln}.");
+
             result.LineNumber = ln;
             result.OriginalLine = progLines[ln];
 

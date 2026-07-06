@@ -230,7 +230,9 @@ namespace miniBBS
                 {
                     nodeParams?.Client?.Close();
                     session?.SaveReads(GlobalDependencyResolver.Default);
-                    session?.RecordSeenData(DI.GetRepository<Metadata>());
+                    var metadataRepo = DI.GetRepository<Metadata>();
+                    session?.RecordSeenData(metadataRepo);
+                    session?.RecordWasDoing(metadataRepo);
                     session?.Dispose();
                 }
                 catch (Exception ex)
@@ -297,6 +299,8 @@ namespace miniBBS
             Thread.Sleep(500);
 
             var metaRepo = DI.GetRepository<Metadata>();
+
+            Doing.TryLoadFromWasDoing(session, metaRepo);
 
             var startupMode = session.User.GetStartupMode(metaRepo);
             session.Items[SessionItem.StartupMode] = startupMode;
@@ -1404,6 +1408,10 @@ namespace miniBBS
                 case "/afk":
                     Afk.Execute(session, string.Join(" ", parts.Skip(1)));
                     return;
+                case "/doing":
+                case "/do":
+                    Doing.Execute(session, string.Join(" ", parts.Skip(1)));
+                    return;
                 case "/read":
                     ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)), false);
                     return;
@@ -1606,9 +1614,14 @@ namespace miniBBS
                     return;
                 case "/textread":
                 case "/tr":
+                    ReadTextFile.Execute(session, parts.Skip(1).ToArray());
+                    return;
                 case "/run":
                 case "/exec":
-                    ReadTextFile.Execute(session, parts.Skip(1).ToArray());
+                    if (parts.Length < 2)
+                        BrowseGames.Execute(session);
+                    else
+                        ReadTextFile.Execute(session, parts.Skip(1).ToArray());
                     return;
                 case "/blurb":
                     Blurbs.Execute(session, string.Join(" ", parts.Skip(1)));

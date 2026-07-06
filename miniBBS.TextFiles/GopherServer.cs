@@ -49,6 +49,7 @@ namespace miniBBS.TextFiles
             {"mid", (char) GopherEntryType.SoundFile},
             {"wav", (char) GopherEntryType.SoundFile},
             {"mp3", (char) GopherEntryType.SoundFile},
+            {"m4a", (char) GopherEntryType.SoundFile},
             {"doc", (char) GopherEntryType.Doc},
             {"rtf", (char) GopherEntryType.RichText},
             {"map", (char) GopherEntryType.Directory},
@@ -137,8 +138,12 @@ namespace miniBBS.TextFiles
 
                     var requestWithoutNewline = request.Replace("\r", "").Replace("\n", "");
 
-                    if (requestWithoutNewline.StartsWith("/Radio", StringComparison.CurrentCultureIgnoreCase) &&
-                        requestWithoutNewline.EndsWith(".mp3", StringComparison.CurrentCultureIgnoreCase))
+                    var isBinary =
+                        requestWithoutNewline.EndsWith(".mp3", StringComparison.CurrentCultureIgnoreCase) ||
+                        requestWithoutNewline.EndsWith(".mp4", StringComparison.CurrentCultureIgnoreCase) ||
+                        requestWithoutNewline.EndsWith(".m4a", StringComparison.CurrentCultureIgnoreCase);
+
+                    if (isBinary && requestWithoutNewline.StartsWith("/Radio", StringComparison.CurrentCultureIgnoreCase))
                     {
                         WriteFileContents($"z:{requestWithoutNewline}", stream);
                     }

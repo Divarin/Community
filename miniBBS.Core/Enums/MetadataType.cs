@@ -13,6 +13,7 @@
         ReadBulletins,
         PasswordResetCode,
         Bookmark,
-        MenuFiles
+        MenuFiles,
+        WasDoing
     }
 }

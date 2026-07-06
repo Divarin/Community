@@ -1,6 +1,9 @@
 ﻿using miniBBS.Core.Enums;
+using miniBBS.Core.Extensions;
+using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
+using miniBBS.Extensions;
 using System;
 using System.Linq;
 using System.Text;
@@ -52,12 +55,65 @@ namespace miniBBS.Commands
                 builder.AppendLine($"Time Zone    : {user.Timezone}");
                 builder.AppendLine($"Terminal     : {user.Cols} x {user.Rows}  {user.Emulation}");
 
-                if (session.User.Access.HasFlag(AccessFlag.Administrator))
-                {
-                    var metas = DI.GetRepository<Metadata>()
-                        .Get(m => m.UserId, user.Id)
-                        .Where(m => !_filteredMetadataTypes.Contains(m.Type));
+                var metas = DI.GetRepository<Metadata>()
+                    .Get(m => m.UserId, user.Id)
+                    .Where(m => !_filteredMetadataTypes.Contains(m.Type));
 
+                var wasDoing = metas?.FirstOrDefault(m => m.Type == MetadataType.WasDoing)?.Data;
+
+                if (!string.IsNullOrWhiteSpace(wasDoing))
+                {
+                    builder.AppendLine($"Was Doing    : {wasDoing}");
+                }
+
+                var activeSessions = DI.Get<ISessionsList>()
+                    .Sessions
+                    .Where(s => s.User != null && s.User.Id == user.Id)
+                    .ToList();
+                builder.AppendLine("--- Active Sessions ---");
+                if (activeSessions.Count < 1)
+                {
+                    builder.AppendLine("No active sessions (not online)");
+                }
+                else
+                {
+                    foreach (var s in activeSessions)
+                    {
+                        string listItem = $"{s.User.Name} ";
+                        if (s.Afk)
+                        {
+                            if (!"away from keyboard".Equals(s.AfkReason, StringComparison.CurrentCultureIgnoreCase))
+                                listItem += $"(AFK:{s.AfkReason})";
+                            else
+                                listItem += "(AFK)";
+                        }
+
+                        if (s.Items.ContainsKey(SessionItem.Doing) && !string.IsNullOrWhiteSpace(s.Items[SessionItem.Doing] as string))
+                        {
+                            listItem += $"({s.Items[SessionItem.Doing]})";
+                        }
+
+                        if (s.DoNotDisturb)
+                            listItem += "(DND)";
+
+                        listItem += $" in {s.Channel?.Name}";
+                        var idleTime = s.IdleTime.TotalMinutes;
+                        if (idleTime >= 5)
+                        {
+                            int h = (int)Math.Floor(idleTime / 60);
+                            int m = (int)Math.Round(idleTime % 60);
+                            if (h > 0)
+                                listItem += $" - {h}h {m}m idle";
+                            else
+                                listItem += $" - {m} min. idle";
+                        }
+
+                        builder.AppendLine(listItem);
+                    }
+                }
+
+                if (session.User.Access.HasFlag(AccessFlag.Administrator) && 'Y' == session.Io.Ask("See metadata?"))
+                {
                     foreach (var meta in metas)
                         builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");
                 }

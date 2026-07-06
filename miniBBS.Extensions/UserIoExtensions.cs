@@ -8,12 +8,12 @@ namespace miniBBS.Extensions
 {
     public static class UserIoExtensions
     {
-        public static char Ask(this IUserIo io, string question, OutputHandlingFlag flags = OutputHandlingFlag.None)
+        public static char Ask(this IUserIo io, string question, OutputHandlingFlag flags = OutputHandlingFlag.None, ConsoleColor color = ConsoleColor.Magenta)
         {
             if (io == null)
                 return (char)0;
 
-            using (io.WithColorspace(ConsoleColor.Black, ConsoleColor.Magenta))
+            using (io.WithColorspace(ConsoleColor.Black, color))
             {
                 io.Output($"{Constants.Inverser}{question}:{Constants.Inverser} ", flags);
                 var result = io.InputKey();

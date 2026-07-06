@@ -2,6 +2,7 @@
 using miniBBS.Basic.Extensions;
 using miniBBS.Basic.Models;
 using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Models.Control;
 using miniBBS.Extensions;
 using System;
@@ -26,7 +27,7 @@ namespace miniBBS.Basic.Executors
             "GETWORD", "GETWORDCONTAINS", "GETNEXTWORD", "GETNEXTWORDCONTAINS",
             "GETWORD$", "GETWORDCONTAINS$", "GETNEXTWORD$", "GETNEXTWORDCONTAINS$",
             "GUID$", "SECONDS", "LTRIM$", "RTRIM$", "TRIM$", "ROUND",
-            "ISOPEN", "FILEPOSITION"
+            "ISOPEN", "FILEPOSITION"//, "KEY$"
         };
 
         private static readonly char[] _logicalOperators = new char[]
@@ -799,6 +800,10 @@ namespace miniBBS.Basic.Executors
                             else
                                 value = "0";
                             break;
+                        //case "key$":
+                        //    value = value.Detokenize(pkg.StringValues);
+                        //    value = '"' + GetKey(pkg.Session, value) + '"';
+                        //    break;
                         default:
                             if (f.StartsWith("fn", StringComparison.CurrentCultureIgnoreCase))
                             {
@@ -818,6 +823,69 @@ namespace miniBBS.Basic.Executors
 
             return line;
         }
+
+        //private static string GetKey(BbsSession session, string input)
+        //{
+        //    if (string.IsNullOrWhiteSpace(input))
+        //        return input;
+
+        //    if (session.Io.EmulationType == TerminalEmulation.Ansi || session.Io.EmulationType == TerminalEmulation.Ascii)
+        //    {
+        //        if (input.Length >= 3)
+        //        {
+        //            if (new char[] { (char)27, (char)91, (char)65 }.SequenceEqual(input))
+        //                return "up";
+        //            if (new char[] { (char)27, (char)91, (char)66 }.SequenceEqual(input))
+        //                return "down";
+        //            if (new char[] { (char)27, (char)91, (char)68 }.SequenceEqual(input))
+        //                return "left";
+        //            if (new char[] { (char)27, (char)91, (char)67 }.SequenceEqual(input))
+        //                return "up";
+        //            if (new char[] { (char)27, (char)91, (char)50, (char)126 }.SequenceEqual(input))
+        //                return "ins";
+        //            if (new char[] { (char)27, (char)91, (char)51, (char)126 }.SequenceEqual(input))
+        //                return "del";
+        //            if (new char[] { (char)27, (char)91, (char)72 }.SequenceEqual(input))
+        //                return "home";
+        //            if (new char[] { (char)27, (char)91, (char)70 }.SequenceEqual(input))
+        //                return "home";
+        //            if (new char[] { (char)27, (char)91, (char)53, (char)126 }.SequenceEqual(input))
+        //                return "pageup";
+        //            if (new char[] { (char)27, (char)91, (char)54, (char)126 }.SequenceEqual(input))
+        //                return "pagedown";
+        //        }
+        //        if (input[0] == (char)13) return "enter";
+        //        if (input[0] == (char)127) return "backspace";
+        //    }
+
+        //    if (session.Io.EmulationType == TerminalEmulation.Cbm)
+        //    {
+        //        switch (input[0])
+        //        {
+        //            case (char)145: return "up";
+        //            case (char)17: return "down";
+        //            case (char)157: return "left";
+        //            case (char)29: return "right";
+        //            case (char)13: return "enter";
+        //            case (char)20: return "backspace";
+        //        }
+        //    }
+
+        //    if (session.Io.EmulationType == TerminalEmulation.Atascii)
+        //    {
+        //        switch (input[0])
+        //        {
+        //            case (char)28: return "up";
+        //            case (char)29: return "down";
+        //            case (char)30: return "left";
+        //            case (char)31: return "right";
+        //            case (char)155: return "enter";
+        //            case (char)126: return "backspace";
+        //        }
+        //    }
+
+        //    return input;
+        //}
      
         private class InnerExpression
         {

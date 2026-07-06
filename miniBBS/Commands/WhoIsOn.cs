@@ -44,6 +44,7 @@ namespace miniBBS.Commands
                             s.AfkReason,
                             s.DoNotDisturb,
                             s.IdleTime,
+                            Doing = s.Items.ContainsKey(SessionItem.Doing) ? $"{s.Items[SessionItem.Doing]}" : null,
                             ChannelName = s.CurrentLocation == Module.Chat ? s.Channel.Name : s.CurrentLocation.FriendlyName()
                         };
                     })
@@ -64,6 +65,11 @@ namespace miniBBS.Commands
                                 listItem += $"(AFK:{s.AfkReason})";
                             else
                                 listItem += "(AFK)";
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(s.Doing) && (!s.Afk || "away from keyboard".Equals(s.AfkReason, StringComparison.CurrentCultureIgnoreCase)))
+                        {
+                            listItem += $"({s.Doing})";
                         }
 
                         if (s.DoNotDisturb)

@@ -30,6 +30,7 @@
         BookmarkPercentage,
         MenuFiles,
         StartupMode,
-        Clipboard
+        Clipboard,
+        Doing
     }
 }

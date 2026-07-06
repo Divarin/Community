@@ -168,6 +168,18 @@ namespace miniBBS.Commands
                                 }
                             }
                             break;
+                        case 'A':
+                            if (lastRead.HasValue)
+                            {
+                                var i = bulletins.ItemNumber(lastRead.Value);
+                                if (i.HasValue)
+                                {
+                                    ReadBulletin(session, i.Value, bulletins, readBulletins);
+                                    break;
+                                }
+                                session.Io.Error("Can't find the last message you read to read it (A)gain.");
+                            }
+                            break;
                         case '[':
                         case '{':
                             currentBoard = boards.LastOrDefault(x => x.Id < currentBoard.Id);
@@ -955,6 +967,8 @@ namespace miniBBS.Commands
                     $"{Constants.Inverser}]{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Next Board", OutputHandlingFlag.NoWordWrap);
                 session.Io.OutputLine(
                     $"{Constants.Inverser}J{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Jump to / List Boards", OutputHandlingFlag.NoWordWrap);
+                session.Io.OutputLine(
+                    $"{Constants.Inverser}A{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Read last message Again", OutputHandlingFlag.NoWordWrap);
                 session.Io.OutputLine(
                     $"{Constants.Inverser}N{Constants.Inverser}".Color(ConsoleColor.Green) + eq + $"{Constants.Inverser}Next Unread{Constants.Inverser}        " +
                     $"{Constants.Inverser}#{Constants.Inverser}".Color(ConsoleColor.Green) + eq + "Jump to #", OutputHandlingFlag.NoWordWrap);

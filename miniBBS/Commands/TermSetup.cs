@@ -341,13 +341,29 @@ namespace miniBBS.Commands
             session.Io.OutputLine($"Columns: {session.User.Cols}");
             session.Io.OutputLine($"Rows: {session.User.Rows}");
             session.Io.OutputLine($"Emulation: {session.User.Emulation}");
-            session.Io.Output("Enter new preset name: ");
+            session.Io.Output("Enter preset name: ");
             var name = session.Io.InputLine();
             session.Io.OutputLine();
             if (string.IsNullOrWhiteSpace(name))
                 return;
-            if (userPresets.Any(x => x.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-                session.Io.Error("You already have a preset by that name");
+
+            var metaRepo = DI.GetRepository<Metadata>();
+
+            var existing = userPresets?.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (existing != null && existing.Id.HasValue && 'Y' == session.Io.Ask($"Preset '{existing.Name}' already exists, overwrite?"))
+            {
+                existing.Rows = session.User.Rows;
+                existing.Cols = session.User.Cols;
+                existing.Emulation = session.User.Emulation;
+                var existingMeta = metaRepo.Get(existing.Id.Value);
+                if (existingMeta != null)
+                {
+                    // should be not null, but who knows.
+                    existingMeta.Data = JsonConvert.SerializeObject(existing);
+                    metaRepo.Update(existingMeta);
+                }
+            }
             else
             {
                 var settings = new TerminalSettings
@@ -357,7 +373,7 @@ namespace miniBBS.Commands
                     Cols = session.User.Cols,
                     Emulation = session.User.Emulation
                 };
-                var meta = DI.GetRepository<Metadata>().Insert(new Metadata
+                var meta = metaRepo.Insert(new Metadata
                 {
                     Type = MetadataType.UserTermPreset,
                     UserId = session.User.Id,
