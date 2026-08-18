@@ -1,10 +1,12 @@
-﻿using miniBBS.Core.Enums;
+﻿using miniBBS.Core;
+using miniBBS.Core.Enums;
 using miniBBS.Core.Extensions;
 using miniBBS.Core.Interfaces;
 using miniBBS.Core.Models.Control;
 using miniBBS.Core.Models.Data;
 using miniBBS.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -55,9 +57,18 @@ namespace miniBBS.Commands
                 builder.AppendLine($"Time Zone    : {user.Timezone}");
                 builder.AppendLine($"Terminal     : {user.Cols} x {user.Rows}  {user.Emulation}");
 
-                var metas = DI.GetRepository<Metadata>()
+                var metaRepo = DI.GetRepository<Metadata>();
+
+                var metas = metaRepo
                     .Get(m => m.UserId, user.Id)
-                    .Where(m => !_filteredMetadataTypes.Contains(m.Type));
+                    .Where(m => !_filteredMetadataTypes.Contains(m.Type))
+                    .ToList();
+
+                var profileMeta = metas.FirstOrDefault(x => x.Type == MetadataType.Profile);
+                if (profileMeta != null)
+                {
+                    metas.Remove(profileMeta);
+                }
 
                 var wasDoing = metas?.FirstOrDefault(m => m.Type == MetadataType.WasDoing)?.Data;
 
@@ -118,8 +129,33 @@ namespace miniBBS.Commands
                         builder.AppendLine($"Meta         : {meta.Type} = {meta.Data}");
                 }
 
-                session.Io.OutputLine(builder.ToString());
+                session.Io.OutputLine(builder.ToString(), OutputHandlingFlag.PauseAtEnd);
+                builder.Clear();
 
+                // profile
+                if (profileMeta == null)
+                {
+                    builder.AppendLine($"{user.Name} has no profile.");
+                    if (session.User.Id == user.Id)
+                    {
+                        builder.AppendLine("use /profile to create & edit your profile.");
+                    }
+                }
+                else
+                {
+                    builder.AppendLine($"{user.Name}'s profile:");
+                    var profile = profileMeta.Data;
+                    if (profile.Length > Constants.MaxProfileLength)
+                    {
+                        profile = profile.Substring(0, Constants.MaxProfileLength);
+                    }
+                    builder.AppendLine(profile);
+                }
+
+                using (session.Io.WithColorspace(ConsoleColor.Black, ConsoleColor.Yellow))
+                {
+                    session.Io.OutputLine(builder.ToString(), OutputHandlingFlag.DoNotTrimStart | OutputHandlingFlag.PauseAtEnd);
+                }
             }
         }
     }

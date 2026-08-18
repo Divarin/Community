@@ -6,13 +6,14 @@ namespace miniBBS.Core
     public static class Constants
     {
         public const string BbsName = "Community";
-        public const string Version = "5.28a - 2026.07.06";
+        public const string Version = "5.28e - 2026.08.18";
         public const string SysopName = "Divarin";
         public const string BbsLocation = "Cleveland";
 
         public const int MinutesUntilMessageIsUndeletable = 60*3;
         public const int MinimumPasswordLength = 5;
         public const int MaximumPasswordLength = 30;
+        public const int MaxProfileLength = 80 * 25;
 
         public const string DatabaseFilename = "community.db";
 
@@ -172,7 +173,8 @@ namespace miniBBS.Core
             InputHandlingFlag.MaxLengthIfEmote;
 
         public static readonly LoginStartupMode DefaultStartupMode = LoginStartupMode.ChatRooms;
-
+        public const double MinTimeBetweenGopherRequestsMs = 2500;
+        public const int MaxMessageBodyLength = 32 * 1024;
         public const int BasicMaxRuntimeMin = 60;
         public const int DefaultPingPongDelayMin = 5;
 

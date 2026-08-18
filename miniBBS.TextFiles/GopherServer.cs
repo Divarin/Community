@@ -6,6 +6,7 @@ using miniBBS.Services;
 using miniBBS.Services.GlobalCommands;
 using miniBBS.TextFiles.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -25,6 +26,7 @@ namespace miniBBS.TextFiles
         private ILogger _logger;
         private ConditionalWeakTable<NetworkStream, GopherServerSessionFlag> _sessionFlags =
             new ConditionalWeakTable<NetworkStream, GopherServerSessionFlag>();
+        private ConcurrentDictionary<string, DateTime> _ipLastReq = new ConcurrentDictionary<string, DateTime>();
         
         private static readonly Dictionary<string, char> _gopherEntryTypeDict = new Dictionary<string, char>()
         {
@@ -119,6 +121,17 @@ namespace miniBBS.TextFiles
 
             try
             {
+                var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
+                var now = DateTime.Now;
+                var rejectRequest =
+                    _ipLastReq.TryGetValue(ip, out var lastReqFromThisIp) &&
+                    (now - lastReqFromThisIp).TotalMilliseconds <= Constants.MinTimeBetweenGopherRequestsMs;
+
+                _ipLastReq.AddOrUpdate(ip, now, (i, d) => now);
+
+                if (rejectRequest)
+                    return;
+
                 using (var stream = client.GetStream())
                 {
                     var buffer = new byte[2048];
@@ -133,7 +146,6 @@ namespace miniBBS.TextFiles
                     }
                     var request = builder.ToString();
 
-                    var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address?.ToString();
                     SysopScreen.RegisterGopherServerRequest(ip, request.Replace("\r", "").Replace("\n", ""));
 
                     var requestWithoutNewline = request.Replace("\r", "").Replace("\n", "");
@@ -246,6 +258,31 @@ namespace miniBBS.TextFiles
 
         private string ReadRadioDirectory(string[] pathParts)
         {
+            return @"
+Browsing of this directory is disabled
+However episodes of Echoes and Midnight Audio Theater
+can be downloaded via FTP using the BBS's FTP server.
+
+First, if you don't have an account on the BBS then
+telnet to mutinybbs.com port 2332
+Then you can use that username/password to log into
+the FTP server, also at mutinybbs.com port 2121
+so ... ftp://username:password@mutinybbs.com:2121
+where username is your Mutiny BBS username
+and password is your Mutiny BBS password
+
+Chips 'N Dip episodes can be downloaded via the web
+at http://anonradio.net/archives
+or through this gopher server from the Chips 'N Dip
+page at	/users/Divarin/pub/ChipsNDip
+
+Yesterday's Tomorrow episodes can be downloaded in
+.au format from the original source at:
+https://town.hall.org/ or through this gopher
+server from the Yesterday's Tomorrow page:
+at /users/Divarin/pub/YesterdaysTomorrow
+";
+
             var root = string.Join("\\", pathParts
                 .Where(x => x.All(c => c == ' ' || char.IsLetterOrDigit(c))));
             string path = $"z:\\{root}";
@@ -382,7 +419,7 @@ namespace miniBBS.TextFiles
             };
             var radioLink = new Models.Link
             {
-                ActualFilename = "Radio/index.html",
+                ActualFilename = "Radio",
                 Description = "Radio Recordings",
                 DisplayedFilename = "Radio",
                 Parent = new Models.Link()

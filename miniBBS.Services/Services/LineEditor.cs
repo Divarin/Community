@@ -145,12 +145,19 @@ namespace miniBBS.Services.Services
                     if (OnSave != null)
                     {
                         var body = Compile(lines);
-                        var status = OnSave(body);
-                        Notify(status);
-                        var result = CommandResult.Saved;
-                        if (_parameters.QuitOnSave || "sq".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
-                            result |= CommandResult.ExitEditor;
-                        return result;
+                        if (body.Length > Constants.MaxMessageBodyLength)
+                        {
+                            session.Io.Error($"Message body is {body.Length} characters, which exceeds the maximum length of {Constants.MaxMessageBodyLength}.");
+                        }
+                        else
+                        {
+                            var status = OnSave(body);
+                            Notify(status);
+                            var result = CommandResult.Saved;
+                            if (_parameters.QuitOnSave || "sq".Equals(args[0], StringComparison.CurrentCultureIgnoreCase))
+                                result |= CommandResult.ExitEditor;
+                            return result;
+                        }
                     }
                     break;
                 case "abort":

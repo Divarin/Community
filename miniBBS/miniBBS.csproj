@@ -94,6 +94,7 @@
     <Compile Include="Commands\Doing.cs" />
     <Compile Include="Commands\Gopher.cs" />
     <Compile Include="Commands\GopherBookmarks.cs" />
+    <Compile Include="Commands\Profile.cs" />
     <Compile Include="Commands\RenameChannel.cs" />
     <Compile Include="Commands\DeleteChannel.cs" />
     <Compile Include="Commands\DeleteMessage.cs" />

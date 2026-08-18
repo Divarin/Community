@@ -14,6 +14,7 @@
         PasswordResetCode,
         Bookmark,
         MenuFiles,
-        WasDoing
+        WasDoing,
+        Profile
     }
 }

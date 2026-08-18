@@ -22,6 +22,7 @@ namespace miniBBS.Menus
             $"{_clr($"{Constants.Inverser}/dnd{Constants.Inverser}", ConsoleColor.Green)} : Toggle Do Not Disturb",
             $"{_clr($"{Constants.Inverser}/afk{Constants.Inverser}", ConsoleColor.Green)} : Toggle Away from Keyboard",
             $"{_clr($"{Constants.Inverser}/doing{Constants.Inverser}", ConsoleColor.Green)} : Sets what you're doing: '/doing catching up on posts', '/doing' (clears your 'doing')",
+            $"{_clr($"{Constants.Inverser}/profile{Constants.Inverser}", ConsoleColor.Green)} : Create, Edit, or Delete your profile text (seen when someone does /ui on you)",
             $"{_clr($"{Constants.Inverser}/password{Constants.Inverser}", ConsoleColor.Green)} : Change your password",
             $"{_clr($"{Constants.Inverser}/ghosts{Constants.Inverser}", ConsoleColor.Green)} : See your other sessions and disconnect them",
             $"{_clr($"{Constants.Inverser}/bookmark{Constants.Inverser}", ConsoleColor.Green)} : Checks to see if you have a 'save for later' text, and if so lets you continue reading it.",

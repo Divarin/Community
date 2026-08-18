@@ -313,6 +313,7 @@ namespace miniBBS
                 throw new Exception($"Unable to switch to '{Constants.DefaultChannelName}' channel.");
 
             ShowLoginNotifications(session, startupMode);
+
             BookmarkManager.CheckBookmarkedRead(session);
 
             if (startupMode == LoginStartupMode.MainMenu)
@@ -1217,7 +1218,7 @@ namespace miniBBS
                             $"Unread{UserIoExtensions.WrapInColor("*", ConsoleColor.DarkGray)}   : {UserIoExtensions.WrapInColor((_high - _lastRead).ToString(), ConsoleColor.White)}",
                             UserIoExtensions.WrapInColor("*: High-Last Read = Unread", ConsoleColor.DarkGray)
                         });
-                        session.Io.Output(msg);
+                        session.Io.OutputLine(msg);
                     }
                     return;
                 case "/msg":
@@ -1411,6 +1412,10 @@ namespace miniBBS
                 case "/doing":
                 case "/do":
                     Doing.Execute(session, string.Join(" ", parts.Skip(1)));
+                    return;
+                case "/profile":
+                case "/plan":
+                    Profile.Execute(session);
                     return;
                 case "/read":
                     ContinuousRead.Execute(session, string.Join(" ", parts.Skip(1)), false);
